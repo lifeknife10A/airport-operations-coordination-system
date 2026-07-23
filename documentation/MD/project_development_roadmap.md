@@ -2,7 +2,7 @@
 
 This document defines the 8-week developmental roadmap, team member responsibilities, workload distribution, and phase-by-phase execution plan for building the Airport Operations Coordination System (AOCS) from ground zero.
 
-The workload is balanced to keep the core architectural and algorithmic features with **Krishna (Lead)** and **Anuvrat**, while assigning simpler CRUD-based and frontend-focused features to **Anay** and **Chaitanya** to prevent development bottlenecks.
+The workload is balanced to keep the core architectural and algorithmic features with **Krishna** and **Anuvrat**, while assigning simpler CRUD-based and frontend-focused features to **Anay** and **Chaitanya** to prevent development bottlenecks.
 
 ---
 
@@ -67,7 +67,7 @@ gantt
 ### Phase 1: Database & Architectural Foundation (Weeks 1-2)
 * **Objective:** Establish the repository, PostgreSQL tables, basic Spring Boot routes, and React layout shell.
 * **Workload Division:**
-  * **Krishna (Lead):** Sets up database schema, foreign keys, and Spring Boot project structure.
+  * **Krishna:** Sets up database schema, foreign keys, and Spring Boot project structure.
   * **Anuvrat:** Documents the database tables, relations, and drafts initial API specifications.
   * **Anay:** Creates standard UI elements (buttons, layout cards, header styling).
   * **Chaitanya:** Sets up Spring Security and defines user roles access endpoints.

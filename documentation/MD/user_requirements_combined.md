@@ -15,7 +15,7 @@ This document combines the user stories and acceptance criteria for all **25 spe
 
 ### Suggested Workload Distribution
 To optimize developer capacity and focus the heavy architectural work on the lead developers, the features are allocated as follows:
-* **Krishna Solanki (Lead):** Core Architecture, State Engine, Safety Lockouts & Calculators (Exactly 6 Features).
+* **Krishna Solanki:** Core Architecture, State Engine, Safety Lockouts & Calculators (Exactly 6 Features).
 * **Anuvrat Tripathi:** Data Reconciliation, Performance Analytics, and Fleet Management (Exactly 6 Features).
 * **Anay Modi:** Simple User Interfaces, Desk Planners, and Handover Logs (Exactly 4 Features).
 * **Chaitanya Tikku:** Carousel Allocation UI, Queue Trackers, and Lounge Counters (Exactly 4 Features).
