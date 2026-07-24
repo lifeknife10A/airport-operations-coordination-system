@@ -4,3 +4,8 @@ node_modules/
 target/
 .idea/
 .vscode/
+
+# Draw.io Auto-Generated Temporary Backup Files
+*.bkp
+.$*.drawio.bkp
+.*.drawio.bkp
