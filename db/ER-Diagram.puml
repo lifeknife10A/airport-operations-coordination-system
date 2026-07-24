@@ -1,0 +1,176 @@
+@startchen AOCS_Peter_Chen_ERD
+left to right direction
+
+' ============================================================
+' ENTITIES & ATTRIBUTES (16 Entities)
+' ============================================================
+
+entity ROLES {
+  role_id <<key>>
+  role_name
+}
+
+entity USERS {
+  user_id <<key>>
+  username
+  name
+  phone_numbers <<multi>>
+}
+
+entity DEPARTMENTS {
+  department_id <<key>>
+  department_name
+  number_of_staff <<derived>>
+}
+
+entity AIRCRAFT {
+  aircraft_id <<key>>
+  registration_number
+}
+
+entity FLIGHTS {
+  flight_id <<key>>
+  flight_number
+  flight_status
+  turnaround_duration <<derived>>
+}
+
+entity GATES {
+  gate_id <<key>>
+  gate_number
+}
+
+entity RUNWAYS {
+  runway_id <<key>>
+  runway_code
+}
+
+entity TASKS {
+  task_id <<key>>
+  task_name
+  status
+  elapsed_time <<derived>>
+}
+
+entity DELAY_LOGS <<weak>> {
+  delay_sequence_no <<key>>
+  delay_minutes
+}
+
+entity FUEL_LOGS {
+  fuel_log_id <<key>>
+  fuel_density
+}
+
+entity CARGO_MANIFESTS {
+  cargo_id <<key>>
+  container_id
+}
+
+entity PASSENGERS {
+  passenger_id <<key>>
+  passport_number
+}
+
+entity LOUNGE_VISITS {
+  visit_id <<key>>
+  lounge_name
+}
+
+entity BAGGAGE_CAROUSELS {
+  carousel_id <<key>>
+  terminal
+}
+
+entity NOTIFICATIONS {
+  notification_id <<key>>
+  title
+}
+
+entity AUDIT_LOGS {
+  log_id <<key>>
+  action
+}
+
+' ============================================================
+' RELATIONSHIPS (16 Diamonds)
+' ============================================================
+
+relationship has_role {
+}
+relationship employs {
+}
+relationship operates {
+}
+relationship assigned_gate {
+}
+relationship assigned_runway {
+}
+relationship requires_turnaround {
+}
+relationship triggers_delay <<identifying>> {
+}
+relationship refuels {
+}
+relationship carries_cargo {
+}
+relationship carries_pax {
+}
+relationship visits_lounge {
+}
+relationship claims_baggage {
+}
+relationship receives {
+}
+relationship generates {
+}
+
+' ============================================================
+' CONNECTIONS & PARTICIPATION
+' - Single Line (-1-, -N-): Partial Participation
+' = Double Line (=1=, =N=): Total Participation
+' ============================================================
+
+has_role -1- ROLES
+has_role =N= USERS
+
+employs -1- DEPARTMENTS
+employs =N= USERS
+
+operates -1- AIRCRAFT
+operates =N= FLIGHTS
+
+assigned_gate -1- GATES
+assigned_gate -N- FLIGHTS
+
+assigned_runway -1- RUNWAYS
+assigned_runway -N- FLIGHTS
+
+requires_turnaround =1= FLIGHTS
+requires_turnaround =N= TASKS
+
+triggers_delay -1- FLIGHTS
+triggers_delay =N= DELAY_LOGS
+
+refuels -1- TASKS
+refuels =1= FUEL_LOGS
+
+carries_cargo -1- FLIGHTS
+carries_cargo =N= CARGO_MANIFESTS
+
+carries_pax -1- FLIGHTS
+carries_pax =N= PASSENGERS
+
+visits_lounge -1- PASSENGERS
+visits_lounge =N= LOUNGE_VISITS
+
+claims_baggage -1- FLIGHTS
+claims_baggage -1- BAGGAGE_CAROUSELS
+
+receives -1- USERS
+receives =N= NOTIFICATIONS
+
+generates -1- USERS
+generates =N= AUDIT_LOGS
+
+@endchen
