@@ -88,8 +88,9 @@ Mini Project/
 ## 📄 Diagram Quick Reference for Teammates
 
 For visual diagram review, open the vector PDF files in [`documentation/PDF/`](file:///Users/krish/Desktop/Software%20Engineering/Mini%20Project/documentation/PDF):
-* 📐 **Peter Chen ER Diagram**: [ER Diagram.pdf](file:///Users/krish/Desktop/Software%20Engineering/Mini%20Project/documentation/PDF/ER%20Diagram.pdf)
-* 📊 **Information Package Matrix**: [AOCS Information Package.pdf](file:///Users/krish/Desktop/Software%20Engineering/Mini%20Project/documentation/PDF/AOCS%20Information%20Package.pdf)
+* 📐 **Step 1: Peter Chen ER Diagram**: [ER Diagram.pdf](file:///Users/krish/Desktop/Software%20Engineering/Mini%20Project/documentation/PDF/ER%20Diagram.pdf)
+* 📊 **Step 2: Information Package Matrix**: [Information Package.pdf](file:///Users/krish/Desktop/Software%20Engineering/Mini%20Project/documentation/PDF/Information%20Package.pdf)
+* 🌟 **Step 3: Star Schema Dimensional Model**: [Star Schema.pdf](file:///Users/krish/Desktop/Software%20Engineering/Mini%20Project/documentation/PDF/Star%20Schema.pdf)
 
 ---
 *Airport Operations Coordination System (AOCS) — Project Developer Guide*
