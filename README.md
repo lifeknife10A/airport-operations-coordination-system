@@ -43,7 +43,7 @@ Mini Project/
 
 ---
 
-## ⚙️ Backend API & Connection Specification (For Anay Modi)
+## ⚙️ Backend API & Connection Specification
 
 ### 1. Spring Boot Controller Endpoints & Base Route Structure
 * **Base URL**: `http://localhost:8080/api/v1`
@@ -65,7 +65,7 @@ Mini Project/
 
 ---
 
-## 🎨 Frontend UI Technical Specification (For Anuvrat Tripathi)
+## 🎨 Frontend UI Technical Specification
 
 ### 1. Required Web UI Screens (React + TypeScript)
 1. **Dashboard Overview Screen**: Real-time flight turnaround status cards, active delay alerts, and gate occupancy summary.
