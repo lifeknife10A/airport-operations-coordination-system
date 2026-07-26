@@ -6,17 +6,17 @@ Copy and paste the entire block below directly into **Claude (Claude 3.5 Sonnet)
 ```markdown
 Role: You are a Principal Aviation Database Architect and Senior Software Engineer.
 
-Objective: Final acknowledgement of the complete Grade 10.0 Enterprise PostgreSQL 18 DDL script for the Airport Operations Coordination System (AOCS). Confirm that:
+Objective: Final sign-off on the complete Grade 10.0 Enterprise PostgreSQL 18 DDL script for the Airport Operations Coordination System (AOCS). Confirm that:
 1. All 47 foreign key edges are indexed (44 explicit B-Tree indexes + 3 auto-indexed composite PK/UNIQUE edges + 1 PNR lookup).
 2. All silent classification/legal/billing defaults were dropped.
-3. Bidirectional flight rotation aircraft consistency is enforced at runtime with row-level concurrency locking (`FOR SHARE` / `FOR KEY SHARE`) via `trg_verify_flight_rotation` & `trg_verify_downstream_rotation`.
+3. Bidirectional flight rotation aircraft consistency is enforced via `DEFERRABLE INITIALLY DEFERRED` constraint triggers (`trg_verify_flight_rotation` & `trg_verify_downstream_rotation`), allowing multi-flight rotation reassignments within transactions while guaranteeing transaction commit integrity.
 4. Rotation self-loops & multi-claiming are blocked via `CHECK (inbound_flight_id <> flight_id)` and `UNIQUE (inbound_flight_id)`.
 5. Three-tier flight times (`scheduled`, `estimated`, `actual`) are active.
 6. Structured JSONB audit logs are implemented.
 
 ---
 
-### 🏛️ COMPLETE 38-TABLE POSTGRESQL 18 DDL SCRIPT (GRADE 10.0 ENTERPRISE ARCHITECTURE)
+### 🏛️ COMPLETE 38-TABLE POSTGRESQL 18 DDL SCRIPT (DEFERRABLE CONSTRAINT TRIGGERS & GRADE 10.0 ARCHITECTURE)
 
 ```sql
 -- 1. ROLES TABLE
@@ -380,8 +380,8 @@ CREATE TABLE audit_logs (
 );
 
 -- ============================================================
--- TRIGGER FUNCTION 1: UPSTREAM AIRCRAFT ROTATION CONSISTENCY (WITH ROW LOCKING)
--- Ensures when setting inbound_flight_id, the aircraft matches the inbound flight
+-- CONSTRAINT TRIGGER 1: UPSTREAM AIRCRAFT ROTATION CONSISTENCY (DEFERRABLE INITIALLY DEFERRED)
+-- Validates at transaction commit that aircraft matches inbound flight
 -- ============================================================
 CREATE OR REPLACE FUNCTION fn_verify_flight_rotation_aircraft()
 RETURNS TRIGGER AS $$
@@ -391,8 +391,7 @@ BEGIN
     IF NEW.inbound_flight_id IS NOT NULL THEN
         SELECT aircraft_id INTO inbound_aircraft_id
         FROM flights
-        WHERE flight_id = NEW.inbound_flight_id
-        FOR SHARE;
+        WHERE flight_id = NEW.inbound_flight_id;
         
         IF inbound_aircraft_id IS DISTINCT FROM NEW.aircraft_id THEN
             RAISE EXCEPTION 'Rotation integrity violation: Inbound flight % operates aircraft %, but flight % is assigned aircraft %',
@@ -404,14 +403,15 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_verify_flight_rotation ON flights;
-CREATE TRIGGER trg_verify_flight_rotation
-BEFORE INSERT OR UPDATE OF inbound_flight_id, aircraft_id ON flights
+CREATE CONSTRAINT TRIGGER trg_verify_flight_rotation
+AFTER INSERT OR UPDATE OF inbound_flight_id, aircraft_id ON flights
+DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
 EXECUTE FUNCTION fn_verify_flight_rotation_aircraft();
 
 -- ============================================================
--- TRIGGER FUNCTION 2: DOWNSTREAM AIRCRAFT ROTATION INTEGRITY (WITH KEY SHARE LOCKING)
--- Ensures when an aircraft_id is updated on a flight, all downstream rotated flights match
+-- CONSTRAINT TRIGGER 2: DOWNSTREAM AIRCRAFT ROTATION INTEGRITY (DEFERRABLE INITIALLY DEFERRED)
+-- Validates at transaction commit that all downstream rotated outbound flights match new aircraft
 -- ============================================================
 CREATE OR REPLACE FUNCTION fn_verify_downstream_rotation()
 RETURNS TRIGGER AS $$
@@ -420,7 +420,6 @@ BEGIN
         SELECT 1 FROM flights
         WHERE inbound_flight_id = NEW.flight_id
           AND aircraft_id IS DISTINCT FROM NEW.aircraft_id
-        FOR KEY SHARE
     ) THEN
         RAISE EXCEPTION 'Aircraft reassignment violation: Reassigning aircraft on flight % breaks rotation consistency with dependent outbound flights',
             NEW.flight_id;
@@ -430,8 +429,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_verify_downstream_rotation ON flights;
-CREATE TRIGGER trg_verify_downstream_rotation
-BEFORE UPDATE OF aircraft_id ON flights
+CREATE CONSTRAINT TRIGGER trg_verify_downstream_rotation
+AFTER UPDATE OF aircraft_id ON flights
+DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
 EXECUTE FUNCTION fn_verify_downstream_rotation();
 
