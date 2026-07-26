@@ -1,0 +1,362 @@
+import os
+
+xml_content = """<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="Electron" agent="Mozilla/5.0">
+  <diagram name="AOCS-Chen-ERD-ParticipationEnforced" id="aocs-chen-erd-pe">
+    <mxGraphModel dx="2600" dy="2000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2600" pageHeight="2000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ============================================================ -->
+        <!-- HEADER                                                       -->
+        <!-- ============================================================ -->
+        <mxCell id="hdr_title" value="&lt;b style=&quot;font-size: 16px;&quot;&gt;AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size: 12px; color: #555555;&quot;&gt;Peter Chen Conceptual ERD (Explicit Single/Double Line Participation Enforcement)&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="900" y="20" width="650" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ============================================================ -->
+        <!-- LEVEL 1: TOP INFRASTRUCTURE ENTITIES (y=120)                 -->
+        <!-- ============================================================ -->
+
+        <!-- AIRCRAFT (x=300, y=120) -->
+        <mxCell id="ent_aircraft" value="AIRCRAFT" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="300" y="120" width="120" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="a_ac1" value="&lt;u&gt;aircraft_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="220" y="50" width="80" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_ac1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_aircraft" target="a_ac1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_ac2" value="&lt;u&gt;registration_number&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="320" y="50" width="120" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_ac2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.75;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_aircraft" target="a_ac2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- GATES (x=930, y=120) -->
+        <mxCell id="ent_gates" value="GATES" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="930" y="120" width="120" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="a_g1" value="&lt;u&gt;gate_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="870" y="50" width="70" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_g1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_gates" target="a_g1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_g2" value="&lt;u&gt;gate_number&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="960" y="50" width="85" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_g2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.75;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_gates" target="a_g2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- RUNWAYS (x=1650, y=120) -->
+        <mxCell id="ent_runways" value="RUNWAYS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1650" y="120" width="120" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="a_rw1" value="&lt;u&gt;runway_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="1590" y="50" width="80" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_rw1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_runways" target="a_rw1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_rw2" value="&lt;u&gt;runway_code&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="1685" y="50" width="90" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_rw2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.75;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_runways" target="a_rw2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+
+        <!-- ============================================================ -->
+        <!-- LEVEL 2: TOP RELATIONSHIPS (y=300)                           -->
+        <!-- ============================================================ -->
+
+        <!-- operates (x=315, y=300) -->
+        <mxCell id="rel_operates" value="operates" style="rhombus;whiteSpace=wrap;html=1;fontSize=10;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="315" y="300" width="90" height="45" as="geometry" />
+        </mxCell>
+        <!-- Partial Participation: Single Line -->
+        <mxCell id="edge_ac_op" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_aircraft" target="rel_operates"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_ac1" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="365" y="225" width="20" height="20" as="geometry" /></mxCell>
+        <!-- Total Participation: Bold Double Line -->
+        <mxCell id="edge_fl_op" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;double=1;strokeWidth=2;endArrow=none;exitX=0;exitY=0.25;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_flights" target="rel_operates"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="365" y="355" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- assigned_gate (x=935, y=300) -->
+        <mxCell id="rel_assigned_gate" value="assigned_gate" style="rhombus;whiteSpace=wrap;html=1;fontSize=10;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="935" y="300" width="110" height="45" as="geometry" />
+        </mxCell>
+        <!-- Partial Participation: Single Line -->
+        <mxCell id="edge_gt_ag" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_gates" target="rel_assigned_gate"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_gt1" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="995" y="225" width="20" height="20" as="geometry" /></mxCell>
+        <mxCell id="edge_fl_ag" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_flights" target="rel_assigned_gate"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl2" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="995" y="355" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- assigned_runway (x=1650, y=300) -->
+        <mxCell id="rel_assigned_rw" value="assigned_runway" style="rhombus;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1650" y="300" width="120" height="45" as="geometry" />
+        </mxCell>
+        <!-- Partial Participation: Single Line -->
+        <mxCell id="edge_rw_arw" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_runways" target="rel_assigned_rw"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_rw1" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1715" y="225" width="20" height="20" as="geometry" /></mxCell>
+        <mxCell id="edge_fl_arw" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=1;exitY=0.25;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_flights" target="rel_assigned_rw"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl3" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1715" y="355" width="20" height="20" as="geometry" /></mxCell>
+
+
+        <!-- ============================================================ -->
+        <!-- LEVEL 3 & 4: MAIN HORIZONTAL TIER (y=560)                    -->
+        <!-- ============================================================ -->
+
+        <!-- 1. ROLES (x=80, y=560) -->
+        <mxCell id="ent_roles" value="ROLES" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="80" y="560" width="100" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="a_r1" value="&lt;u&gt;role_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="30" y="475" width="65" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_r1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_roles" target="a_r1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_r2" value="&lt;u&gt;role_name&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="105" y="475" width="75" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_r2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.75;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_roles" target="a_r2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- has_role (x=210, y=557) -->
+        <mxCell id="rel_has_role" value="has_role" style="rhombus;whiteSpace=wrap;html=1;fontSize=10;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="210" y="557" width="85" height="45" as="geometry" />
+        </mxCell>
+        <!-- ROLES to has_role: Partial (Single Line) -->
+        <mxCell id="edge_r_has" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="ent_roles" target="rel_has_role"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_r1" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="185" y="538" width="20" height="20" as="geometry" /></mxCell>
+        <!-- USERS to has_role: TOTAL PARTICIPATION (Bold Double Line) -->
+        <mxCell id="edge_u_has" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;double=1;strokeWidth=2;endArrow=none;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="ent_users" target="rel_has_role"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_u1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="300" y="538" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 2. USERS (x=330, y=560) -->
+        <mxCell id="ent_users" value="USERS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="330" y="560" width="110" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="a_u1" value="&lt;u&gt;user_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="280" y="475" width="65" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_u1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.2;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_users" target="a_u1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_u2" value="&lt;u&gt;username&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="355" y="475" width="70" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_u2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_users" target="a_u2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_u6" value="phone_numbers" style="ellipse;whiteSpace=wrap;html=1;shape=doubleEllipse;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="435" y="475" width="95" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_u6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.8;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_users" target="a_u6"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- employs (x=475, y=557) -->
+        <mxCell id="rel_employs" value="employs" style="rhombus;whiteSpace=wrap;html=1;fontSize=10;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="475" y="557" width="85" height="45" as="geometry" />
+        </mxCell>
+        <!-- USERS to employs: TOTAL PARTICIPATION (Bold Double Line) -->
+        <mxCell id="edge_u_emp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;double=1;strokeWidth=2;endArrow=none;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="ent_users" target="rel_employs"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_u2" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="445" y="538" width="20" height="20" as="geometry" /></mxCell>
+        <!-- DEPARTMENTS to employs: Partial (Single Line) -->
+        <mxCell id="edge_d_emp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="ent_departments" target="rel_employs"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_d1" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="565" y="538" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 3. DEPARTMENTS (x=595, y=560) -->
+        <mxCell id="ent_departments" value="DEPARTMENTS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="595" y="560" width="125" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="a_d1" value="&lt;u&gt;department_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="550" y="475" width="90" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_departments" target="a_d1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_d2" value="department_name" style="ellipse;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="650" y="475" width="95" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_d2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.75;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_departments" target="a_d2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_d5" value="number_of_staff" style="ellipse;whiteSpace=wrap;html=1;dashed=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="610" y="635" width="95" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_d5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_departments" target="a_d5"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- coordinates (x=760, y=557) -->
+        <mxCell id="rel_coordinates" value="coordinates" style="rhombus;whiteSpace=wrap;html=1;fontSize=10;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="760" y="557" width="95" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_d_coord" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="ent_departments" target="rel_coordinates"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_d_coord" value="M" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="725" y="538" width="20" height="20" as="geometry" /></mxCell>
+        <mxCell id="edge_f_coord" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="ent_flights" target="rel_coordinates"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_f_coord" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="880" y="538" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 7. FLIGHTS (CENTER HUB: x=910, y=560) -->
+        <mxCell id="ent_flights" value="FLIGHTS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=13;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="910" y="560" width="140" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- FLIGHTS Attributes -->
+        <mxCell id="a_f1" value="&lt;u&gt;flight_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="840" y="475" width="75" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_f1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.15;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_flights" target="a_f1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_f2" value="flight_number" style="ellipse;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="925" y="475" width="80" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_f2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_flights" target="a_f2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_f3" value="flight_status" style="ellipse;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="1015" y="475" width="80" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_f3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.85;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_flights" target="a_f3"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_f6" value="turnaround_duration" style="ellipse;whiteSpace=wrap;html=1;dashed=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="920" y="640" width="120" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_f6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_flights" target="a_f6"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- requires_turnaround (x=1175, y=557) - TOTAL PARTICIPATION ON BOTH SIDES -->
+        <mxCell id="rel_requires_t" value="requires_turnaround" style="rhombus;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1175" y="557" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_f_req" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;double=1;strokeWidth=2;endArrow=none;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="ent_flights" target="rel_requires_t"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl4" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1140" y="538" width="20" height="20" as="geometry" /></mxCell>
+        <mxCell id="edge_t_req" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;double=1;strokeWidth=2;endArrow=none;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="ent_tasks" target="rel_requires_t"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_tk1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1315" y="538" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 8. TASKS (x=1345, y=560) -->
+        <mxCell id="ent_tasks" value="TASKS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1345" y="560" width="115" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="a_t1" value="&lt;u&gt;task_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="1300" y="475" width="65" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_t1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_tasks" target="a_t1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_t2" value="task_name" style="ellipse;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="1380" y="475" width="75" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_t2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.75;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_tasks" target="a_t2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_t5" value="elapsed_time" style="ellipse;whiteSpace=wrap;html=1;dashed=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="1357" y="635" width="90" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_t5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_tasks" target="a_t5"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- refuels (x=1500, y=557) -->
+        <mxCell id="rel_refuels" value="refuels" style="rhombus;whiteSpace=wrap;html=1;fontSize=10;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1500" y="557" width="85" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_f_rf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="ent_tasks" target="rel_refuels"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl6" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1470" y="538" width="20" height="20" as="geometry" /></mxCell>
+        <!-- FUEL_LOGS to refuels: TOTAL PARTICIPATION (Bold Double Line) -->
+        <mxCell id="edge_fl_rf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;double=1;strokeWidth=2;endArrow=none;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="ent_fuel_logs" target="rel_refuels"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fue1" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1595" y="538" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 10. FUEL_LOGS (x=1625, y=560) -->
+        <mxCell id="ent_fuel_logs" value="FUEL_LOGS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1625" y="560" width="110" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="a_flg1" value="&lt;u&gt;fuel_log_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="1585" y="475" width="80" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_flg1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_fuel_logs" target="a_flg1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_flg2" value="fuel_density" style="ellipse;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="1675" y="475" width="75" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_flg2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.75;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_fuel_logs" target="a_flg2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- carries_cargo (x=1775, y=557) -->
+        <mxCell id="rel_cargo" value="carries_cargo" style="rhombus;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1775" y="557" width="100" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_f_cg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="ent_fuel_logs" target="rel_cargo"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl7" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1745" y="538" width="20" height="20" as="geometry" /></mxCell>
+        <!-- CARGO_MANIFESTS to carries_cargo: TOTAL PARTICIPATION (Bold Double Line) -->
+        <mxCell id="edge_c_cg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;double=1;strokeWidth=2;endArrow=none;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="ent_cargo" target="rel_cargo"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_cg1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1885" y="538" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 11. CARGO_MANIFESTS (x=1910, y=560) -->
+        <mxCell id="ent_cargo" value="CARGO_MANIFESTS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1910" y="560" width="145" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="a_cr1" value="&lt;u&gt;cargo_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="1875" y="475" width="70" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_cr1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_cargo" target="a_cr1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_cr2" value="container_id" style="ellipse;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="1955" y="475" width="75" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_cr2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.75;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_cargo" target="a_cr2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+
+        <!-- ============================================================ -->
+        <!-- LEVEL 5 & 6: LOWER RELATIONSHIPS & BOTTOM ENTITIES (y=720-800)-->
+        <!-- ============================================================ -->
+
+        <!-- generates (x=70, y=720) -->
+        <mxCell id="rel_audit" value="generates" style="rhombus;whiteSpace=wrap;html=1;fontSize=10;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="70" y="720" width="85" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_u_aud" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_users" target="rel_audit"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_u4" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="115" y="690" width="20" height="20" as="geometry" /></mxCell>
+        <!-- AUDIT_LOGS to generates: TOTAL PARTICIPATION (Bold Double Line) -->
+        <mxCell id="edge_a_aud" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;double=1;strokeWidth=2;endArrow=none;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_audit" target="rel_audit"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_a1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="115" y="770" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 15. AUDIT_LOGS (x=55, y=800) -->
+        <mxCell id="ent_audit" value="AUDIT_LOGS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="55" y="800" width="115" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="a_al1" value="&lt;u&gt;log_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="20" y="885" width="65" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_al1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_audit" target="a_al1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_al2" value="action" style="ellipse;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="95" y="885" width="60" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_al2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.75;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_audit" target="a_al2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- receives (x=340, y=720) -->
+        <mxCell id="rel_notif" value="receives" style="rhombus;whiteSpace=wrap;html=1;fontSize=10;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="340" y="720" width="85" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_u_not" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_users" target="rel_notif"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_u3" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="385" y="690" width="20" height="20" as="geometry" /></mxCell>
+        <!-- NOTIFICATIONS to receives: TOTAL PARTICIPATION (Bold Double Line) -->
+        <mxCell id="edge_n_not" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;double=1;strokeWidth=2;endArrow=none;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_notif" target="rel_notif"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_n1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="385" y="770" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 16. NOTIFICATIONS (x=320, y=800) -->
+        <mxCell id="ent_notif" value="NOTIFICATIONS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="320" y="800" width="125" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="a_nt1" value="&lt;u&gt;notification_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="280" y="885" width="85" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_nt1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_notif" target="a_nt1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_nt2" value="title" style="ellipse;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="375" y="885" width="60" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_nt2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.75;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_notif" target="a_nt2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- performs_task (x=590, y=720) -->
+        <mxCell id="rel_performs" value="performs_task" style="rhombus;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="590" y="720" width="95" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_u_perf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.75;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_users" target="rel_performs"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_u_perf" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="545" y="690" width="20" height="20" as="geometry" /></mxCell>
+        <mxCell id="edge_t_perf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=1;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_tasks" target="rel_performs"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_t_perf" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="640" y="770" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- claims_baggage (x=735, y=800) -->
+        <mxCell id="rel_car" value="claims_baggage" style="rhombus;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="735" y="800" width="105" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_f_car" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.2;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_flights" target="rel_car"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl9" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="790" y="770" width="20" height="20" as="geometry" /></mxCell>
+        <mxCell id="edge_b_car" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="ent_carousel" target="rel_car"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_car1" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="710" y="808" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 14. BAGGAGE_CAROUSELS (x=545, y=800) -->
+        <mxCell id="ent_carousel" value="BAGGAGE_CAROUSELS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="545" y="800" width="155" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="a_c1" value="&lt;u&gt;carousel_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="530" y="885" width="80" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_c1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_carousel" target="a_c1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_c2" value="terminal" style="ellipse;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="620" y="885" width="65" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_c2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.75;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_carousel" target="a_c2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- triggers_delay (x=930, y=720) -->
+        <mxCell id="rel_triggers_delay" value="triggers_delay" style="rhombus;whiteSpace=wrap;html=1;shape=ext;double=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="930" y="720" width="100" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_f_del" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.35;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_flights" target="rel_triggers_delay"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl5" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="980" y="690" width="20" height="20" as="geometry" /></mxCell>
+        <!-- DELAY_LOGS to triggers_delay: TOTAL PARTICIPATION (Bold Double Line) -->
+        <mxCell id="edge_d_del" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;double=1;strokeWidth=2;endArrow=none;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_delay_logs" target="rel_triggers_delay"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_dl1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="980" y="770" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 9. DELAY_LOGS (Weak Entity: double rectangle) (x=925, y=800) -->
+        <mxCell id="ent_delay_logs" value="DELAY_LOGS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;shape=ext;double=1;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="925" y="800" width="115" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="a_dl1" value="&lt;u style=&quot;border-bottom: 1px dashed;&quot;&gt;delay_seq_no&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=8;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="880" y="885" width="95" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_dl1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_delay_logs" target="a_dl1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_dl2" value="delay_minutes" style="ellipse;whiteSpace=wrap;html=1;fontSize=8;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="985" y="885" width="80" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_dl2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.75;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_delay_logs" target="a_dl2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- carries_pax (x=1115, y=720) -->
+        <mxCell id="rel_pax" value="carries_pax" style="rhombus;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1115" y="720" width="95" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_f_px" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.8;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_flights" target="rel_pax"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl8" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1160" y="690" width="20" height="20" as="geometry" /></mxCell>
+        <!-- PASSENGERS to carries_pax: TOTAL PARTICIPATION (Bold Double Line) -->
+        <mxCell id="edge_p_px" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;double=1;strokeWidth=2;endArrow=none;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="ent_passengers" target="rel_pax"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_px1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1160" y="770" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 12. PASSENGERS (x=1100, y=800) -->
+        <mxCell id="ent_passengers" value="PASSENGERS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="800" width="125" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="a_px1" value="&lt;u&gt;passenger_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="1070" y="885" width="85" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_px1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_passengers" target="a_px1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_px2" value="passport_number" style="ellipse;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="1165" y="885" width="100" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_px2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.75;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_passengers" target="a_px2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- visits_lounge (x=1265, y=800) -->
+        <mxCell id="rel_lounge" value="visits_lounge" style="rhombus;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1265" y="800" width="95" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_p_lg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="ent_passengers" target="rel_lounge"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_px2" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1235" y="788" width="20" height="20" as="geometry" /></mxCell>
+        <!-- LOUNGE_VISITS to visits_lounge: TOTAL PARTICIPATION (Bold Double Line) -->
+        <mxCell id="edge_l_lg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;double=1;strokeWidth=2;endArrow=none;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="ent_lounge" target="rel_lounge"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_lg1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1370" y="788" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 13. LOUNGE_VISITS (x=1395, y=800) -->
+        <mxCell id="ent_lounge" value="LOUNGE_VISITS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1395" y="800" width="135" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="a_lg1" value="&lt;u&gt;visit_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="1375" y="885" width="70" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_lg1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_lounge" target="a_lg1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_lg2" value="lounge_name" style="ellipse;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="1455" y="885" width="80" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_lg2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;exitX=0.75;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ent_lounge" target="a_lg2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
+"""
+
+target_path = "/Users/krish/Desktop/Software Engineering/Mini Project/db/ER-Diagram.xml"
+with open(target_path, "w", encoding="utf-8") as f:
+    f.write(xml_content)
+
+print(f"Successfully updated participation double lines in {target_path}")
