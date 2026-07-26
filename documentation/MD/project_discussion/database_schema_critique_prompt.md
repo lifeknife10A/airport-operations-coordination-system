@@ -1,22 +1,22 @@
 # AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)
-## Complete 38-Table Grade 9.7+ Enterprise DDL & Security Audit Prompt
+## Complete 38-Table Grade 9.8+ Enterprise DDL & Security Audit Prompt
 
 Copy and paste the entire block below directly into **Claude (Claude 3.5 Sonnet)**:
 
 ```markdown
 Role: You are a Principal Aviation Database Architect and Senior Software Engineer.
 
-Objective: Final sign-off on the complete Grade 9.7+ Enterprise PostgreSQL 18 DDL script for the Airport Operations Coordination System (AOCS). Confirm that:
+Objective: Final sign-off on the complete Grade 9.8+ Enterprise PostgreSQL 18 DDL script for the Airport Operations Coordination System (AOCS). Confirm that:
 1. All 47 foreign key edges are indexed (44 explicit B-Tree indexes + 3 auto-indexed composite PK/UNIQUE edges + 1 PNR lookup).
 2. All silent classification/legal/billing defaults (`stands.is_remote`, `stands.has_jetbridge`, `cargo_manifests.cargo_type`, `passengers.is_transit_passenger`, `visa_type`, `cabin_class`, `clearance_status`, `biometric_facial_matched`, `runway_condition`) were dropped.
-3. Flight rotation aircraft consistency is enforced at runtime via `trg_verify_flight_rotation` trigger.
+3. Bidirectional flight rotation aircraft consistency is enforced at runtime via both upstream (`trg_verify_flight_rotation`) and downstream (`trg_verify_downstream_rotation`) triggers.
 4. Rotation self-loops are blocked via `CHECK (inbound_flight_id <> flight_id)`.
 5. Three-tier flight times (`scheduled`, `estimated`, `actual`) are active.
 6. Structured JSONB audit logs are implemented.
 
 ---
 
-### 🏛️ COMPLETE 38-TABLE POSTGRESQL 18 DDL SCRIPT (EXHAUSTIVE CLASSIFICATION SWEEP & ROTATION TRIGGER)
+### 🏛️ COMPLETE 38-TABLE POSTGRESQL 18 DDL SCRIPT (BIDIRECTIONAL ROTATION TRIGGERS & ZERO FALLBACK DEFAULTS)
 
 ```sql
 -- 1. ROLES TABLE
@@ -379,8 +379,8 @@ CREATE TABLE audit_logs (
 );
 
 -- ============================================================
--- TRIGGER FUNCTION: AIRCRAFT ROTATION CONSISTENCY ENFORCEMENT
--- Ensures an inbound flight linked via inbound_flight_id operates the exact same physical aircraft
+-- TRIGGER FUNCTION 1: UPSTREAM AIRCRAFT ROTATION CONSISTENCY
+-- Ensures when setting inbound_flight_id, the aircraft matches the inbound flight
 -- ============================================================
 CREATE OR REPLACE FUNCTION fn_verify_flight_rotation_aircraft()
 RETURNS TRIGGER AS $$
@@ -406,6 +406,31 @@ CREATE TRIGGER trg_verify_flight_rotation
 BEFORE INSERT OR UPDATE OF inbound_flight_id, aircraft_id ON flights
 FOR EACH ROW
 EXECUTE FUNCTION fn_verify_flight_rotation_aircraft();
+
+-- ============================================================
+-- TRIGGER FUNCTION 2: DOWNSTREAM AIRCRAFT ROTATION INTEGRITY
+-- Ensures when an aircraft_id is updated on a flight, all downstream rotated flights match
+-- ============================================================
+CREATE OR REPLACE FUNCTION fn_verify_downstream_rotation()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM flights
+        WHERE inbound_flight_id = NEW.flight_id
+          AND aircraft_id IS DISTINCT FROM NEW.aircraft_id
+    ) THEN
+        RAISE EXCEPTION 'Aircraft reassignment violation: Reassigning aircraft on flight % breaks rotation consistency with dependent outbound flights',
+            NEW.flight_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_verify_downstream_rotation ON flights;
+CREATE TRIGGER trg_verify_downstream_rotation
+BEFORE UPDATE OF aircraft_id ON flights
+FOR EACH ROW
+EXECUTE FUNCTION fn_verify_downstream_rotation();
 
 -- ============================================================
 -- 100% COMPLETE B-TREE PERFORMANCE INDEXES FOR ALL 47 FK EDGES
@@ -471,5 +496,5 @@ CREATE INDEX idx_audit_user ON audit_logs(user_id);
 ---
 
 ### ❓ FINAL SIGN-OFF FOR CLAUDE:
-1. Does this complete DDL with exhaustive classification sweep and aircraft rotation trigger meet your criteria for a **9.7+ Enterprise Grade** architecture?
+1. Does this complete DDL with bidirectional rotation triggers (`trg_verify_flight_rotation` & `trg_verify_downstream_rotation`) meet your criteria for a **9.8+ Enterprise Grade** architecture?
 ```
