@@ -1,16 +1,16 @@
 # AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)
-## Complete 38-Table Grade 9.7 Enterprise DDL & Performance Indexing Prompt
+## Complete 38-Table Grade 9.7+ Enterprise DDL & Security Audit Prompt
 
 Copy and paste the entire block below directly into **Claude (Claude 3.5 Sonnet)**:
 
 ```markdown
 Role: You are a Principal Aviation Database Architect and Senior Software Engineer.
 
-Objective: Final sign-off on the complete Grade 9.7 Enterprise PostgreSQL 18 DDL script for the Airport Operations Coordination System (AOCS). Confirm that all 47 foreign key edges are indexed (44 explicit B-Tree indexes + 3 auto-indexed composite PK/UNIQUE edges + 1 PNR lookup), silent defaults on cargo weight and flight type were removed, rotation self-loops are blocked, three-tier flight times are active, and structured JSONB audit logs are implemented.
+Objective: Final sign-off on the complete Grade 9.7+ Enterprise PostgreSQL 18 DDL script for the Airport Operations Coordination System (AOCS). Confirm that all 47 foreign key edges are indexed (44 explicit B-Tree indexes + 3 auto-indexed composite PK/UNIQUE edges + 1 PNR lookup), all silent security/clearance defaults (`DEFAULT 'APPROVED'`, `DEFAULT TRUE`, `DEFAULT 'DRY'`) were dropped, rotation self-loops are blocked, three-tier flight times are active, and structured JSONB audit logs are implemented.
 
 ---
 
-### 🏛️ COMPLETE 38-TABLE POSTGRESQL 18 DDL SCRIPT (GRADE 9.7 ENTERPRISE AUDITED)
+### 🏛️ COMPLETE 38-TABLE POSTGRESQL 18 DDL SCRIPT (ZERO SECURITY FALLBACK DEFAULTS)
 
 ```sql
 -- 1. ROLES TABLE
@@ -109,13 +109,13 @@ CREATE TABLE runways (
     runway_code VARCHAR(10) NOT NULL UNIQUE
 );
 
--- 13. WEATHER_REPORTS TABLE
+-- 13. WEATHER_REPORTS TABLE (No Silent Default Runway Condition!)
 CREATE TABLE weather_reports (
     report_id BIGSERIAL PRIMARY KEY,
     visibility_meters INT NOT NULL CHECK (visibility_meters >= 0),
     wind_speed_knots INT NOT NULL CHECK (wind_speed_knots >= 0),
     temperature_celsius NUMERIC(4,1) NOT NULL,
-    runway_condition VARCHAR(20) NOT NULL DEFAULT 'DRY' CHECK (runway_condition IN ('DRY', 'WET', 'FOG', 'HEAVY_RAIN')),
+    runway_condition VARCHAR(20) NOT NULL CHECK (runway_condition IN ('DRY', 'WET', 'FOG', 'HEAVY_RAIN')),
     observation_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -295,11 +295,11 @@ CREATE TABLE security_checkpoints (
     terminal VARCHAR(10) NOT NULL
 );
 
--- 31. PASSENGER_CLEARANCE_LOGS TABLE (Un-bypassable Legal Retention - RESTRICT on ALL edges)
+-- 31. PASSENGER_CLEARANCE_LOGS TABLE (No Silent Approved Default!)
 CREATE TABLE passenger_clearance_logs (
     clearance_id BIGSERIAL PRIMARY KEY,
     scan_timestamp TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    clearance_status VARCHAR(25) NOT NULL DEFAULT 'APPROVED' CHECK (clearance_status IN ('APPROVED', 'FLAGGED_SECURITY', 'DENIED', 'BOARDED')),
+    clearance_status VARCHAR(25) NOT NULL CHECK (clearance_status IN ('APPROVED', 'FLAGGED_SECURITY', 'DENIED', 'BOARDED')),
     denial_reason VARCHAR(100),
     verification_method VARCHAR(30) NOT NULL CHECK (verification_method IN ('BARCODE_SCANNER', 'BIOMETRIC_FACIAL', 'PASSPORT_CHIP_READER')),
     passenger_id BIGINT NOT NULL REFERENCES passengers(passenger_id) ON DELETE RESTRICT,
@@ -307,12 +307,12 @@ CREATE TABLE passenger_clearance_logs (
     checkpoint_id BIGINT NOT NULL REFERENCES security_checkpoints(checkpoint_id) ON DELETE RESTRICT
 );
 
--- 32. IMMIGRATION_RECORDS TABLE (Authoritative Passport derived via passenger_id ON DELETE RESTRICT)
+-- 32. IMMIGRATION_RECORDS TABLE (No Silent Biometric Match Default!)
 CREATE TABLE immigration_records (
     immigration_id BIGSERIAL PRIMARY KEY,
     visa_type VARCHAR(30) NOT NULL DEFAULT 'TOURIST_VISA',
     stamp_number VARCHAR(50) NOT NULL UNIQUE,
-    biometric_facial_matched BOOLEAN NOT NULL DEFAULT TRUE,
+    biometric_facial_matched BOOLEAN NOT NULL,
     clearance_type VARCHAR(30) NOT NULL CHECK (clearance_type IN ('DEPARTURE_EMIGRATION', 'ARRIVAL_IMMIGRATION')),
     passenger_id BIGINT NOT NULL REFERENCES passengers(passenger_id) ON DELETE RESTRICT
 );
@@ -432,4 +432,9 @@ CREATE INDEX idx_line_items_flight ON invoice_line_items(flight_id);
 CREATE INDEX idx_notif_user ON notifications(user_id);
 CREATE INDEX idx_audit_user ON audit_logs(user_id);
 ```
+
+---
+
+### ❓ FINAL SIGN-OFF FOR CLAUDE:
+1. Does this complete DDL with zero security fallbacks meet your criteria for a **9.7+ Enterprise Grade** architecture?
 ```
