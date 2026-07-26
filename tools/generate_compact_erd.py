@@ -1,0 +1,301 @@
+import os
+
+xml_content = """<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="Electron" agent="Mozilla/5.0">
+  <diagram name="AOCS-Peter-Chen-ERD-Participation" id="aocs-chen-erd-part">
+    <mxGraphModel dx="2000" dy="1600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ============================================================ -->
+        <!-- DIAGRAM TITLE & LEGEND (Peter Chen Standard)                  -->
+        <!-- ============================================================ -->
+        <mxCell id="lbl_legend" value="&lt;b&gt;PETER CHEN ER DIAGRAM (AOCS)&lt;/b&gt;&lt;br&gt;──────── Single Line: Partial / Optional Participation&lt;br&gt;════════ Double Line: Total / Mandatory Participation" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=#666666;fillColor=none;fontSize=10;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="60" y="40" width="310" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ============================================================ -->
+        <!-- ROW 1: ROLES, USERS, DEPARTMENTS, NOTIFICATIONS, AUDIT_LOGS   -->
+        <!-- ============================================================ -->
+
+        <!-- 1. ROLES -->
+        <mxCell id="ent_roles" value="ROLES" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="100" y="160" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="a_r1" value="&lt;u&gt;role_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=10;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="30" y="90" width="70" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_r1" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_roles" target="a_r1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_r2" value="&lt;u&gt;role_name&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=10;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="115" y="90" width="75" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_r2" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_roles" target="a_r2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- R1: ROLES - USERS (has_role) -->
+        <mxCell id="rel_has_role" value="has_role" style="rhombus;whiteSpace=wrap;html=1;fontSize=11;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="250" y="155" width="95" height="50" as="geometry" />
+        </mxCell>
+        <!-- Single Line: Partial Participation (ROLES is optional) -->
+        <mxCell id="edge_r_has" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_roles" target="rel_has_role"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_r1" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="210" y="155" width="30" height="30" as="geometry" /></mxCell>
+        
+        <!-- Double Line (double=1): Total Participation (USERS must have a role) -->
+        <mxCell id="edge_u_has" style="endArrow=none;html=1;double=1;" edge="1" parent="1" source="ent_users" target="rel_has_role"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_u1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="355" y="155" width="30" height="30" as="geometry" /></mxCell>
+
+        <!-- 2. USERS -->
+        <mxCell id="ent_users" value="USERS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="390" y="160" width="110" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a_u1" value="&lt;u&gt;user_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=10;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="340" y="90" width="70" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_u1" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_users" target="a_u1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_u2" value="&lt;u&gt;username&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=10;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="420" y="90" width="75" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_u2" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_users" target="a_u2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_u3" value="name" style="ellipse;whiteSpace=wrap;html=1;fontSize=10;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="505" y="90" width="60" height="28" as="geometry" /></mxCell>
+        <mxCell id="e_u3" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_users" target="a_u3"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_u6" value="phone_numbers" style="ellipse;whiteSpace=wrap;html=1;shape=doubleEllipse;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="450" y="225" width="90" height="32" as="geometry" /></mxCell>
+        <mxCell id="e_u6" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_users" target="a_u6"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- R2: DEPARTMENTS - USERS (employs) -->
+        <mxCell id="rel_employs" value="employs" style="rhombus;whiteSpace=wrap;html=1;fontSize=11;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="550" y="155" width="95" height="50" as="geometry" />
+        </mxCell>
+        <!-- Single Line: Partial Participation (DEPARTMENTS is optional) -->
+        <mxCell id="edge_d_emp" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_departments" target="rel_employs"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_d1" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="655" y="155" width="30" height="30" as="geometry" /></mxCell>
+        <!-- Double Line (double=1): Total Participation (USERS must belong to a dept) -->
+        <mxCell id="edge_u_emp" style="endArrow=none;html=1;double=1;" edge="1" parent="1" source="ent_users" target="rel_employs"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_u2" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="510" y="155" width="30" height="30" as="geometry" /></mxCell>
+
+        <!-- 3. DEPARTMENTS -->
+        <mxCell id="ent_departments" value="DEPARTMENTS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="690" y="160" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="a_d1" value="&lt;u&gt;department_id&lt;/u&gt;" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="650" y="90" width="85" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_d1" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_departments" target="a_d1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_d2" value="department_name" style="ellipse;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="745" y="90" width="95" height="30" as="geometry" /></mxCell>
+        <mxCell id="e_d2" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_departments" target="a_d2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a_d5" value="number_of_staff" style="ellipse;whiteSpace=wrap;html=1;dashed=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1"><mxGeometry x="705" y="225" width="90" height="32" as="geometry" /></mxCell>
+        <mxCell id="e_d5" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_departments" target="a_d5"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- R15: USERS - NOTIFICATIONS (receives) -->
+        <mxCell id="rel_notif" value="receives" style="rhombus;whiteSpace=wrap;html=1;fontSize=11;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="870" y="155" width="90" height="50" as="geometry" />
+        </mxCell>
+        <!-- Single Line: Partial Participation -->
+        <mxCell id="edge_u_not" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_users" target="rel_notif"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_u3" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="830" y="155" width="30" height="30" as="geometry" /></mxCell>
+        <!-- Double Line (double=1): Total Participation (NOTIFICATION must have user) -->
+        <mxCell id="edge_n_not" style="endArrow=none;html=1;double=1;" edge="1" parent="1" source="ent_notif" target="rel_notif"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_n1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="970" y="155" width="30" height="30" as="geometry" /></mxCell>
+
+        <!-- 16. NOTIFICATIONS -->
+        <mxCell id="ent_notif" value="NOTIFICATIONS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="160" width="120" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- R16: USERS - AUDIT_LOGS (generates) -->
+        <mxCell id="rel_audit" value="generates" style="rhombus;whiteSpace=wrap;html=1;fontSize=11;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="155" width="85" height="50" as="geometry" />
+        </mxCell>
+        <!-- Single Line: Partial Participation -->
+        <mxCell id="edge_u_aud" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_users" target="rel_audit"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <!-- Double Line (double=1): Total Participation (AUDIT_LOG must have user) -->
+        <mxCell id="edge_a_aud" style="endArrow=none;html=1;double=1;" edge="1" parent="1" source="ent_audit" target="rel_audit"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_a1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1295" y="155" width="30" height="30" as="geometry" /></mxCell>
+
+        <!-- 15. AUDIT_LOGS -->
+        <mxCell id="ent_audit" value="AUDIT_LOGS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1330" y="160" width="110" height="40" as="geometry" />
+        </mxCell>
+
+
+        <!-- ============================================================ -->
+        <!-- ROW 2: INFRASTRUCTURE (AIRCRAFT, GATES, RUNWAYS)             -->
+        <!-- ============================================================ -->
+
+        <!-- 4. AIRCRAFT -->
+        <mxCell id="ent_aircraft" value="AIRCRAFT" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="100" y="450" width="110" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- R4: AIRCRAFT - FLIGHTS (operates) -->
+        <mxCell id="rel_operates" value="operates" style="rhombus;whiteSpace=wrap;html=1;fontSize=11;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="250" y="445" width="95" height="50" as="geometry" />
+        </mxCell>
+        <!-- Single Line: Partial Participation (AIRCRAFT is optional) -->
+        <mxCell id="edge_ac_op" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_aircraft" target="rel_operates"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_ac1" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="215" y="445" width="20" height="20" as="geometry" /></mxCell>
+        <!-- Double Line (double=1): Total Participation (FLIGHTS must have aircraft) -->
+        <mxCell id="edge_fl_op" style="endArrow=none;html=1;double=1;" edge="1" parent="1" source="ent_flights" target="rel_operates"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="355" y="445" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 5. GATES -->
+        <mxCell id="ent_gates" value="GATES" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="390" y="450" width="100" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- R5: GATES - FLIGHTS (assigned_gate) -->
+        <mxCell id="rel_assigned_gate" value="assigned_gate" style="rhombus;whiteSpace=wrap;html=1;fontSize=10;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="530" y="445" width="105" height="50" as="geometry" />
+        </mxCell>
+        <!-- Single Line: Partial Participation -->
+        <mxCell id="edge_gt_ag" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_gates" target="rel_assigned_gate"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_gt1" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="495" y="445" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- Single Line: Partial Participation -->
+        <mxCell id="edge_fl_ag" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_flights" target="rel_assigned_gate"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl2" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="450" y="660" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 6. RUNWAYS -->
+        <mxCell id="ent_runways" value="RUNWAYS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="690" y="450" width="110" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- R6: RUNWAYS - FLIGHTS (assigned_runway) -->
+        <mxCell id="rel_assigned_rw" value="assigned_runway" style="rhombus;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="830" y="445" width="115" height="50" as="geometry" />
+        </mxCell>
+        <!-- Single Line: Partial Participation -->
+        <mxCell id="edge_rw_arw" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_runways" target="rel_assigned_rw"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_rw1" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="805" y="445" width="20" height="20" as="geometry" /></mxCell>
+        <!-- Single Line: Partial Participation -->
+        <mxCell id="edge_fl_arw" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_flights" target="rel_assigned_rw"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl3" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="500" y="660" width="20" height="20" as="geometry" /></mxCell>
+
+
+        <!-- ============================================================ -->
+        <!-- ROW 3: FLIGHTS, TASKS, DELAY_LOGS                             -->
+        <!-- ============================================================ -->
+
+        <!-- 7. FLIGHTS -->
+        <mxCell id="ent_flights" value="FLIGHTS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="390" y="700" width="120" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- R7: FLIGHTS - TASKS (requires_turnaround) -->
+        <mxCell id="rel_requires_t" value="requires_turnaround" style="rhombus;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="550" y="697" width="130" height="50" as="geometry" />
+        </mxCell>
+        <!-- Double Line (double=1): Total Participation (FLIGHTS must generate tasks) -->
+        <mxCell id="edge_f_req" style="endArrow=none;html=1;double=1;" edge="1" parent="1" source="ent_flights" target="rel_requires_t"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl4" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="515" y="697" width="20" height="20" as="geometry" /></mxCell>
+        <!-- Double Line (double=1): Total Participation (TASKS must belong to a flight) -->
+        <mxCell id="edge_t_req" style="endArrow=none;html=1;double=1;" edge="1" parent="1" source="ent_tasks" target="rel_requires_t"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_tk1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="685" y="697" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 8. TASKS -->
+        <mxCell id="ent_tasks" value="TASKS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="720" y="700" width="110" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- R9: IDENTIFYING RELATIONSHIP: FLIGHTS - DELAY_LOGS (triggers_delay) -->
+        <mxCell id="rel_triggers_delay" value="triggers_delay" style="rhombus;whiteSpace=wrap;html=1;shape=ext;double=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="395" y="805" width="110" height="50" as="geometry" />
+        </mxCell>
+        <!-- Single Line: Partial Participation (FLIGHTS is optional owner) -->
+        <mxCell id="edge_f_del" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_flights" target="rel_triggers_delay"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl5" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="450" y="750" width="20" height="20" as="geometry" /></mxCell>
+        <!-- Double Line (double=1): Total Participation (Weak Entity DELAY_LOGS must belong to a flight) -->
+        <mxCell id="edge_d_del" style="endArrow=none;html=1;double=1;" edge="1" parent="1" source="ent_delay_logs" target="rel_triggers_delay"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_dl1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="450" y="870" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 9. DELAY_LOGS (Weak Entity) -->
+        <mxCell id="ent_delay_logs" value="DELAY_LOGS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;shape=ext;double=1;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="390" y="910" width="120" height="45" as="geometry" />
+        </mxCell>
+
+
+        <!-- ============================================================ -->
+        <!-- ROW 4: SPECIALIZED GROUND SERVICES                           -->
+        <!-- ============================================================ -->
+
+        <!-- R10: TASKS - FUEL_LOGS (refuels) -->
+        <mxCell id="rel_refuels" value="refuels" style="rhombus;whiteSpace=wrap;html=1;fontSize=10;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="870" y="697" width="90" height="50" as="geometry" />
+        </mxCell>
+        <!-- Single Line: Partial Participation -->
+        <mxCell id="edge_f_rf" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_tasks" target="rel_refuels"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl6" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="835" y="697" width="20" height="20" as="geometry" /></mxCell>
+        <!-- Double Line (double=1): Total Participation (FUEL_LOGS must belong to task/flight) -->
+        <mxCell id="edge_fl_rf" style="endArrow=none;html=1;double=1;" edge="1" parent="1" source="ent_fuel_logs" target="rel_refuels"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fue1" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="970" y="697" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 10. FUEL_LOGS -->
+        <mxCell id="ent_fuel_logs" value="FUEL_LOGS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="700" width="110" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- R11: FUEL_LOGS - CARGO_MANIFESTS (carries_cargo) -->
+        <mxCell id="rel_cargo" value="carries_cargo" style="rhombus;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1150" y="697" width="105" height="50" as="geometry" />
+        </mxCell>
+        <!-- Single Line: Partial Participation -->
+        <mxCell id="edge_f_cg" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_fuel_logs" target="rel_cargo"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl7" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1115" y="697" width="20" height="20" as="geometry" /></mxCell>
+        <!-- Double Line (double=1): Total Participation (CARGO_MANIFESTS must belong to flight) -->
+        <mxCell id="edge_c_cg" style="endArrow=none;html=1;double=1;" edge="1" parent="1" source="ent_cargo" target="rel_cargo"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_cg1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1260" y="697" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 11. CARGO_MANIFESTS -->
+        <mxCell id="ent_cargo" value="CARGO_MANIFESTS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1290" y="700" width="145" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- R12: FLIGHTS - PASSENGERS (carries_pax) -->
+        <mxCell id="rel_pax" value="carries_pax" style="rhombus;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="680" y="907" width="90" height="50" as="geometry" />
+        </mxCell>
+        <!-- Single Line: Partial Participation -->
+        <mxCell id="edge_f_px" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_flights" target="rel_pax"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl8" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="645" y="907" width="20" height="20" as="geometry" /></mxCell>
+        <!-- Double Line (double=1): Total Participation (PASSENGERS must belong to a flight) -->
+        <mxCell id="edge_p_px" style="endArrow=none;html=1;double=1;" edge="1" parent="1" source="ent_passengers" target="rel_pax"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_px1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="775" y="907" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 12. PASSENGERS -->
+        <mxCell id="ent_passengers" value="PASSENGERS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="810" y="910" width="120" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- R13: PASSENGERS - LOUNGE_VISITS (visits_lounge) -->
+        <mxCell id="rel_lounge" value="visits_lounge" style="rhombus;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="965" y="907" width="95" height="50" as="geometry" />
+        </mxCell>
+        <!-- Single Line: Partial Participation -->
+        <mxCell id="edge_p_lg" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_passengers" target="rel_lounge"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_px2" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="935" y="907" width="20" height="20" as="geometry" /></mxCell>
+        <!-- Double Line (double=1): Total Participation (LOUNGE_VISITS must belong to passenger) -->
+        <mxCell id="edge_l_lg" style="endArrow=none;html=1;double=1;" edge="1" parent="1" source="ent_lounge" target="rel_lounge"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_lg1" value="N" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1065" y="907" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 13. LOUNGE_VISITS -->
+        <mxCell id="ent_lounge" value="LOUNGE_VISITS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="910" width="130" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- R14: FLIGHTS - BAGGAGE_CAROUSELS (claims_baggage) -->
+        <mxCell id="rel_car" value="claims_baggage" style="rhombus;whiteSpace=wrap;html=1;fontSize=9;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1265" y="907" width="105" height="50" as="geometry" />
+        </mxCell>
+        <!-- Single Line: Partial Participation -->
+        <mxCell id="edge_f_car" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_flights" target="rel_car"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_fl9" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1235" y="907" width="20" height="20" as="geometry" /></mxCell>
+        <!-- Single Line: Partial Participation -->
+        <mxCell id="edge_b_car" style="endArrow=none;html=1;" edge="1" parent="1" source="ent_carousel" target="rel_car"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="lbl_card_car1" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1375" y="907" width="20" height="20" as="geometry" /></mxCell>
+
+        <!-- 14. BAGGAGE_CAROUSELS -->
+        <mxCell id="ent_carousel" value="BAGGAGE_CAROUSELS" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;fillColor=none;strokeColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="910" width="150" height="45" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
+"""
+
+target_path = "/Users/krish/Desktop/Software Engineering/Mini Project/db/ER-Diagram.xml"
+with open(target_path, "w", encoding="utf-8") as f:
+    f.write(xml_content)
+
+print(f"Successfully generated participation-aware Peter Chen ERD in {target_path}")
