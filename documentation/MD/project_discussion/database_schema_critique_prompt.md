@@ -6,11 +6,17 @@ Copy and paste the entire block below directly into **Claude (Claude 3.5 Sonnet)
 ```markdown
 Role: You are a Principal Aviation Database Architect and Senior Software Engineer.
 
-Objective: Final sign-off on the complete Grade 9.7+ Enterprise PostgreSQL 18 DDL script for the Airport Operations Coordination System (AOCS). Confirm that all 47 foreign key edges are indexed (44 explicit B-Tree indexes + 3 auto-indexed composite PK/UNIQUE edges + 1 PNR lookup), all silent classification/legal/billing defaults (`visa_type DEFAULT 'TOURIST_VISA'`, `cabin_class DEFAULT 'ECONOMY'`, `stands.has_jetbridge DEFAULT TRUE`, `clearance_status DEFAULT 'APPROVED'`, `biometric_facial_matched DEFAULT TRUE`, `runway_condition DEFAULT 'DRY'`) were dropped, rotation self-loops are blocked, three-tier flight times are active, and structured JSONB audit logs are implemented.
+Objective: Final sign-off on the complete Grade 9.7+ Enterprise PostgreSQL 18 DDL script for the Airport Operations Coordination System (AOCS). Confirm that:
+1. All 47 foreign key edges are indexed (44 explicit B-Tree indexes + 3 auto-indexed composite PK/UNIQUE edges + 1 PNR lookup).
+2. All silent classification/legal/billing defaults (`stands.is_remote`, `stands.has_jetbridge`, `cargo_manifests.cargo_type`, `passengers.is_transit_passenger`, `visa_type`, `cabin_class`, `clearance_status`, `biometric_facial_matched`, `runway_condition`) were dropped.
+3. Flight rotation aircraft consistency is enforced at runtime via `trg_verify_flight_rotation` trigger.
+4. Rotation self-loops are blocked via `CHECK (inbound_flight_id <> flight_id)`.
+5. Three-tier flight times (`scheduled`, `estimated`, `actual`) are active.
+6. Structured JSONB audit logs are implemented.
 
 ---
 
-### 🏛️ COMPLETE 38-TABLE POSTGRESQL 18 DDL SCRIPT (ZERO CLASSIFICATION & ZERO SECURITY FALLBACK DEFAULTS)
+### 🏛️ COMPLETE 38-TABLE POSTGRESQL 18 DDL SCRIPT (EXHAUSTIVE CLASSIFICATION SWEEP & ROTATION TRIGGER)
 
 ```sql
 -- 1. ROLES TABLE
@@ -94,11 +100,11 @@ CREATE TABLE checkin_counters (
     allocated_airline_id BIGINT REFERENCES airlines(airline_id) ON DELETE SET NULL
 );
 
--- 11. STANDS TABLE (No Silent Jetbridge Default!)
+-- 11. STANDS TABLE (No Silent Remote or Jetbridge Defaults!)
 CREATE TABLE stands (
     stand_id BIGSERIAL PRIMARY KEY,
     stand_number VARCHAR(20) NOT NULL UNIQUE,
-    is_remote BOOLEAN NOT NULL DEFAULT FALSE,
+    is_remote BOOLEAN NOT NULL,
     has_jetbridge BOOLEAN NOT NULL,
     assigned_gate_id BIGINT REFERENCES gates(gate_id) ON DELETE SET NULL
 );
@@ -207,12 +213,12 @@ CREATE TABLE fuel_logs (
     task_id BIGINT NOT NULL REFERENCES tasks(task_id) ON DELETE RESTRICT
 );
 
--- 22. CARGO_MANIFESTS TABLE (No Silent Weight Default)
+-- 22. CARGO_MANIFESTS TABLE (No Silent Cargo Type or Weight Defaults!)
 CREATE TABLE cargo_manifests (
     cargo_id BIGSERIAL PRIMARY KEY,
     container_id VARCHAR(30) NOT NULL,
     weight_kg NUMERIC(8,2) NOT NULL CHECK (weight_kg > 0),
-    cargo_type VARCHAR(20) NOT NULL DEFAULT 'CARGO' CHECK (cargo_type IN ('CARGO', 'MAIL', 'BAGGAGE')),
+    cargo_type VARCHAR(20) NOT NULL CHECK (cargo_type IN ('CARGO', 'MAIL', 'BAGGAGE')),
     flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE CASCADE
 );
 
@@ -235,13 +241,13 @@ CREATE TABLE travelers (
     phone_number VARCHAR(30)
 );
 
--- 25. PASSENGERS TABLE (Flight Segment Instance - Unique traveler_id + flight_id)
+-- 25. PASSENGERS TABLE (Flight Segment Instance - Unique traveler_id + flight_id, No Silent Transit Default!)
 CREATE TABLE passengers (
     passenger_id BIGSERIAL PRIMARY KEY,
     traveler_id BIGINT NOT NULL REFERENCES travelers(traveler_id) ON DELETE RESTRICT,
     flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE RESTRICT,
     pnr_code VARCHAR(10) NOT NULL,
-    is_transit_passenger BOOLEAN NOT NULL DEFAULT FALSE,
+    is_transit_passenger BOOLEAN NOT NULL,
     UNIQUE (traveler_id, flight_id)
 );
 
@@ -373,6 +379,35 @@ CREATE TABLE audit_logs (
 );
 
 -- ============================================================
+-- TRIGGER FUNCTION: AIRCRAFT ROTATION CONSISTENCY ENFORCEMENT
+-- Ensures an inbound flight linked via inbound_flight_id operates the exact same physical aircraft
+-- ============================================================
+CREATE OR REPLACE FUNCTION fn_verify_flight_rotation_aircraft()
+RETURNS TRIGGER AS $$
+DECLARE
+    inbound_aircraft_id BIGINT;
+BEGIN
+    IF NEW.inbound_flight_id IS NOT NULL THEN
+        SELECT aircraft_id INTO inbound_aircraft_id
+        FROM flights
+        WHERE flight_id = NEW.inbound_flight_id;
+        
+        IF inbound_aircraft_id IS DISTINCT FROM NEW.aircraft_id THEN
+            RAISE EXCEPTION 'Rotation integrity violation: Inbound flight % operates aircraft %, but flight % is assigned aircraft %',
+                NEW.inbound_flight_id, inbound_aircraft_id, NEW.flight_id, NEW.aircraft_id;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_verify_flight_rotation ON flights;
+CREATE TRIGGER trg_verify_flight_rotation
+BEFORE INSERT OR UPDATE OF inbound_flight_id, aircraft_id ON flights
+FOR EACH ROW
+EXECUTE FUNCTION fn_verify_flight_rotation_aircraft();
+
+-- ============================================================
 -- 100% COMPLETE B-TREE PERFORMANCE INDEXES FOR ALL 47 FK EDGES
 -- (44 Explicit B-Tree Indexes + 3 Auto-Indexed PK/UNIQUE Composite Edges + 1 PNR Lookup)
 -- ============================================================
@@ -436,5 +471,5 @@ CREATE INDEX idx_audit_user ON audit_logs(user_id);
 ---
 
 ### ❓ FINAL SIGN-OFF FOR CLAUDE:
-1. Does this complete DDL with comprehensive classification sweep meet your criteria for a **9.7+ Enterprise Grade** architecture?
+1. Does this complete DDL with exhaustive classification sweep and aircraft rotation trigger meet your criteria for a **9.7+ Enterprise Grade** architecture?
 ```
