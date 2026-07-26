@@ -2,6 +2,7 @@
 -- AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)
 -- PostgreSQL 18 Initial Database Schema (Flyway V1 Migration)
 -- Author: Krishna Solanki & AOCS Engineering Team
+-- Includes Peer-Reviewed Architectural Fixes (Claude 3.5 & GPT-4o Audit)
 -- ============================================================
 
 -- 1. ROLES TABLE
@@ -52,20 +53,32 @@ CREATE TABLE IF NOT EXISTS airports (
     timezone VARCHAR(50) NOT NULL DEFAULT 'UTC'
 );
 
--- 7. AIRCRAFT TABLE
+-- 7. AIRCRAFT_TYPES TABLE (New #36: Master Aircraft Category & Physical Specs)
+CREATE TABLE IF NOT EXISTS aircraft_types (
+    type_id BIGSERIAL PRIMARY KEY,
+    type_code VARCHAR(20) NOT NULL UNIQUE,
+    manufacturer VARCHAR(50) NOT NULL,
+    model_name VARCHAR(50) NOT NULL,
+    wingspan_meters NUMERIC(5,2) NOT NULL CHECK (wingspan_meters > 0),
+    mtow_kg NUMERIC(10,2) NOT NULL CHECK (mtow_kg > 0),
+    max_passenger_capacity INT NOT NULL CHECK (max_passenger_capacity > 0)
+);
+
+-- 8. AIRCRAFT TABLE (Enhanced with Foreign Key to AIRCRAFT_TYPES)
 CREATE TABLE IF NOT EXISTS aircraft (
     aircraft_id BIGSERIAL PRIMARY KEY,
     registration_number VARCHAR(20) NOT NULL UNIQUE,
+    type_id BIGINT NOT NULL REFERENCES aircraft_types(type_id) ON DELETE RESTRICT,
     airline_id BIGINT NOT NULL REFERENCES airlines(airline_id) ON DELETE RESTRICT
 );
 
--- 8. GATES TABLE
+-- 9. GATES TABLE
 CREATE TABLE IF NOT EXISTS gates (
     gate_id BIGSERIAL PRIMARY KEY,
     gate_number VARCHAR(10) NOT NULL UNIQUE
 );
 
--- 9. CHECKIN_COUNTERS TABLE (DCS Counter Allocation Master)
+-- 10. CHECKIN_COUNTERS TABLE
 CREATE TABLE IF NOT EXISTS checkin_counters (
     counter_id BIGSERIAL PRIMARY KEY,
     counter_number VARCHAR(20) NOT NULL UNIQUE,
@@ -73,7 +86,7 @@ CREATE TABLE IF NOT EXISTS checkin_counters (
     allocated_airline_id BIGINT REFERENCES airlines(airline_id) ON DELETE SET NULL
 );
 
--- 10. STANDS TABLE (Airside Aircraft Apron Parking Positions)
+-- 11. STANDS TABLE
 CREATE TABLE IF NOT EXISTS stands (
     stand_id BIGSERIAL PRIMARY KEY,
     stand_number VARCHAR(20) NOT NULL UNIQUE,
@@ -82,13 +95,13 @@ CREATE TABLE IF NOT EXISTS stands (
     assigned_gate_id BIGINT REFERENCES gates(gate_id) ON DELETE SET NULL
 );
 
--- 11. RUNWAYS TABLE
+-- 12. RUNWAYS TABLE
 CREATE TABLE IF NOT EXISTS runways (
     runway_id BIGSERIAL PRIMARY KEY,
     runway_code VARCHAR(10) NOT NULL UNIQUE
 );
 
--- 12. WEATHER_REPORTS TABLE
+-- 13. WEATHER_REPORTS TABLE
 CREATE TABLE IF NOT EXISTS weather_reports (
     report_id BIGSERIAL PRIMARY KEY,
     visibility_meters INT NOT NULL CHECK (visibility_meters >= 0),
@@ -98,16 +111,16 @@ CREATE TABLE IF NOT EXISTS weather_reports (
     observation_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 13. GATE_ASSIGNMENT_RULES TABLE
+-- 14. GATE_ASSIGNMENT_RULES TABLE (Normalized with FK to AIRCRAFT_TYPES)
 CREATE TABLE IF NOT EXISTS gate_assignment_rules (
     rule_id BIGSERIAL PRIMARY KEY,
     gate_id BIGINT NOT NULL REFERENCES gates(gate_id) ON DELETE CASCADE,
+    type_id BIGINT NOT NULL REFERENCES aircraft_types(type_id) ON DELETE CASCADE,
     max_wingspan_meters NUMERIC(5,2) NOT NULL CHECK (max_wingspan_meters > 0),
-    max_weight_mtow_kg NUMERIC(10,2) NOT NULL CHECK (max_weight_mtow_kg > 0),
-    compatible_aircraft_type VARCHAR(50) NOT NULL
+    max_weight_mtow_kg NUMERIC(10,2) NOT NULL CHECK (max_weight_mtow_kg > 0)
 );
 
--- 14. FLIGHTS TABLE
+-- 15. FLIGHTS TABLE
 CREATE TABLE IF NOT EXISTS flights (
     flight_id BIGSERIAL PRIMARY KEY,
     flight_number VARCHAR(10) NOT NULL,
@@ -128,7 +141,7 @@ CREATE TABLE IF NOT EXISTS flights (
     department_id BIGINT REFERENCES departments(department_id) ON DELETE SET NULL
 );
 
--- 15. GROUND_EQUIPMENT TABLE
+-- 16. GROUND_EQUIPMENT TABLE
 CREATE TABLE IF NOT EXISTS ground_equipment (
     equipment_id BIGSERIAL PRIMARY KEY,
     equipment_code VARCHAR(20) NOT NULL UNIQUE,
@@ -136,16 +149,20 @@ CREATE TABLE IF NOT EXISTS ground_equipment (
     status VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE' CHECK (status IN ('AVAILABLE', 'IN_USE', 'MAINTENANCE'))
 );
 
--- 16. TASKS TABLE
+-- 17. TASKS TABLE (Enhanced with SLA Timestamps)
 CREATE TABLE IF NOT EXISTS tasks (
     task_id BIGSERIAL PRIMARY KEY,
     task_name VARCHAR(100) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'IN_PROGRESS', 'COMPLETED', 'BLOCKED')),
+    scheduled_start TIMESTAMPTZ,
+    scheduled_end TIMESTAMPTZ,
+    actual_start TIMESTAMPTZ,
+    actual_end TIMESTAMPTZ,
     flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE CASCADE,
     assigned_user_id BIGINT REFERENCES users(user_id) ON DELETE SET NULL
 );
 
--- 17. EQUIPMENT_ASSIGNMENTS TABLE
+-- 18. EQUIPMENT_ASSIGNMENTS TABLE
 CREATE TABLE IF NOT EXISTS equipment_assignments (
     assignment_id BIGSERIAL PRIMARY KEY,
     equipment_id BIGINT NOT NULL REFERENCES ground_equipment(equipment_id) ON DELETE CASCADE,
@@ -154,42 +171,45 @@ CREATE TABLE IF NOT EXISTS equipment_assignments (
     released_timestamp TIMESTAMPTZ
 );
 
--- 18. DELAY_LOGS TABLE (Weak Entity)
+-- 19. DELAY_LOGS TABLE (Enhanced with IATA Delay Code)
 CREATE TABLE IF NOT EXISTS delay_logs (
     flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE CASCADE,
     delay_seq_no INT NOT NULL CHECK (delay_seq_no > 0),
+    delay_code VARCHAR(10) NOT NULL DEFAULT 'IATA-99',
     delay_minutes INT NOT NULL CHECK (delay_minutes >= 0),
     PRIMARY KEY (flight_id, delay_seq_no)
 );
 
--- 19. FUEL_LOGS TABLE
+-- 20. FUEL_LOGS TABLE
 CREATE TABLE IF NOT EXISTS fuel_logs (
     fuel_log_id BIGSERIAL PRIMARY KEY,
     fuel_density NUMERIC(6,3) NOT NULL CHECK (fuel_density > 0),
     task_id BIGINT NOT NULL REFERENCES tasks(task_id) ON DELETE RESTRICT
 );
 
--- 20. CARGO_MANIFESTS TABLE
+-- 21. CARGO_MANIFESTS TABLE (Fixed: Re-linked directly to FLIGHTS with weight & type)
 CREATE TABLE IF NOT EXISTS cargo_manifests (
     cargo_id BIGSERIAL PRIMARY KEY,
     container_id VARCHAR(30) NOT NULL,
-    fuel_log_id BIGINT NOT NULL REFERENCES fuel_logs(fuel_log_id) ON DELETE RESTRICT
+    weight_kg NUMERIC(8,2) NOT NULL DEFAULT 500.00 CHECK (weight_kg > 0),
+    cargo_type VARCHAR(20) NOT NULL DEFAULT 'CARGO' CHECK (cargo_type IN ('CARGO', 'MAIL', 'BAGGAGE')),
+    flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE CASCADE
 );
 
--- 21. BAGGAGE_CAROUSELS TABLE
+-- 22. BAGGAGE_CAROUSELS TABLE
 CREATE TABLE IF NOT EXISTS baggage_carousels (
     carousel_id BIGSERIAL PRIMARY KEY,
     terminal VARCHAR(10) NOT NULL,
     flight_id BIGINT REFERENCES flights(flight_id) ON DELETE SET NULL
 );
 
--- 22. PASSENGERS TABLE (Enhanced with Transit Flag)
+-- 23. PASSENGERS TABLE (Fixed: Non-unique passport_number to support multi-leg itineraries)
 CREATE TABLE IF NOT EXISTS passengers (
     passenger_id BIGSERIAL PRIMARY KEY,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
     pnr_code VARCHAR(10) NOT NULL,
-    passport_number VARCHAR(20) NOT NULL UNIQUE,
+    passport_number VARCHAR(20) NOT NULL,
     nationality VARCHAR(50) NOT NULL DEFAULT 'IND',
     is_transit_passenger BOOLEAN NOT NULL DEFAULT FALSE,
     email VARCHAR(100),
@@ -197,7 +217,7 @@ CREATE TABLE IF NOT EXISTS passengers (
     flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE RESTRICT
 );
 
--- 23. BOARDING_PASSES TABLE
+-- 24. BOARDING_PASSES TABLE
 CREATE TABLE IF NOT EXISTS boarding_passes (
     boarding_pass_id BIGSERIAL PRIMARY KEY,
     barcode_data VARCHAR(255) NOT NULL UNIQUE,
@@ -211,7 +231,7 @@ CREATE TABLE IF NOT EXISTS boarding_passes (
     flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE CASCADE
 );
 
--- 24. BAG_TAGS TABLE
+-- 25. BAG_TAGS TABLE
 CREATE TABLE IF NOT EXISTS bag_tags (
     bag_tag_id BIGSERIAL PRIMARY KEY,
     tag_number VARCHAR(20) NOT NULL UNIQUE,
@@ -221,7 +241,7 @@ CREATE TABLE IF NOT EXISTS bag_tags (
     status VARCHAR(20) NOT NULL DEFAULT 'CHECKED_IN' CHECK (status IN ('CHECKED_IN', 'SCREENED', 'LOADED', 'CLAIMED'))
 );
 
--- 25. BAGGAGE_SCAN_EVENTS TABLE
+-- 26. BAGGAGE_SCAN_EVENTS TABLE
 CREATE TABLE IF NOT EXISTS baggage_scan_events (
     scan_id BIGSERIAL PRIMARY KEY,
     bag_tag_id BIGINT NOT NULL REFERENCES bag_tags(bag_tag_id) ON DELETE CASCADE,
@@ -229,7 +249,7 @@ CREATE TABLE IF NOT EXISTS baggage_scan_events (
     scan_timestamp TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 26. MISHANDLED_BAGGAGE TABLE (Lost/Damaged Baggage PIR Reports)
+-- 27. MISHANDLED_BAGGAGE TABLE
 CREATE TABLE IF NOT EXISTS mishandled_baggage (
     report_id BIGSERIAL PRIMARY KEY,
     claim_number VARCHAR(50) NOT NULL UNIQUE,
@@ -239,7 +259,7 @@ CREATE TABLE IF NOT EXISTS mishandled_baggage (
     passenger_id BIGINT NOT NULL REFERENCES passengers(passenger_id) ON DELETE CASCADE
 );
 
--- 27. SECURITY_CHECKPOINTS TABLE
+-- 28. SECURITY_CHECKPOINTS TABLE
 CREATE TABLE IF NOT EXISTS security_checkpoints (
     checkpoint_id BIGSERIAL PRIMARY KEY,
     checkpoint_name VARCHAR(100) NOT NULL UNIQUE,
@@ -247,7 +267,7 @@ CREATE TABLE IF NOT EXISTS security_checkpoints (
     terminal VARCHAR(10) NOT NULL
 );
 
--- 28. PASSENGER_CLEARANCE_LOGS TABLE (Enhanced with Security Denial Reasons)
+-- 29. PASSENGER_CLEARANCE_LOGS TABLE
 CREATE TABLE IF NOT EXISTS passenger_clearance_logs (
     clearance_id BIGSERIAL PRIMARY KEY,
     scan_timestamp TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -259,7 +279,7 @@ CREATE TABLE IF NOT EXISTS passenger_clearance_logs (
     checkpoint_id BIGINT NOT NULL REFERENCES security_checkpoints(checkpoint_id) ON DELETE RESTRICT
 );
 
--- 29. IMMIGRATION_RECORDS TABLE
+-- 30. IMMIGRATION_RECORDS TABLE
 CREATE TABLE IF NOT EXISTS immigration_records (
     immigration_id BIGSERIAL PRIMARY KEY,
     passport_number VARCHAR(20) NOT NULL,
@@ -270,14 +290,14 @@ CREATE TABLE IF NOT EXISTS immigration_records (
     passenger_id BIGINT NOT NULL REFERENCES passengers(passenger_id) ON DELETE CASCADE
 );
 
--- 30. LOUNGE_VISITS TABLE
+-- 31. LOUNGE_VISITS TABLE
 CREATE TABLE IF NOT EXISTS lounge_visits (
     visit_id BIGSERIAL PRIMARY KEY,
     lounge_name VARCHAR(100) NOT NULL,
     passenger_id BIGINT NOT NULL REFERENCES passengers(passenger_id) ON DELETE CASCADE
 );
 
--- 31. CUSTOMER_FEEDBACK_LOGS TABLE
+-- 32. CUSTOMER_FEEDBACK_LOGS TABLE
 CREATE TABLE IF NOT EXISTS customer_feedback_logs (
     feedback_id BIGSERIAL PRIMARY KEY,
     passenger_id BIGINT REFERENCES passengers(passenger_id) ON DELETE SET NULL,
@@ -287,7 +307,7 @@ CREATE TABLE IF NOT EXISTS customer_feedback_logs (
     submitted_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 32. AIRLINE_BILLING_INVOICES TABLE
+-- 33. AIRLINE_BILLING_INVOICES TABLE
 CREATE TABLE IF NOT EXISTS airline_billing_invoices (
     invoice_id BIGSERIAL PRIMARY KEY,
     invoice_number VARCHAR(50) NOT NULL UNIQUE,
@@ -298,7 +318,7 @@ CREATE TABLE IF NOT EXISTS airline_billing_invoices (
     payment_status VARCHAR(20) NOT NULL DEFAULT 'UNPAID' CHECK (payment_status IN ('UNPAID', 'PAID', 'OVERDUE'))
 );
 
--- 33. INVOICE_LINE_ITEMS TABLE
+-- 34. INVOICE_LINE_ITEMS TABLE
 CREATE TABLE IF NOT EXISTS invoice_line_items (
     line_item_id BIGSERIAL PRIMARY KEY,
     invoice_id BIGINT NOT NULL REFERENCES airline_billing_invoices(invoice_id) ON DELETE CASCADE,
@@ -306,14 +326,14 @@ CREATE TABLE IF NOT EXISTS invoice_line_items (
     amount_usd NUMERIC(10,2) NOT NULL CHECK (amount_usd >= 0)
 );
 
--- 34. NOTIFICATIONS TABLE
+-- 35. NOTIFICATIONS TABLE
 CREATE TABLE IF NOT EXISTS notifications (
     notification_id BIGSERIAL PRIMARY KEY,
     title VARCHAR(150) NOT NULL,
     user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- 35. AUDIT_LOGS TABLE (Immutable Security Trail - Legal Compliance)
+-- 36. AUDIT_LOGS TABLE (Immutable Security Trail)
 CREATE TABLE IF NOT EXISTS audit_logs (
     log_id BIGSERIAL PRIMARY KEY,
     action VARCHAR(255) NOT NULL,
@@ -350,6 +370,7 @@ SELECT
     f.scheduled_departure_time,
     f.scheduled_arrival_time,
     ac.registration_number AS aircraft_tail_number,
+    act.type_code AS aircraft_type,
     bp.barcode_data
 FROM boarding_passes bp
 JOIN passengers p ON bp.passenger_id = p.passenger_id
@@ -359,12 +380,24 @@ JOIN airports orig ON f.origin_airport_id = orig.airport_id
 JOIN airports dest ON f.destination_airport_id = dest.airport_id
 LEFT JOIN gates g ON f.gate_id = g.gate_id
 LEFT JOIN stands st ON f.stand_id = st.stand_id
-LEFT JOIN aircraft ac ON f.aircraft_id = ac.aircraft_id;
+LEFT JOIN aircraft ac ON f.aircraft_id = ac.aircraft_id
+LEFT JOIN aircraft_types act ON ac.type_id = act.type_id;
 
--- INDEXES FOR PERFORMANCE
+-- INDEXES FOR HIGH-THROUGHPUT PERFORMANCE
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role_id);
+CREATE INDEX IF NOT EXISTS idx_users_dept ON users(department_id);
+CREATE INDEX IF NOT EXISTS idx_aircraft_type ON aircraft(type_id);
+CREATE INDEX IF NOT EXISTS idx_aircraft_airline ON aircraft(airline_id);
+CREATE INDEX IF NOT EXISTS idx_flights_airline ON flights(airline_id);
+CREATE INDEX IF NOT EXISTS idx_flights_airports ON flights(origin_airport_id, destination_airport_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_flight ON tasks(flight_id);
+CREATE INDEX IF NOT EXISTS idx_passengers_flight ON passengers(flight_id);
 CREATE INDEX IF NOT EXISTS idx_passengers_pnr ON passengers(pnr_code);
+CREATE INDEX IF NOT EXISTS idx_passengers_passport ON passengers(passport_number);
 CREATE INDEX IF NOT EXISTS idx_boarding_passes_ticket ON boarding_passes(ticket_number);
+CREATE INDEX IF NOT EXISTS idx_bag_tags_pass ON bag_tags(passenger_id);
+CREATE INDEX IF NOT EXISTS idx_bag_scans_tag ON baggage_scan_events(bag_tag_id);
+CREATE INDEX IF NOT EXISTS idx_cargo_flight ON cargo_manifests(flight_id);
 CREATE INDEX IF NOT EXISTS idx_mishandled_bag_tag ON mishandled_baggage(bag_tag_id);
-CREATE INDEX IF NOT EXISTS idx_checkin_counters_airline ON checkin_counters(allocated_airline_id);
-CREATE INDEX IF NOT EXISTS idx_stands_gate ON stands(assigned_gate_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_airline ON airline_billing_invoices(airline_id);
 CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id);
