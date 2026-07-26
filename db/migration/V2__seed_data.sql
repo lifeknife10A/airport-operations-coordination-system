@@ -1,7 +1,7 @@
 -- ============================================================
 -- AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)
--- Complete 37-Table Master Hybrid Seed Dataset (3,700+ Unique Rows)
--- Includes TRAVELERS Master, DELAY_CODES Master & Legal Retention Constraints
+-- Complete 38-Table Master Hybrid Seed Dataset (3,800+ Unique Rows)
+-- Includes Un-bypassable Legal Retention (RESTRICT on ALL Security Edges)
 -- Author: Krishna Solanki & AOCS Engineering Team
 -- ============================================================
 

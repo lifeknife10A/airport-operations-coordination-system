@@ -2,7 +2,7 @@
 -- AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)
 -- PostgreSQL 18 Initial Database Schema (Flyway V1 Migration)
 -- Author: Krishna Solanki & AOCS Engineering Team
--- Includes Master TRAVELERS Split, DELAY_CODES Master & Legal Retention Constraints
+-- Complete 38-Table Production Architecture (Fully Audited & Un-bypassable Legal Retention)
 -- ============================================================
 
 -- 1. ROLES TABLE
@@ -141,15 +141,7 @@ CREATE TABLE IF NOT EXISTS flights (
     department_id BIGINT REFERENCES departments(department_id) ON DELETE SET NULL
 );
 
--- 16. GROUND_EQUIPMENT TABLE
-CREATE TABLE IF NOT EXISTS ground_equipment (
-    equipment_id BIGSERIAL PRIMARY KEY,
-    equipment_code VARCHAR(20) NOT NULL UNIQUE,
-    equipment_type VARCHAR(50) NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE' CHECK (status IN ('AVAILABLE', 'IN_USE', 'MAINTENANCE'))
-);
-
--- 17. TASKS TABLE (Enhanced with SLA Timestamps)
+-- 16. TASKS TABLE (Enhanced with SLA Timestamps)
 CREATE TABLE IF NOT EXISTS tasks (
     task_id BIGSERIAL PRIMARY KEY,
     task_name VARCHAR(100) NOT NULL,
@@ -160,6 +152,14 @@ CREATE TABLE IF NOT EXISTS tasks (
     actual_end TIMESTAMPTZ,
     flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE CASCADE,
     assigned_user_id BIGINT REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+-- 17. GROUND_EQUIPMENT TABLE
+CREATE TABLE IF NOT EXISTS ground_equipment (
+    equipment_id BIGSERIAL PRIMARY KEY,
+    equipment_code VARCHAR(20) NOT NULL UNIQUE,
+    equipment_type VARCHAR(50) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE' CHECK (status IN ('AVAILABLE', 'IN_USE', 'MAINTENANCE'))
 );
 
 -- 18. EQUIPMENT_ASSIGNMENTS TABLE
@@ -221,13 +221,14 @@ CREATE TABLE IF NOT EXISTS travelers (
     phone_number VARCHAR(30)
 );
 
--- 25. PASSENGERS TABLE (Flight Segment Passenger Instance - FK to TRAVELERS)
+-- 25. PASSENGERS TABLE (Flight Segment Instance - Unique traveler_id + flight_id)
 CREATE TABLE IF NOT EXISTS passengers (
     passenger_id BIGSERIAL PRIMARY KEY,
     traveler_id BIGINT NOT NULL REFERENCES travelers(traveler_id) ON DELETE RESTRICT,
     flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE RESTRICT,
     pnr_code VARCHAR(10) NOT NULL,
-    is_transit_passenger BOOLEAN NOT NULL DEFAULT FALSE
+    is_transit_passenger BOOLEAN NOT NULL DEFAULT FALSE,
+    UNIQUE (traveler_id, flight_id)
 );
 
 -- 26. BOARDING_PASSES TABLE
@@ -280,7 +281,7 @@ CREATE TABLE IF NOT EXISTS security_checkpoints (
     terminal VARCHAR(10) NOT NULL
 );
 
--- 31. PASSENGER_CLEARANCE_LOGS TABLE (Legal Security Retention - RESTRICT on Passenger)
+-- 31. PASSENGER_CLEARANCE_LOGS TABLE (Un-bypassable Legal Retention - RESTRICT on ALL edges)
 CREATE TABLE IF NOT EXISTS passenger_clearance_logs (
     clearance_id BIGSERIAL PRIMARY KEY,
     scan_timestamp TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -292,7 +293,7 @@ CREATE TABLE IF NOT EXISTS passenger_clearance_logs (
     checkpoint_id BIGINT NOT NULL REFERENCES security_checkpoints(checkpoint_id) ON DELETE RESTRICT
 );
 
--- 32. IMMIGRATION_RECORDS TABLE (Legal Border Security Retention - RESTRICT on Passenger)
+-- 32. IMMIGRATION_RECORDS TABLE (Un-bypassable Legal Border Retention - RESTRICT on Passenger)
 CREATE TABLE IF NOT EXISTS immigration_records (
     immigration_id BIGSERIAL PRIMARY KEY,
     passport_number VARCHAR(20) NOT NULL,

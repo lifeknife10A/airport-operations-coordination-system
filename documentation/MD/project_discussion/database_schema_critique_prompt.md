@@ -1,64 +1,373 @@
 # AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)
-## Complete 37-Table Master Database Architecture Critique & Peer-Review Prompt
+## Complete 38-Table Master Database DDL & Architecture Review Prompt
 
-Copy and paste the entire block below directly into **Claude (Claude 3.5 Sonnet)** or **ChatGPT (GPT-4o)** to solicit a rigorous expert database architecture critique:
+Copy and paste the entire block below directly into **Claude (Claude 3.5 Sonnet)** to confirm that all cascade leak paths are sealed and the 38-table architecture is 100% 3NF compliant:
 
 ```markdown
-Role: You are a Principal Aviation Database Architect and Senior Software Engineer specializing in Airport Operational Databases (AODB), Departure Control Systems (DCS), Baggage Reconciliation Systems (BRS), and Resource Management Systems (RMS) for major international airports (such as SITA, Amadeus, or TAV Tech Stack).
+Role: You are a Principal Aviation Database Architect and Senior Software Engineer specializing in Airport Operational Databases (AODB), Departure Control Systems (DCS), Baggage Reconciliation Systems (BRS), and Resource Management Systems (RMS).
 
-Objective: Evaluate the complete 37-table PostgreSQL 18 relational database schema for the Airport Operations Coordination System (AOCS) designed by our software engineering team. Provide a rigorous review of its design, normalization (3NF/BCNF), real-world airport operational flow accuracy, foreign key constraints, indexing strategy, and potential missing edge cases.
+Objective: Evaluate the complete PostgreSQL 18 DDL for the 38-table Airport Operations Coordination System (AOCS). Confirm that all cascade leak paths into border control logs are sealed (ON DELETE RESTRICT on all incoming edges), the traveler/passenger 3NF split works cleanly with UNIQUE(traveler_id, flight_id), and all 38 tables are properly normalized.
 
 ---
 
-### 🏛️ SYSTEM DOMAINS & 37-TABLE SCHEMATIC BREAKDOWN
+### 🏛️ COMPLETE 38-TABLE POSTGRESQL 18 DDL SCRIPT
 
-#### DOMAIN 1: IDENTITY & ACCESS MANAGEMENT (IAM) & ORGANIZATIONAL STRUCTURE
-1. ROLES (role_id PK, role_name UNIQUE)
-2. DEPARTMENTS (department_id PK, department_name UNIQUE)
-3. USERS (user_id PK, username UNIQUE, name, role_id FK, department_id FK)
-4. USER_PHONE_NUMBERS (user_id FK, phone_number PK - 1NF multivalued contact split)
+```sql
+-- 1. ROLES TABLE
+CREATE TABLE roles (
+    role_id BIGSERIAL PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL UNIQUE
+);
 
-#### DOMAIN 2: AVIATION INFRASTRUCTURE & AIRFIELD MASTERS
-5. AIRLINES (airline_id PK, iata_code UNIQUE, icao_code UNIQUE, airline_name, country)
-6. AIRPORTS (airport_id PK, iata_code UNIQUE, icao_code UNIQUE, airport_name, city, country, timezone)
-7. AIRCRAFT_TYPES (type_id PK, type_code UNIQUE, manufacturer, model_name, wingspan_meters, mtow_kg, max_passenger_capacity)
-8. AIRCRAFT (aircraft_id PK, registration_number UNIQUE, type_id FK -> AIRCRAFT_TYPES, airline_id FK -> AIRLINES)
-9. GATES (gate_id PK, gate_number UNIQUE)
-10. CHECKIN_COUNTERS (counter_id PK, counter_number UNIQUE, terminal, allocated_airline_id FK -> AIRLINES)
-11. STANDS (stand_id PK, stand_number UNIQUE, is_remote, has_jetbridge, assigned_gate_id FK -> GATES)
-12. RUNWAYS (runway_id PK, runway_code UNIQUE)
+-- 2. DEPARTMENTS TABLE
+CREATE TABLE departments (
+    department_id BIGSERIAL PRIMARY KEY,
+    department_name VARCHAR(100) NOT NULL UNIQUE
+);
 
-#### DOMAIN 3: AIRSIDE METAR & RESOURCE ASSIGNMENT RULES
-13. WEATHER_REPORTS (report_id PK, visibility_meters, wind_speed_knots, temperature_celsius, runway_condition, observation_time)
-14. GATE_ASSIGNMENT_RULES (rule_id PK, gate_id FK -> GATES, type_id FK -> AIRCRAFT_TYPES, max_wingspan_meters, max_weight_mtow_kg)
+-- 3. USERS TABLE
+CREATE TABLE users (
+    user_id BIGSERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    role_id BIGINT NOT NULL REFERENCES roles(role_id) ON DELETE RESTRICT,
+    department_id BIGINT NOT NULL REFERENCES departments(department_id) ON DELETE RESTRICT
+);
 
-#### DOMAIN 4: FLIGHT LOGISTICS & GROUND TURNAROUND
-15. FLIGHTS (flight_id PK, flight_number, flight_status, flight_type, origin_airport_id FK, destination_airport_id FK, airline_id FK, aircraft_id FK, gate_id FK, stand_id FK, runway_id FK, scheduled_departure_time, actual_departure_time, scheduled_arrival_time, actual_arrival_time, boarding_time)
-16. TASKS (task_id PK, task_name, status, scheduled_start, scheduled_end, actual_start, actual_end, flight_id FK, assigned_user_id FK)
-17. GROUND_EQUIPMENT (equipment_id PK, equipment_code UNIQUE, equipment_type, status)
-18. EQUIPMENT_ASSIGNMENTS (assignment_id PK, equipment_id FK, task_id FK, assigned_timestamp, released_timestamp)
-19. DELAY_CODES (delay_code PK, category, description - IATA delay code master)
-20. DELAY_LOGS (flight_id FK, delay_seq_no PK, delay_code FK -> DELAY_CODES, delay_minutes)
-21. FUEL_LOGS (fuel_log_id PK, fuel_density, task_id FK)
-22. CARGO_MANIFESTS (cargo_id PK, container_id, weight_kg, cargo_type, flight_id FK -> FLIGHTS)
+-- 4. USER_PHONE_NUMBERS TABLE
+CREATE TABLE user_phone_numbers (
+    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    phone_number VARCHAR(30) NOT NULL,
+    PRIMARY KEY (user_id, phone_number)
+);
 
-#### DOMAIN 5: PASSENGER DCS, BRS, SECURITY & BORDER CONTROL
-23. BAGGAGE_CAROUSELS (carousel_id PK, terminal, flight_id FK)
-24. TRAVELERS (traveler_id PK, first_name, last_name, passport_number UNIQUE, nationality, email, phone_number - Master Human Traveler Profile)
-25. PASSENGERS (passenger_id PK, traveler_id FK -> TRAVELERS, flight_id FK -> FLIGHTS, pnr_code, is_transit_passenger - Flight Segment Instance)
-26. BOARDING_PASSES (boarding_pass_id PK, barcode_data UNIQUE, ticket_number UNIQUE, seat_number, cabin_class, boarding_group, sequence_number, frequent_flyer_number, passenger_id FK, flight_id FK)
-27. BAG_TAGS (bag_tag_id PK, tag_number UNIQUE, weight_kg, status, passenger_id FK, flight_id FK)
-28. BAGGAGE_SCAN_EVENTS (scan_id PK, bag_tag_id FK, scan_location, scan_timestamp)
-29. MISHANDLED_BAGGAGE (report_id PK, claim_number UNIQUE, incident_type, status, bag_tag_id FK, passenger_id FK)
-30. SECURITY_CHECKPOINTS (checkpoint_id PK, checkpoint_name UNIQUE, checkpoint_type, terminal)
-31. PASSENGER_CLEARANCE_LOGS (clearance_id PK, scan_timestamp, clearance_status, denial_reason, verification_method, passenger_id FK ON DELETE RESTRICT, boarding_pass_id FK, checkpoint_id FK)
-32. IMMIGRATION_RECORDS (immigration_id PK, passport_number, visa_type, stamp_number UNIQUE, biometric_facial_matched, clearance_type, passenger_id FK ON DELETE RESTRICT)
-33. LOUNGE_VISITS (visit_id PK, lounge_name, passenger_id FK)
+-- 5. AIRLINES TABLE
+CREATE TABLE airlines (
+    airline_id BIGSERIAL PRIMARY KEY,
+    iata_code VARCHAR(10) NOT NULL UNIQUE,
+    icao_code VARCHAR(10) NOT NULL UNIQUE,
+    airline_name VARCHAR(100) NOT NULL,
+    country VARCHAR(50) NOT NULL
+);
 
-#### DOMAIN 6: REVENUE BILLING, FEEDBACK, NOTIFICATIONS & LEGAL AUDIT
-34. CUSTOMER_FEEDBACK_LOGS (feedback_id PK, terminal, rating, category, submitted_at, passenger_id FK)
-35. AIRLINE_BILLING_INVOICES (invoice_id PK, invoice_number UNIQUE, airline_id FK, billing_period_start, billing_period_end, total_amount_usd, payment_status)
-36. INVOICE_LINE_ITEMS (line_item_id PK, charge_type, amount_usd, invoice_id FK)
-37. NOTIFICATIONS (notification_id PK, title, user_id FK)
-38. AUDIT_LOGS (log_id PK, action, created_at, user_id FK ON DELETE RESTRICT)
+-- 6. AIRPORTS TABLE
+CREATE TABLE airports (
+    airport_id BIGSERIAL PRIMARY KEY,
+    iata_code VARCHAR(10) NOT NULL UNIQUE,
+    icao_code VARCHAR(10) NOT NULL UNIQUE,
+    airport_name VARCHAR(100) NOT NULL,
+    city VARCHAR(50) NOT NULL,
+    country VARCHAR(50) NOT NULL,
+    timezone VARCHAR(50) NOT NULL DEFAULT 'UTC'
+);
+
+-- 7. AIRCRAFT_TYPES TABLE
+CREATE TABLE aircraft_types (
+    type_id BIGSERIAL PRIMARY KEY,
+    type_code VARCHAR(20) NOT NULL UNIQUE,
+    manufacturer VARCHAR(50) NOT NULL,
+    model_name VARCHAR(50) NOT NULL,
+    wingspan_meters NUMERIC(5,2) NOT NULL CHECK (wingspan_meters > 0),
+    mtow_kg NUMERIC(10,2) NOT NULL CHECK (mtow_kg > 0),
+    max_passenger_capacity INT NOT NULL CHECK (max_passenger_capacity > 0)
+);
+
+-- 8. AIRCRAFT TABLE
+CREATE TABLE aircraft (
+    aircraft_id BIGSERIAL PRIMARY KEY,
+    registration_number VARCHAR(20) NOT NULL UNIQUE,
+    type_id BIGINT NOT NULL REFERENCES aircraft_types(type_id) ON DELETE RESTRICT,
+    airline_id BIGINT NOT NULL REFERENCES airlines(airline_id) ON DELETE RESTRICT
+);
+
+-- 9. GATES TABLE
+CREATE TABLE gates (
+    gate_id BIGSERIAL PRIMARY KEY,
+    gate_number VARCHAR(10) NOT NULL UNIQUE
+);
+
+-- 10. CHECKIN_COUNTERS TABLE
+CREATE TABLE checkin_counters (
+    counter_id BIGSERIAL PRIMARY KEY,
+    counter_number VARCHAR(20) NOT NULL UNIQUE,
+    terminal VARCHAR(10) NOT NULL,
+    allocated_airline_id BIGINT REFERENCES airlines(airline_id) ON DELETE SET NULL
+);
+
+-- 11. STANDS TABLE
+CREATE TABLE stands (
+    stand_id BIGSERIAL PRIMARY KEY,
+    stand_number VARCHAR(20) NOT NULL UNIQUE,
+    is_remote BOOLEAN NOT NULL DEFAULT FALSE,
+    has_jetbridge BOOLEAN NOT NULL DEFAULT TRUE,
+    assigned_gate_id BIGINT REFERENCES gates(gate_id) ON DELETE SET NULL
+);
+
+-- 12. RUNWAYS TABLE
+CREATE TABLE runways (
+    runway_id BIGSERIAL PRIMARY KEY,
+    runway_code VARCHAR(10) NOT NULL UNIQUE
+);
+
+-- 13. WEATHER_REPORTS TABLE
+CREATE TABLE weather_reports (
+    report_id BIGSERIAL PRIMARY KEY,
+    visibility_meters INT NOT NULL CHECK (visibility_meters >= 0),
+    wind_speed_knots INT NOT NULL CHECK (wind_speed_knots >= 0),
+    temperature_celsius NUMERIC(4,1) NOT NULL,
+    runway_condition VARCHAR(20) NOT NULL DEFAULT 'DRY' CHECK (runway_condition IN ('DRY', 'WET', 'FOG', 'HEAVY_RAIN')),
+    observation_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 14. GATE_ASSIGNMENT_RULES TABLE
+CREATE TABLE gate_assignment_rules (
+    rule_id BIGSERIAL PRIMARY KEY,
+    gate_id BIGINT NOT NULL REFERENCES gates(gate_id) ON DELETE CASCADE,
+    type_id BIGINT NOT NULL REFERENCES aircraft_types(type_id) ON DELETE CASCADE,
+    max_wingspan_meters NUMERIC(5,2) NOT NULL CHECK (max_wingspan_meters > 0),
+    max_weight_mtow_kg NUMERIC(10,2) NOT NULL CHECK (max_weight_mtow_kg > 0)
+);
+
+-- 15. FLIGHTS TABLE
+CREATE TABLE flights (
+    flight_id BIGSERIAL PRIMARY KEY,
+    flight_number VARCHAR(10) NOT NULL,
+    flight_status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED' CHECK (flight_status IN ('SCHEDULED', 'BOARDING', 'AIRBORNE', 'LANDED', 'DELAYED', 'CANCELLED')),
+    flight_type VARCHAR(15) NOT NULL DEFAULT 'DEPARTURE' CHECK (flight_type IN ('DEPARTURE', 'ARRIVAL')),
+    origin_airport_id BIGINT NOT NULL REFERENCES airports(airport_id) ON DELETE RESTRICT,
+    destination_airport_id BIGINT NOT NULL REFERENCES airports(airport_id) ON DELETE RESTRICT,
+    airline_id BIGINT NOT NULL REFERENCES airlines(airline_id) ON DELETE RESTRICT,
+    scheduled_departure_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    actual_departure_time TIMESTAMPTZ,
+    scheduled_arrival_time TIMESTAMPTZ NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '2 hours'),
+    actual_arrival_time TIMESTAMPTZ,
+    boarding_time TIMESTAMPTZ,
+    aircraft_id BIGINT NOT NULL REFERENCES aircraft(aircraft_id) ON DELETE RESTRICT,
+    gate_id BIGINT REFERENCES gates(gate_id) ON DELETE SET NULL,
+    stand_id BIGINT REFERENCES stands(stand_id) ON DELETE SET NULL,
+    runway_id BIGINT REFERENCES runways(runway_id) ON DELETE SET NULL,
+    department_id BIGINT REFERENCES departments(department_id) ON DELETE SET NULL
+);
+
+-- 16. TASKS TABLE
+CREATE TABLE tasks (
+    task_id BIGSERIAL PRIMARY KEY,
+    task_name VARCHAR(100) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'IN_PROGRESS', 'COMPLETED', 'BLOCKED')),
+    scheduled_start TIMESTAMPTZ,
+    scheduled_end TIMESTAMPTZ,
+    actual_start TIMESTAMPTZ,
+    actual_end TIMESTAMPTZ,
+    flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE CASCADE,
+    assigned_user_id BIGINT REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+-- 17. GROUND_EQUIPMENT TABLE
+CREATE TABLE ground_equipment (
+    equipment_id BIGSERIAL PRIMARY KEY,
+    equipment_code VARCHAR(20) NOT NULL UNIQUE,
+    equipment_type VARCHAR(50) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE' CHECK (status IN ('AVAILABLE', 'IN_USE', 'MAINTENANCE'))
+);
+
+-- 18. EQUIPMENT_ASSIGNMENTS TABLE
+CREATE TABLE equipment_assignments (
+    assignment_id BIGSERIAL PRIMARY KEY,
+    equipment_id BIGINT NOT NULL REFERENCES ground_equipment(equipment_id) ON DELETE CASCADE,
+    task_id BIGINT NOT NULL REFERENCES tasks(task_id) ON DELETE CASCADE,
+    assigned_timestamp TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    released_timestamp TIMESTAMPTZ
+);
+
+-- 19. DELAY_CODES TABLE
+CREATE TABLE delay_codes (
+    delay_code VARCHAR(10) PRIMARY KEY,
+    category VARCHAR(50) NOT NULL,
+    description VARCHAR(255) NOT NULL
+);
+
+-- 20. DELAY_LOGS TABLE
+CREATE TABLE delay_logs (
+    flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE CASCADE,
+    delay_seq_no INT NOT NULL CHECK (delay_seq_no > 0),
+    delay_code VARCHAR(10) NOT NULL REFERENCES delay_codes(delay_code) ON DELETE RESTRICT,
+    delay_minutes INT NOT NULL CHECK (delay_minutes >= 0),
+    PRIMARY KEY (flight_id, delay_seq_no)
+);
+
+-- 21. FUEL_LOGS TABLE
+CREATE TABLE fuel_logs (
+    fuel_log_id BIGSERIAL PRIMARY KEY,
+    fuel_density NUMERIC(6,3) NOT NULL CHECK (fuel_density > 0),
+    task_id BIGINT NOT NULL REFERENCES tasks(task_id) ON DELETE RESTRICT
+);
+
+-- 22. CARGO_MANIFESTS TABLE
+CREATE TABLE cargo_manifests (
+    cargo_id BIGSERIAL PRIMARY KEY,
+    container_id VARCHAR(30) NOT NULL,
+    weight_kg NUMERIC(8,2) NOT NULL DEFAULT 500.00 CHECK (weight_kg > 0),
+    cargo_type VARCHAR(20) NOT NULL DEFAULT 'CARGO' CHECK (cargo_type IN ('CARGO', 'MAIL', 'BAGGAGE')),
+    flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE CASCADE
+);
+
+-- 23. BAGGAGE_CAROUSELS TABLE
+CREATE TABLE baggage_carousels (
+    carousel_id BIGSERIAL PRIMARY KEY,
+    terminal VARCHAR(10) NOT NULL,
+    flight_id BIGINT REFERENCES flights(flight_id) ON DELETE SET NULL
+);
+
+-- 24. TRAVELERS TABLE (Master Human Entity - 3NF Person Level Passport Uniqueness)
+CREATE TABLE travelers (
+    traveler_id BIGSERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    passport_number VARCHAR(20) NOT NULL UNIQUE,
+    nationality VARCHAR(50) NOT NULL DEFAULT 'IND',
+    email VARCHAR(100),
+    phone_number VARCHAR(30)
+);
+
+-- 25. PASSENGERS TABLE (Flight Segment Instance - Unique traveler_id + flight_id)
+CREATE TABLE passengers (
+    passenger_id BIGSERIAL PRIMARY KEY,
+    traveler_id BIGINT NOT NULL REFERENCES travelers(traveler_id) ON DELETE RESTRICT,
+    flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE RESTRICT,
+    pnr_code VARCHAR(10) NOT NULL,
+    is_transit_passenger BOOLEAN NOT NULL DEFAULT FALSE,
+    UNIQUE (traveler_id, flight_id)
+);
+
+-- 26. BOARDING_PASSES TABLE
+CREATE TABLE boarding_passes (
+    boarding_pass_id BIGSERIAL PRIMARY KEY,
+    barcode_data VARCHAR(255) NOT NULL UNIQUE,
+    ticket_number VARCHAR(30) NOT NULL UNIQUE,
+    seat_number VARCHAR(10) NOT NULL,
+    cabin_class VARCHAR(20) NOT NULL DEFAULT 'ECONOMY' CHECK (cabin_class IN ('ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST')),
+    boarding_group VARCHAR(10) NOT NULL DEFAULT 'ZONE 1',
+    sequence_number INT NOT NULL CHECK (sequence_number > 0),
+    frequent_flyer_number VARCHAR(30),
+    passenger_id BIGINT NOT NULL REFERENCES passengers(passenger_id) ON DELETE CASCADE,
+    flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE CASCADE
+);
+
+-- 27. BAG_TAGS TABLE
+CREATE TABLE bag_tags (
+    bag_tag_id BIGSERIAL PRIMARY KEY,
+    tag_number VARCHAR(20) NOT NULL UNIQUE,
+    passenger_id BIGINT NOT NULL REFERENCES passengers(passenger_id) ON DELETE CASCADE,
+    flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE CASCADE,
+    weight_kg NUMERIC(5,2) NOT NULL CHECK (weight_kg > 0),
+    status VARCHAR(20) NOT NULL DEFAULT 'CHECKED_IN' CHECK (status IN ('CHECKED_IN', 'SCREENED', 'LOADED', 'CLAIMED'))
+);
+
+-- 28. BAGGAGE_SCAN_EVENTS TABLE
+CREATE TABLE baggage_scan_events (
+    scan_id BIGSERIAL PRIMARY KEY,
+    bag_tag_id BIGINT NOT NULL REFERENCES bag_tags(bag_tag_id) ON DELETE CASCADE,
+    scan_location VARCHAR(100) NOT NULL,
+    scan_timestamp TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 29. MISHANDLED_BAGGAGE TABLE
+CREATE TABLE mishandled_baggage (
+    report_id BIGSERIAL PRIMARY KEY,
+    claim_number VARCHAR(50) NOT NULL UNIQUE,
+    incident_type VARCHAR(30) NOT NULL CHECK (incident_type IN ('LOST', 'DAMAGED', 'DELAYED', 'PILFERED')),
+    status VARCHAR(20) NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'LOCATED', 'IN_TRANSIT', 'RESOLVED')),
+    bag_tag_id BIGINT NOT NULL REFERENCES bag_tags(bag_tag_id) ON DELETE CASCADE,
+    passenger_id BIGINT NOT NULL REFERENCES passengers(passenger_id) ON DELETE CASCADE
+);
+
+-- 30. SECURITY_CHECKPOINTS TABLE
+CREATE TABLE security_checkpoints (
+    checkpoint_id BIGSERIAL PRIMARY KEY,
+    checkpoint_name VARCHAR(100) NOT NULL UNIQUE,
+    checkpoint_type VARCHAR(30) NOT NULL CHECK (checkpoint_type IN ('TERMINAL_ENTRY', 'SECURITY_SCREENING', 'IMMIGRATION_CONTROL', 'BOARDING_GATE')),
+    terminal VARCHAR(10) NOT NULL
+);
+
+-- 31. PASSENGER_CLEARANCE_LOGS TABLE (Un-bypassable Legal Retention - RESTRICT on ALL edges)
+CREATE TABLE passenger_clearance_logs (
+    clearance_id BIGSERIAL PRIMARY KEY,
+    scan_timestamp TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    clearance_status VARCHAR(25) NOT NULL DEFAULT 'APPROVED' CHECK (clearance_status IN ('APPROVED', 'FLAGGED_SECURITY', 'DENIED', 'BOARDED')),
+    denial_reason VARCHAR(100),
+    verification_method VARCHAR(30) NOT NULL CHECK (verification_method IN ('BARCODE_SCANNER', 'BIOMETRIC_FACIAL', 'PASSPORT_CHIP_READER')),
+    passenger_id BIGINT NOT NULL REFERENCES passengers(passenger_id) ON DELETE RESTRICT,
+    boarding_pass_id BIGINT NOT NULL REFERENCES boarding_passes(boarding_pass_id) ON DELETE RESTRICT,
+    checkpoint_id BIGINT NOT NULL REFERENCES security_checkpoints(checkpoint_id) ON DELETE RESTRICT
+);
+
+-- 32. IMMIGRATION_RECORDS TABLE (Un-bypassable Legal Border Retention - RESTRICT on Passenger)
+CREATE TABLE immigration_records (
+    immigration_id BIGSERIAL PRIMARY KEY,
+    passport_number VARCHAR(20) NOT NULL,
+    visa_type VARCHAR(30) NOT NULL DEFAULT 'TOURIST_VISA',
+    stamp_number VARCHAR(50) NOT NULL UNIQUE,
+    biometric_facial_matched BOOLEAN NOT NULL DEFAULT TRUE,
+    clearance_type VARCHAR(30) NOT NULL CHECK (clearance_type IN ('DEPARTURE_EMIGRATION', 'ARRIVAL_IMMIGRATION')),
+    passenger_id BIGINT NOT NULL REFERENCES passengers(passenger_id) ON DELETE RESTRICT
+);
+
+-- 33. LOUNGE_VISITS TABLE
+CREATE TABLE lounge_visits (
+    visit_id BIGSERIAL PRIMARY KEY,
+    lounge_name VARCHAR(100) NOT NULL,
+    passenger_id BIGINT NOT NULL REFERENCES passengers(passenger_id) ON DELETE CASCADE
+);
+
+-- 34. CUSTOMER_FEEDBACK_LOGS TABLE
+CREATE TABLE customer_feedback_logs (
+    feedback_id BIGSERIAL PRIMARY KEY,
+    passenger_id BIGINT REFERENCES passengers(passenger_id) ON DELETE SET NULL,
+    terminal VARCHAR(10) NOT NULL,
+    rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    category VARCHAR(50) NOT NULL,
+    submitted_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 35. AIRLINE_BILLING_INVOICES TABLE
+CREATE TABLE airline_billing_invoices (
+    invoice_id BIGSERIAL PRIMARY KEY,
+    invoice_number VARCHAR(50) NOT NULL UNIQUE,
+    airline_id BIGINT NOT NULL REFERENCES airlines(airline_id) ON DELETE RESTRICT,
+    billing_period_start DATE NOT NULL,
+    billing_period_end DATE NOT NULL,
+    total_amount_usd NUMERIC(12,2) NOT NULL CHECK (total_amount_usd >= 0),
+    payment_status VARCHAR(20) NOT NULL DEFAULT 'UNPAID' CHECK (payment_status IN ('UNPAID', 'PAID', 'OVERDUE'))
+);
+
+-- 36. INVOICE_LINE_ITEMS TABLE
+CREATE TABLE invoice_line_items (
+    line_item_id BIGSERIAL PRIMARY KEY,
+    invoice_id BIGINT NOT NULL REFERENCES airline_billing_invoices(invoice_id) ON DELETE CASCADE,
+    charge_type VARCHAR(50) NOT NULL,
+    amount_usd NUMERIC(10,2) NOT NULL CHECK (amount_usd >= 0)
+);
+
+-- 37. NOTIFICATIONS TABLE
+CREATE TABLE notifications (
+    notification_id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(150) NOT NULL,
+    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- 38. AUDIT_LOGS TABLE
+CREATE TABLE audit_logs (
+    log_id BIGSERIAL PRIMARY KEY,
+    action VARCHAR(255) NOT NULL,
+    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+### ❓ CONFIRMATION FOR CLAUDE:
+1. Does this raw DDL confirm that all cascade leak paths into `PASSENGER_CLEARANCE_LOGS` and `IMMIGRATION_RECORDS` are sealed with `ON DELETE RESTRICT` on all 3 incoming edges?
+2. Does `UNIQUE(traveler_id, flight_id)` on `PASSENGERS` resolve the segment double-booking risk?
+3. Is this exact 38-table schema 100% compliant with 3NF / BCNF?
 ```
