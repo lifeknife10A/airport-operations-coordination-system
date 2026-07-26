@@ -6,11 +6,11 @@ Copy and paste the entire block below directly into **Claude (Claude 3.5 Sonnet)
 ```markdown
 Role: You are a Principal Aviation Database Architect and Senior Software Engineer.
 
-Objective: Final sign-off on the complete Grade 9.7+ Enterprise PostgreSQL 18 DDL script for the Airport Operations Coordination System (AOCS). Confirm that all 47 foreign key edges are indexed (44 explicit B-Tree indexes + 3 auto-indexed composite PK/UNIQUE edges + 1 PNR lookup), all silent security/clearance defaults (`DEFAULT 'APPROVED'`, `DEFAULT TRUE`, `DEFAULT 'DRY'`) were dropped, rotation self-loops are blocked, three-tier flight times are active, and structured JSONB audit logs are implemented.
+Objective: Final sign-off on the complete Grade 9.7+ Enterprise PostgreSQL 18 DDL script for the Airport Operations Coordination System (AOCS). Confirm that all 47 foreign key edges are indexed (44 explicit B-Tree indexes + 3 auto-indexed composite PK/UNIQUE edges + 1 PNR lookup), all silent classification/legal/billing defaults (`visa_type DEFAULT 'TOURIST_VISA'`, `cabin_class DEFAULT 'ECONOMY'`, `stands.has_jetbridge DEFAULT TRUE`, `clearance_status DEFAULT 'APPROVED'`, `biometric_facial_matched DEFAULT TRUE`, `runway_condition DEFAULT 'DRY'`) were dropped, rotation self-loops are blocked, three-tier flight times are active, and structured JSONB audit logs are implemented.
 
 ---
 
-### 🏛️ COMPLETE 38-TABLE POSTGRESQL 18 DDL SCRIPT (ZERO SECURITY FALLBACK DEFAULTS)
+### 🏛️ COMPLETE 38-TABLE POSTGRESQL 18 DDL SCRIPT (ZERO CLASSIFICATION & ZERO SECURITY FALLBACK DEFAULTS)
 
 ```sql
 -- 1. ROLES TABLE
@@ -94,12 +94,12 @@ CREATE TABLE checkin_counters (
     allocated_airline_id BIGINT REFERENCES airlines(airline_id) ON DELETE SET NULL
 );
 
--- 11. STANDS TABLE
+-- 11. STANDS TABLE (No Silent Jetbridge Default!)
 CREATE TABLE stands (
     stand_id BIGSERIAL PRIMARY KEY,
     stand_number VARCHAR(20) NOT NULL UNIQUE,
     is_remote BOOLEAN NOT NULL DEFAULT FALSE,
-    has_jetbridge BOOLEAN NOT NULL DEFAULT TRUE,
+    has_jetbridge BOOLEAN NOT NULL,
     assigned_gate_id BIGINT REFERENCES gates(gate_id) ON DELETE SET NULL
 );
 
@@ -245,13 +245,13 @@ CREATE TABLE passengers (
     UNIQUE (traveler_id, flight_id)
 );
 
--- 26. BOARDING_PASSES TABLE
+-- 26. BOARDING_PASSES TABLE (No Silent Cabin Class Revenue Default!)
 CREATE TABLE boarding_passes (
     boarding_pass_id BIGSERIAL PRIMARY KEY,
     barcode_data VARCHAR(255) NOT NULL UNIQUE,
     ticket_number VARCHAR(30) NOT NULL UNIQUE,
     seat_number VARCHAR(10) NOT NULL,
-    cabin_class VARCHAR(20) NOT NULL DEFAULT 'ECONOMY' CHECK (cabin_class IN ('ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST')),
+    cabin_class VARCHAR(20) NOT NULL CHECK (cabin_class IN ('ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST')),
     boarding_group VARCHAR(10) NOT NULL DEFAULT 'ZONE 1',
     sequence_number INT NOT NULL CHECK (sequence_number > 0),
     frequent_flyer_number VARCHAR(30),
@@ -307,10 +307,10 @@ CREATE TABLE passenger_clearance_logs (
     checkpoint_id BIGINT NOT NULL REFERENCES security_checkpoints(checkpoint_id) ON DELETE RESTRICT
 );
 
--- 32. IMMIGRATION_RECORDS TABLE (No Silent Biometric Match Default!)
+-- 32. IMMIGRATION_RECORDS TABLE (No Silent Visa Type or Biometric Defaults!)
 CREATE TABLE immigration_records (
     immigration_id BIGSERIAL PRIMARY KEY,
-    visa_type VARCHAR(30) NOT NULL DEFAULT 'TOURIST_VISA',
+    visa_type VARCHAR(30) NOT NULL,
     stamp_number VARCHAR(50) NOT NULL UNIQUE,
     biometric_facial_matched BOOLEAN NOT NULL,
     clearance_type VARCHAR(30) NOT NULL CHECK (clearance_type IN ('DEPARTURE_EMIGRATION', 'ARRIVAL_IMMIGRATION')),
@@ -436,5 +436,5 @@ CREATE INDEX idx_audit_user ON audit_logs(user_id);
 ---
 
 ### ❓ FINAL SIGN-OFF FOR CLAUDE:
-1. Does this complete DDL with zero security fallbacks meet your criteria for a **9.7+ Enterprise Grade** architecture?
+1. Does this complete DDL with comprehensive classification sweep meet your criteria for a **9.7+ Enterprise Grade** architecture?
 ```
