@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS runways (
     runway_code VARCHAR(10) NOT NULL UNIQUE
 );
 
--- 8. FLIGHTS TABLE (Enhanced with Origin/Destination & Boarding/Departure Timestamps for FIDS TV Display)
+-- 8. FLIGHTS TABLE
 CREATE TABLE IF NOT EXISTS flights (
     flight_id BIGSERIAL PRIMARY KEY,
     flight_number VARCHAR(10) NOT NULL,
@@ -114,21 +114,61 @@ CREATE TABLE IF NOT EXISTS passengers (
     flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE RESTRICT
 );
 
--- 15. LOUNGE_VISITS TABLE
+-- 15. BOARDING_PASSES TABLE (New Checkpoint Touchpoint)
+CREATE TABLE IF NOT EXISTS boarding_passes (
+    boarding_pass_id BIGSERIAL PRIMARY KEY,
+    barcode_data VARCHAR(100) NOT NULL UNIQUE,
+    seat_number VARCHAR(10) NOT NULL,
+    cabin_class VARCHAR(20) NOT NULL DEFAULT 'ECONOMY' CHECK (cabin_class IN ('ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST')),
+    passenger_id BIGINT NOT NULL REFERENCES passengers(passenger_id) ON DELETE CASCADE,
+    flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE CASCADE
+);
+
+-- 16. SECURITY_CHECKPOINTS TABLE (New Scanner Locations)
+CREATE TABLE IF NOT EXISTS security_checkpoints (
+    checkpoint_id BIGSERIAL PRIMARY KEY,
+    checkpoint_name VARCHAR(100) NOT NULL UNIQUE,
+    checkpoint_type VARCHAR(30) NOT NULL CHECK (checkpoint_type IN ('TERMINAL_ENTRY', 'SECURITY_SCREENING', 'IMMIGRATION_CONTROL', 'BOARDING_GATE')),
+    terminal VARCHAR(10) NOT NULL
+);
+
+-- 17. PASSENGER_CLEARANCE_LOGS TABLE (E-Gate Boarding Pass Scans)
+CREATE TABLE IF NOT EXISTS passenger_clearance_logs (
+    clearance_id BIGSERIAL PRIMARY KEY,
+    scan_timestamp TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    clearance_status VARCHAR(25) NOT NULL DEFAULT 'APPROVED' CHECK (clearance_status IN ('APPROVED', 'FLAGGED_SECURITY', 'DENIED', 'BOARDED')),
+    verification_method VARCHAR(30) NOT NULL CHECK (verification_method IN ('BARCODE_SCANNER', 'BIOMETRIC_FACIAL', 'PASSPORT_CHIP_READER')),
+    passenger_id BIGINT NOT NULL REFERENCES passengers(passenger_id) ON DELETE CASCADE,
+    boarding_pass_id BIGINT NOT NULL REFERENCES boarding_passes(boarding_pass_id) ON DELETE CASCADE,
+    checkpoint_id BIGINT NOT NULL REFERENCES security_checkpoints(checkpoint_id) ON DELETE RESTRICT
+);
+
+-- 18. IMMIGRATION_RECORDS TABLE (Border Control & Stamp Verification)
+CREATE TABLE IF NOT EXISTS immigration_records (
+    immigration_id BIGSERIAL PRIMARY KEY,
+    passport_number VARCHAR(20) NOT NULL,
+    visa_type VARCHAR(30) NOT NULL DEFAULT 'TOURIST_VISA',
+    stamp_number VARCHAR(50) NOT NULL UNIQUE,
+    biometric_facial_matched BOOLEAN NOT NULL DEFAULT TRUE,
+    clearance_type VARCHAR(30) NOT NULL CHECK (clearance_type IN ('DEPARTURE_EMIGRATION', 'ARRIVAL_IMMIGRATION')),
+    passenger_id BIGINT NOT NULL REFERENCES passengers(passenger_id) ON DELETE CASCADE
+);
+
+-- 19. LOUNGE_VISITS TABLE
 CREATE TABLE IF NOT EXISTS lounge_visits (
     visit_id BIGSERIAL PRIMARY KEY,
     lounge_name VARCHAR(100) NOT NULL,
     passenger_id BIGINT NOT NULL REFERENCES passengers(passenger_id) ON DELETE CASCADE
 );
 
--- 16. NOTIFICATIONS TABLE
+-- 20. NOTIFICATIONS TABLE
 CREATE TABLE IF NOT EXISTS notifications (
     notification_id BIGSERIAL PRIMARY KEY,
     title VARCHAR(150) NOT NULL,
     user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- 17. AUDIT_LOGS TABLE (Immutable Security Trail - Legal Compliance)
+-- 21. AUDIT_LOGS TABLE (Immutable Security Trail - Legal Compliance)
 CREATE TABLE IF NOT EXISTS audit_logs (
     log_id BIGSERIAL PRIMARY KEY,
     action VARCHAR(255) NOT NULL,
@@ -136,7 +176,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- INDEXES FOR PERFORMANCE & FIDS SEARCHES
+-- INDEXES FOR PERFORMANCE & PASSENGER CHECKPOINT TRACKING
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role_id);
 CREATE INDEX IF NOT EXISTS idx_users_dept ON users(department_id);
 CREATE INDEX IF NOT EXISTS idx_flights_aircraft ON flights(aircraft_id);
@@ -145,6 +185,9 @@ CREATE INDEX IF NOT EXISTS idx_flights_runway ON flights(runway_id);
 CREATE INDEX IF NOT EXISTS idx_flights_airports ON flights(origin_airport, destination_airport);
 CREATE INDEX IF NOT EXISTS idx_flights_status ON flights(flight_status, flight_type);
 CREATE INDEX IF NOT EXISTS idx_tasks_flight ON tasks(flight_id);
-CREATE INDEX IF NOT EXISTS idx_tasks_user ON tasks(assigned_user_id);
 CREATE INDEX IF NOT EXISTS idx_passengers_flight ON passengers(flight_id);
+CREATE INDEX IF NOT EXISTS idx_boarding_passes_pass ON boarding_passes(passenger_id);
+CREATE INDEX IF NOT EXISTS idx_clearance_logs_pass ON passenger_clearance_logs(passenger_id);
+CREATE INDEX IF NOT EXISTS idx_clearance_logs_chk ON passenger_clearance_logs(checkpoint_id);
+CREATE INDEX IF NOT EXISTS idx_immigration_pass ON immigration_records(passenger_id);
 CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id);
