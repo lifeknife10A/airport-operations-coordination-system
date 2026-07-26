@@ -388,11 +388,60 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- ============================================================
+-- TRIGGER FUNCTION 1: UPSTREAM AIRCRAFT ROTATION CONSISTENCY
+-- Ensures when setting inbound_flight_id, the aircraft matches the inbound flight
+-- ============================================================
+CREATE OR REPLACE FUNCTION fn_verify_flight_rotation_aircraft()
+RETURNS TRIGGER AS $$
+DECLARE
+    inbound_aircraft_id BIGINT;
+BEGIN
+    IF NEW.inbound_flight_id IS NOT NULL THEN
+        SELECT aircraft_id INTO inbound_aircraft_id
+        FROM flights
+        WHERE flight_id = NEW.inbound_flight_id;
+        
+        IF inbound_aircraft_id IS DISTINCT FROM NEW.aircraft_id THEN
+            RAISE EXCEPTION 'Rotation integrity violation: Inbound flight % operates aircraft %, but flight % is assigned aircraft %',
+                NEW.inbound_flight_id, inbound_aircraft_id, NEW.flight_id, NEW.aircraft_id;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 DROP TRIGGER IF EXISTS trg_verify_flight_rotation ON flights;
 CREATE TRIGGER trg_verify_flight_rotation
 BEFORE INSERT OR UPDATE OF inbound_flight_id, aircraft_id ON flights
 FOR EACH ROW
 EXECUTE FUNCTION fn_verify_flight_rotation_aircraft();
+
+-- ============================================================
+-- TRIGGER FUNCTION 2: DOWNSTREAM AIRCRAFT ROTATION INTEGRITY
+-- Ensures when an aircraft_id is updated on a flight, all downstream rotated flights match
+-- ============================================================
+CREATE OR REPLACE FUNCTION fn_verify_downstream_rotation()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM flights
+        WHERE inbound_flight_id = NEW.flight_id
+          AND aircraft_id IS DISTINCT FROM NEW.aircraft_id
+    ) THEN
+        RAISE EXCEPTION 'Aircraft reassignment violation: Reassigning aircraft on flight % breaks rotation consistency with dependent outbound flights',
+            NEW.flight_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_verify_downstream_rotation ON flights;
+CREATE TRIGGER trg_verify_downstream_rotation
+BEFORE UPDATE OF aircraft_id ON flights
+FOR EACH ROW
+EXECUTE FUNCTION fn_verify_downstream_rotation();
+
 
 -- ============================================================
 -- SQL VIEW FOR SOFT-COPY & HARDCOPY BOARDING PASS PRINTING
