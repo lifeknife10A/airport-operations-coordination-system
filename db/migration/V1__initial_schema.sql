@@ -50,11 +50,19 @@ CREATE TABLE IF NOT EXISTS runways (
     runway_code VARCHAR(10) NOT NULL UNIQUE
 );
 
--- 8. FLIGHTS TABLE
+-- 8. FLIGHTS TABLE (Enhanced with Origin/Destination & Boarding/Departure Timestamps for FIDS TV Display)
 CREATE TABLE IF NOT EXISTS flights (
     flight_id BIGSERIAL PRIMARY KEY,
     flight_number VARCHAR(10) NOT NULL,
     flight_status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED' CHECK (flight_status IN ('SCHEDULED', 'BOARDING', 'AIRBORNE', 'LANDED', 'DELAYED', 'CANCELLED')),
+    flight_type VARCHAR(15) NOT NULL DEFAULT 'DEPARTURE' CHECK (flight_type IN ('DEPARTURE', 'ARRIVAL')),
+    origin_airport VARCHAR(10) NOT NULL DEFAULT 'DEL',
+    destination_airport VARCHAR(10) NOT NULL DEFAULT 'BOM',
+    scheduled_departure_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    actual_departure_time TIMESTAMPTZ,
+    scheduled_arrival_time TIMESTAMPTZ NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '2 hours'),
+    actual_arrival_time TIMESTAMPTZ,
+    boarding_time TIMESTAMPTZ,
     aircraft_id BIGINT NOT NULL REFERENCES aircraft(aircraft_id) ON DELETE RESTRICT,
     gate_id BIGINT REFERENCES gates(gate_id) ON DELETE SET NULL,
     runway_id BIGINT REFERENCES runways(runway_id) ON DELETE SET NULL,
@@ -128,12 +136,14 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- INDEXES FOR PERFORMANCE
+-- INDEXES FOR PERFORMANCE & FIDS SEARCHES
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role_id);
 CREATE INDEX IF NOT EXISTS idx_users_dept ON users(department_id);
 CREATE INDEX IF NOT EXISTS idx_flights_aircraft ON flights(aircraft_id);
 CREATE INDEX IF NOT EXISTS idx_flights_gate ON flights(gate_id);
 CREATE INDEX IF NOT EXISTS idx_flights_runway ON flights(runway_id);
+CREATE INDEX IF NOT EXISTS idx_flights_airports ON flights(origin_airport, destination_airport);
+CREATE INDEX IF NOT EXISTS idx_flights_status ON flights(flight_status, flight_type);
 CREATE INDEX IF NOT EXISTS idx_tasks_flight ON tasks(flight_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_user ON tasks(assigned_user_id);
 CREATE INDEX IF NOT EXISTS idx_passengers_flight ON passengers(flight_id);
