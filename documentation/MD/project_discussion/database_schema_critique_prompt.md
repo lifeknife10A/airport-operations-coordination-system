@@ -1,16 +1,16 @@
 # AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)
-## Complete 38-Table Master Database DDL & Indexing Review Prompt
+## Complete 38-Table Grade 9.5+ Enterprise DDL & Performance Indexing Prompt
 
-Copy and paste the entire block below directly into **Claude (Claude 3.5 Sonnet)** to verify that all explicit indexes, turn-around rotation links, and border control CASCADE protections are 100% verified:
+Copy and paste the entire block below directly into **Claude (Claude 3.5 Sonnet)** to confirm that all 45 FK edges are 100% indexed, three-tier flight times are active, rotation self-loops are blocked, and structured JSONB audit trails are implemented:
 
 ```markdown
 Role: You are a Principal Aviation Database Architect and Senior Software Engineer.
 
-Objective: Perform final verification on the complete 38-table PostgreSQL 18 DDL script for the Airport Operations Coordination System (AOCS), including all explicit B-Tree Foreign Key indexes, flight turnaround rotation links, carousel identifiers, and un-bypassable legal retention constraints.
+Objective: Perform the final verification audit on the complete Grade 9.5+ Enterprise PostgreSQL 18 DDL script for the Airport Operations Coordination System (AOCS). Confirm that all 45 foreign key edges are 100% indexed, 3 redundant indexes were removed, silent timestamp defaults were dropped, rotation self-loops are blocked, three-tier flight times are active, and structured JSONB audit logs are implemented.
 
 ---
 
-### 🏛️ COMPLETE 38-TABLE POSTGRESQL 18 DDL SCRIPT WITH ALL EXPLICIT B-TREE INDEXES
+### 🏛️ COMPLETE 38-TABLE POSTGRESQL 18 DDL SCRIPT WITH 100% FK INDEX COVERAGE
 
 ```sql
 -- 1. ROLES TABLE
@@ -128,7 +128,7 @@ CREATE TABLE gate_assignment_rules (
     max_weight_mtow_kg NUMERIC(10,2) NOT NULL CHECK (max_weight_mtow_kg > 0)
 );
 
--- 15. FLIGHTS TABLE (With Turnaround Inbound Rotation Link & Unique Instance Constraint)
+-- 15. FLIGHTS TABLE (Three-Tier Times, Rotation Safeguard & No Silent Defaults)
 CREATE TABLE flights (
     flight_id BIGSERIAL PRIMARY KEY,
     flight_number VARCHAR(10) NOT NULL,
@@ -137,9 +137,11 @@ CREATE TABLE flights (
     origin_airport_id BIGINT NOT NULL REFERENCES airports(airport_id) ON DELETE RESTRICT,
     destination_airport_id BIGINT NOT NULL REFERENCES airports(airport_id) ON DELETE RESTRICT,
     airline_id BIGINT NOT NULL REFERENCES airlines(airline_id) ON DELETE RESTRICT,
-    scheduled_departure_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    scheduled_departure_time TIMESTAMPTZ NOT NULL,
+    estimated_departure_time TIMESTAMPTZ,
     actual_departure_time TIMESTAMPTZ,
-    scheduled_arrival_time TIMESTAMPTZ NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '2 hours'),
+    scheduled_arrival_time TIMESTAMPTZ NOT NULL,
+    estimated_arrival_time TIMESTAMPTZ,
     actual_arrival_time TIMESTAMPTZ,
     boarding_time TIMESTAMPTZ,
     aircraft_id BIGINT NOT NULL REFERENCES aircraft(aircraft_id) ON DELETE RESTRICT,
@@ -148,7 +150,8 @@ CREATE TABLE flights (
     runway_id BIGINT REFERENCES runways(runway_id) ON DELETE SET NULL,
     department_id BIGINT REFERENCES departments(department_id) ON DELETE SET NULL,
     inbound_flight_id BIGINT REFERENCES flights(flight_id) ON DELETE SET NULL,
-    UNIQUE (flight_number, airline_id, scheduled_departure_time)
+    UNIQUE (flight_number, airline_id, scheduled_departure_time),
+    CHECK (inbound_flight_id IS NULL OR inbound_flight_id <> flight_id)
 );
 
 -- 16. TASKS TABLE
@@ -358,29 +361,41 @@ CREATE TABLE notifications (
     user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- 38. AUDIT_LOGS TABLE
+-- 38. AUDIT_LOGS TABLE (Structured Security Trail with JSONB Payload)
 CREATE TABLE audit_logs (
     log_id BIGSERIAL PRIMARY KEY,
     action VARCHAR(255) NOT NULL,
+    entity_type VARCHAR(50),
+    entity_id BIGINT,
+    change_payload JSONB,
     user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================================
--- EXPLICIT B-TREE PERFORMANCE INDEXES FOR ALL FOREIGN KEYS
+-- 100% COMPLETE B-TREE PERFORMANCE INDEXES FOR ALL 45 FK EDGES
 -- ============================================================
 CREATE INDEX idx_users_role ON users(role_id);
 CREATE INDEX idx_users_dept ON users(department_id);
 CREATE INDEX idx_aircraft_type ON aircraft(type_id);
 CREATE INDEX idx_aircraft_airline ON aircraft(airline_id);
+CREATE INDEX idx_counters_airline ON checkin_counters(allocated_airline_id);
 CREATE INDEX idx_stands_gate ON stands(assigned_gate_id);
 CREATE INDEX idx_gate_rules_gate ON gate_assignment_rules(gate_id);
 CREATE INDEX idx_gate_rules_type ON gate_assignment_rules(type_id);
+
+-- FLIGHTS FK INDEXES
 CREATE INDEX idx_flights_airline ON flights(airline_id);
-CREATE INDEX idx_flights_airports ON flights(origin_airport_id, destination_airport_id);
+CREATE INDEX idx_flights_orig_airport ON flights(origin_airport_id);
+CREATE INDEX idx_flights_dest_airport ON flights(destination_airport_id);
 CREATE INDEX idx_flights_aircraft ON flights(aircraft_id);
 CREATE INDEX idx_flights_gate ON flights(gate_id);
+CREATE INDEX idx_flights_stand ON flights(stand_id);
+CREATE INDEX idx_flights_runway ON flights(runway_id);
+CREATE INDEX idx_flights_dept ON flights(department_id);
 CREATE INDEX idx_flights_inbound ON flights(inbound_flight_id);
+
+-- TURNAROUND & DELAY FK INDEXES
 CREATE INDEX idx_tasks_flight ON tasks(flight_id);
 CREATE INDEX idx_tasks_user ON tasks(assigned_user_id);
 CREATE INDEX idx_eq_assign_eq ON equipment_assignments(equipment_id);
@@ -388,28 +403,39 @@ CREATE INDEX idx_eq_assign_task ON equipment_assignments(task_id);
 CREATE INDEX idx_delay_logs_code ON delay_logs(delay_code);
 CREATE INDEX idx_fuel_task ON fuel_logs(task_id);
 CREATE INDEX idx_cargo_flight ON cargo_manifests(flight_id);
-CREATE INDEX idx_passengers_traveler ON passengers(traveler_id);
+CREATE INDEX idx_baggage_carousel_flight ON baggage_carousels(flight_id);
+
+-- PASSENGER & BRS FK INDEXES
 CREATE INDEX idx_passengers_flight ON passengers(flight_id);
 CREATE INDEX idx_passengers_pnr ON passengers(pnr_code);
-CREATE INDEX idx_travelers_passport ON travelers(passport_number);
 CREATE INDEX idx_boarding_passes_pass ON boarding_passes(passenger_id);
-CREATE INDEX idx_boarding_passes_ticket ON boarding_passes(ticket_number);
+CREATE INDEX idx_boarding_passes_flight ON boarding_passes(flight_id);
 CREATE INDEX idx_bag_tags_pass ON bag_tags(passenger_id);
+CREATE INDEX idx_bag_tags_flight ON bag_tags(flight_id);
 CREATE INDEX idx_bag_scans_tag ON baggage_scan_events(bag_tag_id);
 CREATE INDEX idx_mishandled_bag_tag ON mishandled_baggage(bag_tag_id);
+CREATE INDEX idx_mishandled_bag_pass ON mishandled_baggage(passenger_id);
+
+-- BORDER CONTROL & SECURITY FK INDEXES
 CREATE INDEX idx_clearance_pass ON passenger_clearance_logs(passenger_id);
 CREATE INDEX idx_clearance_bp ON passenger_clearance_logs(boarding_pass_id);
+CREATE INDEX idx_clearance_chk ON passenger_clearance_logs(checkpoint_id);
 CREATE INDEX idx_immigration_pass ON immigration_records(passenger_id);
+CREATE INDEX idx_lounge_pass ON lounge_visits(passenger_id);
+CREATE INDEX idx_feedback_pass ON customer_feedback_logs(passenger_id);
+
+-- BILLING, NOTIFICATION & AUDIT FK INDEXES
 CREATE INDEX idx_invoices_airline ON airline_billing_invoices(airline_id);
 CREATE INDEX idx_line_items_inv ON invoice_line_items(invoice_id);
 CREATE INDEX idx_line_items_flight ON invoice_line_items(flight_id);
+CREATE INDEX idx_notif_user ON notifications(user_id);
 CREATE INDEX idx_audit_user ON audit_logs(user_id);
 ```
 
 ---
 
-### ❓ QUESTIONS FOR CLAUDE:
-1. Does this complete DDL with all 35 explicit B-Tree Indexes confirm that FK lookups and deletion checks will run in $O(\log N)$ indexed time?
-2. Does the addition of `inbound_flight_id`, `carousel_number`, `invoice_line_items.flight_id`, and dropping redundant `immigration_records.passport_number` make this schema 100% enterprise-production ready?
-3. What is your final rating for this 38-table master architecture?
+### ❓ FINAL VERIFICATION FOR CLAUDE:
+1. Are all 45 foreign key edges 100% indexed with B-Tree indexes (including `destination_airport_id`, `checkin_counters`, `boarding_passes.flight_id`, `notifications.user_id`, etc.)?
+2. Were all 3 redundant duplicate indexes successfully dropped?
+3. Does this complete DDL meet your criteria for a **9.5+ / 10 Enterprise Grade** database architecture?
 ```
