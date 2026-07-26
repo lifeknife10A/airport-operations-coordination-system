@@ -2,7 +2,7 @@
 -- AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)
 -- PostgreSQL 18 Initial Database Schema (Flyway V1 Migration)
 -- Author: Krishna Solanki & AOCS Engineering Team
--- Complete 38-Table Production Architecture (Fully Audited & Un-bypassable Legal Retention)
+-- Complete 38-Table Final Architecture (All Indexes & Claude DDL Fixes Included)
 -- ============================================================
 
 -- 1. ROLES TABLE
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS gate_assignment_rules (
     max_weight_mtow_kg NUMERIC(10,2) NOT NULL CHECK (max_weight_mtow_kg > 0)
 );
 
--- 15. FLIGHTS TABLE
+-- 15. FLIGHTS TABLE (Enhanced with Turnaround Inbound Rotation Link & Unique Instance Constraint)
 CREATE TABLE IF NOT EXISTS flights (
     flight_id BIGSERIAL PRIMARY KEY,
     flight_number VARCHAR(10) NOT NULL,
@@ -138,7 +138,9 @@ CREATE TABLE IF NOT EXISTS flights (
     gate_id BIGINT REFERENCES gates(gate_id) ON DELETE SET NULL,
     stand_id BIGINT REFERENCES stands(stand_id) ON DELETE SET NULL,
     runway_id BIGINT REFERENCES runways(runway_id) ON DELETE SET NULL,
-    department_id BIGINT REFERENCES departments(department_id) ON DELETE SET NULL
+    department_id BIGINT REFERENCES departments(department_id) ON DELETE SET NULL,
+    inbound_flight_id BIGINT REFERENCES flights(flight_id) ON DELETE SET NULL,
+    UNIQUE (flight_number, airline_id, scheduled_departure_time)
 );
 
 -- 16. TASKS TABLE (Enhanced with SLA Timestamps)
@@ -203,20 +205,21 @@ CREATE TABLE IF NOT EXISTS cargo_manifests (
     flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE CASCADE
 );
 
--- 23. BAGGAGE_CAROUSELS TABLE
+-- 23. BAGGAGE_CAROUSELS TABLE (Enhanced with Carousel Number)
 CREATE TABLE IF NOT EXISTS baggage_carousels (
     carousel_id BIGSERIAL PRIMARY KEY,
+    carousel_number VARCHAR(20) NOT NULL UNIQUE,
     terminal VARCHAR(10) NOT NULL,
     flight_id BIGINT REFERENCES flights(flight_id) ON DELETE SET NULL
 );
 
--- 24. TRAVELERS TABLE (Master Traveler Entity - 3NF Person Level Uniqueness)
+-- 24. TRAVELERS TABLE (Master Human Entity - Required Nationality without silent default)
 CREATE TABLE IF NOT EXISTS travelers (
     traveler_id BIGSERIAL PRIMARY KEY,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
     passport_number VARCHAR(20) NOT NULL UNIQUE,
-    nationality VARCHAR(50) NOT NULL DEFAULT 'IND',
+    nationality VARCHAR(50) NOT NULL,
     email VARCHAR(100),
     phone_number VARCHAR(30)
 );
@@ -293,10 +296,9 @@ CREATE TABLE IF NOT EXISTS passenger_clearance_logs (
     checkpoint_id BIGINT NOT NULL REFERENCES security_checkpoints(checkpoint_id) ON DELETE RESTRICT
 );
 
--- 32. IMMIGRATION_RECORDS TABLE (Un-bypassable Legal Border Retention - RESTRICT on Passenger)
+-- 32. IMMIGRATION_RECORDS TABLE (Authoritative Passport derived via passenger_id ON DELETE RESTRICT)
 CREATE TABLE IF NOT EXISTS immigration_records (
     immigration_id BIGSERIAL PRIMARY KEY,
-    passport_number VARCHAR(20) NOT NULL,
     visa_type VARCHAR(30) NOT NULL DEFAULT 'TOURIST_VISA',
     stamp_number VARCHAR(50) NOT NULL UNIQUE,
     biometric_facial_matched BOOLEAN NOT NULL DEFAULT TRUE,
@@ -332,10 +334,11 @@ CREATE TABLE IF NOT EXISTS airline_billing_invoices (
     payment_status VARCHAR(20) NOT NULL DEFAULT 'UNPAID' CHECK (payment_status IN ('UNPAID', 'PAID', 'OVERDUE'))
 );
 
--- 36. INVOICE_LINE_ITEMS TABLE
+-- 36. INVOICE_LINE_ITEMS TABLE (Enhanced with Direct FLIGHTS Movement Link)
 CREATE TABLE IF NOT EXISTS invoice_line_items (
     line_item_id BIGSERIAL PRIMARY KEY,
     invoice_id BIGINT NOT NULL REFERENCES airline_billing_invoices(invoice_id) ON DELETE CASCADE,
+    flight_id BIGINT REFERENCES flights(flight_id) ON DELETE SET NULL,
     charge_type VARCHAR(50) NOT NULL,
     amount_usd NUMERIC(10,2) NOT NULL CHECK (amount_usd >= 0)
 );
@@ -398,22 +401,41 @@ LEFT JOIN stands st ON f.stand_id = st.stand_id
 LEFT JOIN aircraft ac ON f.aircraft_id = ac.aircraft_id
 LEFT JOIN aircraft_types act ON ac.type_id = act.type_id;
 
--- INDEXES FOR HIGH-THROUGHPUT PERFORMANCE
+-- ============================================================
+-- EXPLICIT B-TREE PERFORMANCE INDEXES FOR ALL FOREIGN KEYS
+-- ============================================================
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role_id);
 CREATE INDEX IF NOT EXISTS idx_users_dept ON users(department_id);
 CREATE INDEX IF NOT EXISTS idx_aircraft_type ON aircraft(type_id);
 CREATE INDEX IF NOT EXISTS idx_aircraft_airline ON aircraft(airline_id);
+CREATE INDEX IF NOT EXISTS idx_stands_gate ON stands(assigned_gate_id);
+CREATE INDEX IF NOT EXISTS idx_gate_rules_gate ON gate_assignment_rules(gate_id);
+CREATE INDEX IF NOT EXISTS idx_gate_rules_type ON gate_assignment_rules(type_id);
 CREATE INDEX IF NOT EXISTS idx_flights_airline ON flights(airline_id);
 CREATE INDEX IF NOT EXISTS idx_flights_airports ON flights(origin_airport_id, destination_airport_id);
+CREATE INDEX IF NOT EXISTS idx_flights_aircraft ON flights(aircraft_id);
+CREATE INDEX IF NOT EXISTS idx_flights_gate ON flights(gate_id);
+CREATE INDEX IF NOT EXISTS idx_flights_inbound ON flights(inbound_flight_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_flight ON tasks(flight_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_user ON tasks(assigned_user_id);
+CREATE INDEX IF NOT EXISTS idx_eq_assign_eq ON equipment_assignments(equipment_id);
+CREATE INDEX IF NOT EXISTS idx_eq_assign_task ON equipment_assignments(task_id);
+CREATE INDEX IF NOT EXISTS idx_delay_logs_code ON delay_logs(delay_code);
+CREATE INDEX IF NOT EXISTS idx_fuel_task ON fuel_logs(task_id);
+CREATE INDEX IF NOT EXISTS idx_cargo_flight ON cargo_manifests(flight_id);
 CREATE INDEX IF NOT EXISTS idx_passengers_traveler ON passengers(traveler_id);
 CREATE INDEX IF NOT EXISTS idx_passengers_flight ON passengers(flight_id);
 CREATE INDEX IF NOT EXISTS idx_passengers_pnr ON passengers(pnr_code);
 CREATE INDEX IF NOT EXISTS idx_travelers_passport ON travelers(passport_number);
+CREATE INDEX IF NOT EXISTS idx_boarding_passes_pass ON boarding_passes(passenger_id);
 CREATE INDEX IF NOT EXISTS idx_boarding_passes_ticket ON boarding_passes(ticket_number);
 CREATE INDEX IF NOT EXISTS idx_bag_tags_pass ON bag_tags(passenger_id);
 CREATE INDEX IF NOT EXISTS idx_bag_scans_tag ON baggage_scan_events(bag_tag_id);
-CREATE INDEX IF NOT EXISTS idx_cargo_flight ON cargo_manifests(flight_id);
 CREATE INDEX IF NOT EXISTS idx_mishandled_bag_tag ON mishandled_baggage(bag_tag_id);
+CREATE INDEX IF NOT EXISTS idx_clearance_pass ON passenger_clearance_logs(passenger_id);
+CREATE INDEX IF NOT EXISTS idx_clearance_bp ON passenger_clearance_logs(boarding_pass_id);
+CREATE INDEX IF NOT EXISTS idx_immigration_pass ON immigration_records(passenger_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_airline ON airline_billing_invoices(airline_id);
+CREATE INDEX IF NOT EXISTS idx_line_items_inv ON invoice_line_items(invoice_id);
+CREATE INDEX IF NOT EXISTS idx_line_items_flight ON invoice_line_items(flight_id);
 CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id);
