@@ -7,7 +7,7 @@
         <mxCell id="1" parent="0" />
 
         <!-- HEADER TITLE -->
-        <mxCell id="hdr_title" value="&lt;b style=&quot;font-size: 16px;&quot;&gt;AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size: 13px;&quot;&gt;Complete 37-Table Master 3NF Architecture (TRAVELERS &amp;amp; DELAY_CODES Normalized Masters)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
+        <mxCell id="hdr_title" value="&lt;b style=&quot;font-size: 16px;&quot;&gt;AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size: 13px;&quot;&gt;Complete 38-Table Master 3NF Architecture (Un-bypassable Legal Retention &amp;amp; Complete Cascade Protection)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
           <mxGeometry x="50" y="30" width="3600" height="50" as="geometry" />
         </mxCell>
 
