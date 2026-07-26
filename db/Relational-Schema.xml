@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="Electron">
   <diagram name="AOCS-Relational-Schema" id="aocs-relational-schema-01">
-    <mxGraphModel dx="2800" dy="2000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2800" pageHeight="2000" math="0" shadow="0">
+    <mxGraphModel dx="3200" dy="2200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3200" pageHeight="2200" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
 
         <!-- HEADER TITLE -->
-        <mxCell id="hdr_title" value="&lt;b style=&quot;font-size: 16px;&quot;&gt;AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size: 13px;&quot;&gt;Physical Relational Database Schema Diagram (Elmasri &amp;amp; Navathe Chapter 7 ER-to-Relational Mapping)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
-          <mxGeometry x="50" y="30" width="2040" height="50" as="geometry" />
+        <mxCell id="hdr_title" value="&lt;b style=&quot;font-size: 16px;&quot;&gt;AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size: 13px;&quot;&gt;Complete 21-Table Physical Relational Database Schema (Elmasri &amp;amp; Navathe Chapter 7 Mapping)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="50" y="30" width="2660" height="50" as="geometry" />
         </mxCell>
 
         <!-- TABLE: ROLES -->
@@ -99,215 +99,340 @@
 
         <!-- TABLE: FLIGHTS -->
         <mxCell id="cell_124" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;FLIGHTS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
-          <mxGeometry x="950" y="420" width="280" height="200" as="geometry" />
+          <mxGeometry x="950" y="420" width="300" height="320" as="geometry" />
         </mxCell>
         <mxCell id="cell_125" value="&lt;b&gt;[PK] flight_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
-          <mxGeometry y="32" width="280" height="24" as="geometry" />
+          <mxGeometry y="32" width="300" height="24" as="geometry" />
         </mxCell>
         <mxCell id="cell_126" value="  flight_number" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
-          <mxGeometry y="56" width="280" height="24" as="geometry" />
+          <mxGeometry y="56" width="300" height="24" as="geometry" />
         </mxCell>
         <mxCell id="cell_127" value="  flight_status" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
-          <mxGeometry y="80" width="280" height="24" as="geometry" />
+          <mxGeometry y="80" width="300" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_128" value="• &lt;u&gt;aircraft_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> AIRCRAFT.aircraft_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
-          <mxGeometry y="104" width="280" height="24" as="geometry" />
+        <mxCell id="cell_128" value="  flight_type" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
+          <mxGeometry y="104" width="300" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_129" value="• &lt;u&gt;gate_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> GATES.gate_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
-          <mxGeometry y="128" width="280" height="24" as="geometry" />
+        <mxCell id="cell_129" value="  origin_airport" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
+          <mxGeometry y="128" width="300" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_130" value="• &lt;u&gt;runway_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> RUNWAYS.runway_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
-          <mxGeometry y="152" width="280" height="24" as="geometry" />
+        <mxCell id="cell_130" value="  destination_airport" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
+          <mxGeometry y="152" width="300" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_131" value="• &lt;u&gt;department_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> DEPARTMENTS.department_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
-          <mxGeometry y="176" width="280" height="24" as="geometry" />
+        <mxCell id="cell_131" value="  scheduled_departure_time" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
+          <mxGeometry y="176" width="300" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_132" value="  boarding_time" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
+          <mxGeometry y="200" width="300" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_133" value="• &lt;u&gt;aircraft_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> AIRCRAFT.aircraft_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
+          <mxGeometry y="224" width="300" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_134" value="• &lt;u&gt;gate_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> GATES.gate_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
+          <mxGeometry y="248" width="300" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_135" value="• &lt;u&gt;runway_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> RUNWAYS.runway_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
+          <mxGeometry y="272" width="300" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_136" value="• &lt;u&gt;department_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> DEPARTMENTS.department_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_124">
+          <mxGeometry y="296" width="300" height="24" as="geometry" />
         </mxCell>
 
         <!-- TABLE: NOTIFICATIONS -->
-        <mxCell id="cell_132" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;NOTIFICATIONS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
-          <mxGeometry x="50" y="780" width="220" height="104" as="geometry" />
+        <mxCell id="cell_137" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;NOTIFICATIONS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="50" y="840" width="220" height="104" as="geometry" />
         </mxCell>
-        <mxCell id="cell_133" value="&lt;b&gt;[PK] notification_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_132">
+        <mxCell id="cell_138" value="&lt;b&gt;[PK] notification_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_137">
           <mxGeometry y="32" width="220" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_134" value="  title" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_132">
+        <mxCell id="cell_139" value="  title" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_137">
           <mxGeometry y="56" width="220" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_135" value="• &lt;u&gt;user_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> USERS.user_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_132">
+        <mxCell id="cell_140" value="• &lt;u&gt;user_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> USERS.user_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_137">
           <mxGeometry y="80" width="220" height="24" as="geometry" />
         </mxCell>
 
         <!-- TABLE: AUDIT_LOGS -->
-        <mxCell id="cell_136" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;AUDIT_LOGS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
-          <mxGeometry x="300" y="780" width="230" height="128" as="geometry" />
+        <mxCell id="cell_141" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;AUDIT_LOGS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="300" y="840" width="230" height="128" as="geometry" />
         </mxCell>
-        <mxCell id="cell_137" value="&lt;b&gt;[PK] log_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_136">
+        <mxCell id="cell_142" value="&lt;b&gt;[PK] log_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_141">
           <mxGeometry y="32" width="230" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_138" value="  action" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_136">
+        <mxCell id="cell_143" value="  action" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_141">
           <mxGeometry y="56" width="230" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_139" value="  created_at" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_136">
+        <mxCell id="cell_144" value="  created_at" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_141">
           <mxGeometry y="80" width="230" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_140" value="• &lt;u&gt;user_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> USERS.user_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_136">
+        <mxCell id="cell_145" value="• &lt;u&gt;user_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> USERS.user_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_141">
           <mxGeometry y="104" width="230" height="24" as="geometry" />
         </mxCell>
 
         <!-- TABLE: TASKS -->
-        <mxCell id="cell_141" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;TASKS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
-          <mxGeometry x="780" y="780" width="240" height="152" as="geometry" />
+        <mxCell id="cell_146" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;TASKS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="780" y="840" width="240" height="152" as="geometry" />
         </mxCell>
-        <mxCell id="cell_142" value="&lt;b&gt;[PK] task_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_141">
+        <mxCell id="cell_147" value="&lt;b&gt;[PK] task_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_146">
           <mxGeometry y="32" width="240" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_143" value="  task_name" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_141">
+        <mxCell id="cell_148" value="  task_name" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_146">
           <mxGeometry y="56" width="240" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_144" value="  status" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_141">
+        <mxCell id="cell_149" value="  status" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_146">
           <mxGeometry y="80" width="240" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_145" value="• &lt;u&gt;flight_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> FLIGHTS.flight_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_141">
+        <mxCell id="cell_150" value="• &lt;u&gt;flight_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> FLIGHTS.flight_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_146">
           <mxGeometry y="104" width="240" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_146" value="• &lt;u&gt;assigned_user_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> USERS.user_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_141">
+        <mxCell id="cell_151" value="• &lt;u&gt;assigned_user_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> USERS.user_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_146">
           <mxGeometry y="128" width="240" height="24" as="geometry" />
         </mxCell>
 
         <!-- TABLE: DELAY_LOGS -->
-        <mxCell id="cell_147" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;DELAY_LOGS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
-          <mxGeometry x="1050" y="780" width="230" height="104" as="geometry" />
+        <mxCell id="cell_152" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;DELAY_LOGS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="840" width="230" height="104" as="geometry" />
         </mxCell>
-        <mxCell id="cell_148" value="• &lt;u&gt;flight_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> FLIGHTS.flight_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_147">
+        <mxCell id="cell_153" value="• &lt;u&gt;flight_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> FLIGHTS.flight_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_152">
           <mxGeometry y="32" width="230" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_149" value="&lt;b&gt;[PK] delay_seq_no&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_147">
+        <mxCell id="cell_154" value="&lt;b&gt;[PK] delay_seq_no&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_152">
           <mxGeometry y="56" width="230" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_150" value="  delay_minutes" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_147">
+        <mxCell id="cell_155" value="  delay_minutes" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_152">
           <mxGeometry y="80" width="230" height="24" as="geometry" />
         </mxCell>
 
         <!-- TABLE: BAGGAGE_CAROUSELS -->
-        <mxCell id="cell_151" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;BAGGAGE_CAROUSELS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
-          <mxGeometry x="1310" y="780" width="240" height="104" as="geometry" />
+        <mxCell id="cell_156" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;BAGGAGE_CAROUSELS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1310" y="840" width="240" height="104" as="geometry" />
         </mxCell>
-        <mxCell id="cell_152" value="&lt;b&gt;[PK] carousel_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_151">
+        <mxCell id="cell_157" value="&lt;b&gt;[PK] carousel_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_156">
           <mxGeometry y="32" width="240" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_153" value="  terminal" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_151">
+        <mxCell id="cell_158" value="  terminal" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_156">
           <mxGeometry y="56" width="240" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_154" value="• &lt;u&gt;flight_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> FLIGHTS.flight_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_151">
+        <mxCell id="cell_159" value="• &lt;u&gt;flight_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> FLIGHTS.flight_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_156">
           <mxGeometry y="80" width="240" height="24" as="geometry" />
         </mxCell>
 
         <!-- TABLE: PASSENGERS -->
-        <mxCell id="cell_155" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;PASSENGERS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
-          <mxGeometry x="1580" y="780" width="240" height="104" as="geometry" />
+        <mxCell id="cell_160" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;PASSENGERS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1580" y="840" width="240" height="104" as="geometry" />
         </mxCell>
-        <mxCell id="cell_156" value="&lt;b&gt;[PK] passenger_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_155">
+        <mxCell id="cell_161" value="&lt;b&gt;[PK] passenger_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_160">
           <mxGeometry y="32" width="240" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_157" value="  passport_number" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_155">
+        <mxCell id="cell_162" value="  passport_number" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_160">
           <mxGeometry y="56" width="240" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_158" value="• &lt;u&gt;flight_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> FLIGHTS.flight_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_155">
+        <mxCell id="cell_163" value="• &lt;u&gt;flight_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> FLIGHTS.flight_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_160">
           <mxGeometry y="80" width="240" height="24" as="geometry" />
         </mxCell>
 
         <!-- TABLE: LOUNGE_VISITS -->
-        <mxCell id="cell_159" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;LOUNGE_VISITS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
-          <mxGeometry x="1850" y="780" width="240" height="104" as="geometry" />
+        <mxCell id="cell_164" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;LOUNGE_VISITS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1850" y="840" width="240" height="104" as="geometry" />
         </mxCell>
-        <mxCell id="cell_160" value="&lt;b&gt;[PK] visit_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_159">
+        <mxCell id="cell_165" value="&lt;b&gt;[PK] visit_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_164">
           <mxGeometry y="32" width="240" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_161" value="  lounge_name" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_159">
+        <mxCell id="cell_166" value="  lounge_name" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_164">
           <mxGeometry y="56" width="240" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_162" value="• &lt;u&gt;passenger_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> PASSENGERS.passenger_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_159">
+        <mxCell id="cell_167" value="• &lt;u&gt;passenger_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> PASSENGERS.passenger_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_164">
           <mxGeometry y="80" width="240" height="24" as="geometry" />
         </mxCell>
 
         <!-- TABLE: FUEL_LOGS -->
-        <mxCell id="cell_163" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;FUEL_LOGS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
-          <mxGeometry x="780" y="1120" width="230" height="104" as="geometry" />
+        <mxCell id="cell_168" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;FUEL_LOGS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="780" y="1220" width="230" height="104" as="geometry" />
         </mxCell>
-        <mxCell id="cell_164" value="&lt;b&gt;[PK] fuel_log_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_163">
+        <mxCell id="cell_169" value="&lt;b&gt;[PK] fuel_log_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_168">
           <mxGeometry y="32" width="230" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_165" value="  fuel_density" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_163">
+        <mxCell id="cell_170" value="  fuel_density" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_168">
           <mxGeometry y="56" width="230" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_166" value="• &lt;u&gt;task_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> TASKS.task_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_163">
+        <mxCell id="cell_171" value="• &lt;u&gt;task_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> TASKS.task_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_168">
           <mxGeometry y="80" width="230" height="24" as="geometry" />
         </mxCell>
 
         <!-- TABLE: CARGO_MANIFESTS -->
-        <mxCell id="cell_167" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;CARGO_MANIFESTS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
-          <mxGeometry x="1050" y="1120" width="240" height="104" as="geometry" />
+        <mxCell id="cell_172" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;CARGO_MANIFESTS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="1220" width="240" height="104" as="geometry" />
         </mxCell>
-        <mxCell id="cell_168" value="&lt;b&gt;[PK] cargo_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_167">
+        <mxCell id="cell_173" value="&lt;b&gt;[PK] cargo_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_172">
           <mxGeometry y="32" width="240" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_169" value="  container_id" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_167">
+        <mxCell id="cell_174" value="  container_id" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_172">
           <mxGeometry y="56" width="240" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cell_170" value="• &lt;u&gt;fuel_log_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> FUEL_LOGS.fuel_log_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_167">
+        <mxCell id="cell_175" value="• &lt;u&gt;fuel_log_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> FUEL_LOGS.fuel_log_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_172">
           <mxGeometry y="80" width="240" height="24" as="geometry" />
         </mxCell>
 
-        <!-- 90-DEGREE ORTHOGONAL FOREIGN KEY -> PRIMARY KEY CONNECTORS -->
-        <mxCell id="edge_171" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_119" target="cell_101">
+        <!-- TABLE: BOARDING_PASSES -->
+        <mxCell id="cell_176" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;BOARDING_PASSES&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1580" y="1220" width="250" height="176" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_177" value="&lt;b&gt;[PK] boarding_pass_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_176">
+          <mxGeometry y="32" width="250" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_178" value="  barcode_data" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_176">
+          <mxGeometry y="56" width="250" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_179" value="  seat_number" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_176">
+          <mxGeometry y="80" width="250" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_180" value="  cabin_class" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_176">
+          <mxGeometry y="104" width="250" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_181" value="• &lt;u&gt;passenger_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> PASSENGERS.passenger_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_176">
+          <mxGeometry y="128" width="250" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_182" value="• &lt;u&gt;flight_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> FLIGHTS.flight_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_176">
+          <mxGeometry y="152" width="250" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- TABLE: SECURITY_CHECKPOINTS -->
+        <mxCell id="cell_183" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;SECURITY_CHECKPOINTS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="1860" y="1220" width="250" height="128" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_184" value="&lt;b&gt;[PK] checkpoint_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_183">
+          <mxGeometry y="32" width="250" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_185" value="  checkpoint_name" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_183">
+          <mxGeometry y="56" width="250" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_186" value="  checkpoint_type" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_183">
+          <mxGeometry y="80" width="250" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_187" value="  terminal" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_183">
+          <mxGeometry y="104" width="250" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- TABLE: PASSENGER_CLEARANCE_LOGS -->
+        <mxCell id="cell_188" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;PASSENGER_CLEARANCE_LOGS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="2140" y="1220" width="280" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_189" value="&lt;b&gt;[PK] clearance_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_188">
+          <mxGeometry y="32" width="280" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_190" value="  scan_timestamp" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_188">
+          <mxGeometry y="56" width="280" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_191" value="  clearance_status" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_188">
+          <mxGeometry y="80" width="280" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_192" value="  verification_method" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_188">
+          <mxGeometry y="104" width="280" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_193" value="• &lt;u&gt;passenger_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> PASSENGERS.passenger_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_188">
+          <mxGeometry y="128" width="280" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_194" value="• &lt;u&gt;boarding_pass_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> BOARDING_PASSES.boarding_pass_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_188">
+          <mxGeometry y="152" width="280" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_195" value="• &lt;u&gt;checkpoint_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> SECURITY_CHECKPOINTS.checkpoint_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_188">
+          <mxGeometry y="176" width="280" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- TABLE: IMMIGRATION_RECORDS -->
+        <mxCell id="cell_196" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;IMMIGRATION_RECORDS&lt;/b&gt;" style="swimlane;fontStyle=1;fontSize=11;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="2450" y="1220" width="260" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_197" value="&lt;b&gt;[PK] immigration_id&lt;/b&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_196">
+          <mxGeometry y="32" width="260" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_198" value="  passport_number" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_196">
+          <mxGeometry y="56" width="260" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_199" value="  visa_type" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_196">
+          <mxGeometry y="80" width="260" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_200" value="  stamp_number" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_196">
+          <mxGeometry y="104" width="260" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_201" value="  biometric_facial_matched" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_196">
+          <mxGeometry y="128" width="260" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_202" value="  clearance_type" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_196">
+          <mxGeometry y="152" width="260" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_203" value="• &lt;u&gt;passenger_id&lt;/u&gt; &lt;span style=&quot;font-size:8px;color:#555;&quot;&gt;[FK -> PASSENGERS.passenger_id]&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;rotatable=0;points=[];portConstraint=eastwest;whiteSpace=wrap;html=1;fontSize=10;fontColor=default;" vertex="1" parent="cell_196">
+          <mxGeometry y="176" width="260" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- 90-DEGREE ORTHOGONAL CONNECTORS -->
+        <mxCell id="edge_204" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_119" target="cell_101">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_172" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_120" target="cell_104">
+        <mxCell id="edge_205" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_120" target="cell_104">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_173" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_122" target="cell_116">
+        <mxCell id="edge_206" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_122" target="cell_116">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_174" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_128" target="cell_107">
+        <mxCell id="edge_207" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_133" target="cell_107">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_175" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_129" target="cell_110">
+        <mxCell id="edge_208" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_134" target="cell_110">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_176" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_130" target="cell_113">
+        <mxCell id="edge_209" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_135" target="cell_114">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_177" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_131" target="cell_104">
+        <mxCell id="edge_210" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_136" target="cell_104">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_178" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_145" target="cell_125">
+        <mxCell id="edge_211" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_150" target="cell_125">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_179" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_146" target="cell_116">
+        <mxCell id="edge_212" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_151" target="cell_116">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_180" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_148" target="cell_125">
+        <mxCell id="edge_213" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_153" target="cell_125">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_181" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_166" target="cell_142">
+        <mxCell id="edge_214" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_171" target="cell_147">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_182" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_170" target="cell_164">
+        <mxCell id="edge_215" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_175" target="cell_169">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_183" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_154" target="cell_125">
+        <mxCell id="edge_216" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_159" target="cell_125">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_184" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_158" target="cell_125">
+        <mxCell id="edge_217" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_163" target="cell_125">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_185" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_162" target="cell_156">
+        <mxCell id="edge_218" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_167" target="cell_161">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_186" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_135" target="cell_116">
+        <mxCell id="edge_219" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_140" target="cell_116">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="edge_187" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_140" target="cell_116">
+        <mxCell id="edge_220" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_145" target="cell_116">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_221" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_181" target="cell_161">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_222" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_182" target="cell_125">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_223" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_193" target="cell_161">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_224" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_194" target="cell_177">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_225" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_195" target="cell_184">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_226" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;strokeColor=default;" edge="1" parent="1" source="cell_203" target="cell_161">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
