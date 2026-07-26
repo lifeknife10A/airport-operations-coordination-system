@@ -2,8 +2,8 @@
 -- AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)
 -- PostgreSQL 18 Initial Database Schema (Flyway V1 Migration)
 -- Author: Krishna Solanki & AOCS Engineering Team
--- Complete 38-Table Master Architecture (Comprehensive Classification Sweep Complete)
--- Includes Complete FK Indexing across 47 Edges, Zero Classification Fallbacks & Full 3NF
+-- Complete 38-Table Master Architecture (Zero Classification Defaults & Aircraft Rotation Trigger)
+-- Includes Complete FK Indexing across 47 Edges, Full 3NF, and Flight Rotation Aircraft Validation
 -- ============================================================
 
 -- 1. ROLES TABLE
@@ -87,11 +87,11 @@ CREATE TABLE IF NOT EXISTS checkin_counters (
     allocated_airline_id BIGINT REFERENCES airlines(airline_id) ON DELETE SET NULL
 );
 
--- 11. STANDS TABLE (No Silent Jetbridge Default!)
+-- 11. STANDS TABLE (No Silent Remote or Jetbridge Defaults!)
 CREATE TABLE IF NOT EXISTS stands (
     stand_id BIGSERIAL PRIMARY KEY,
     stand_number VARCHAR(20) NOT NULL UNIQUE,
-    is_remote BOOLEAN NOT NULL DEFAULT FALSE,
+    is_remote BOOLEAN NOT NULL,
     has_jetbridge BOOLEAN NOT NULL,
     assigned_gate_id BIGINT REFERENCES gates(gate_id) ON DELETE SET NULL
 );
@@ -200,12 +200,12 @@ CREATE TABLE IF NOT EXISTS fuel_logs (
     task_id BIGINT NOT NULL REFERENCES tasks(task_id) ON DELETE RESTRICT
 );
 
--- 22. CARGO_MANIFESTS TABLE (No Silent Weight Default)
+-- 22. CARGO_MANIFESTS TABLE (No Silent Cargo Type or Weight Defaults!)
 CREATE TABLE IF NOT EXISTS cargo_manifests (
     cargo_id BIGSERIAL PRIMARY KEY,
     container_id VARCHAR(30) NOT NULL,
     weight_kg NUMERIC(8,2) NOT NULL CHECK (weight_kg > 0),
-    cargo_type VARCHAR(20) NOT NULL DEFAULT 'CARGO' CHECK (cargo_type IN ('CARGO', 'MAIL', 'BAGGAGE')),
+    cargo_type VARCHAR(20) NOT NULL CHECK (cargo_type IN ('CARGO', 'MAIL', 'BAGGAGE')),
     flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE CASCADE
 );
 
@@ -228,13 +228,13 @@ CREATE TABLE IF NOT EXISTS travelers (
     phone_number VARCHAR(30)
 );
 
--- 25. PASSENGERS TABLE (Flight Segment Instance - Unique traveler_id + flight_id)
+-- 25. PASSENGERS TABLE (Flight Segment Instance - Unique traveler_id + flight_id, No Silent Transit Default!)
 CREATE TABLE IF NOT EXISTS passengers (
     passenger_id BIGSERIAL PRIMARY KEY,
     traveler_id BIGINT NOT NULL REFERENCES travelers(traveler_id) ON DELETE RESTRICT,
     flight_id BIGINT NOT NULL REFERENCES flights(flight_id) ON DELETE RESTRICT,
     pnr_code VARCHAR(10) NOT NULL,
-    is_transit_passenger BOOLEAN NOT NULL DEFAULT FALSE,
+    is_transit_passenger BOOLEAN NOT NULL,
     UNIQUE (traveler_id, flight_id)
 );
 
@@ -364,6 +364,35 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ============================================================
+-- TRIGGER FUNCTION: AIRCRAFT ROTATION CONSISTENCY ENFORCEMENT
+-- Ensures an inbound flight linked via inbound_flight_id operates the exact same physical aircraft
+-- ============================================================
+CREATE OR REPLACE FUNCTION fn_verify_flight_rotation_aircraft()
+RETURNS TRIGGER AS $$
+DECLARE
+    inbound_aircraft_id BIGINT;
+BEGIN
+    IF NEW.inbound_flight_id IS NOT NULL THEN
+        SELECT aircraft_id INTO inbound_aircraft_id
+        FROM flights
+        WHERE flight_id = NEW.inbound_flight_id;
+        
+        IF inbound_aircraft_id IS DISTINCT FROM NEW.aircraft_id THEN
+            RAISE EXCEPTION 'Rotation integrity violation: Inbound flight % operates aircraft %, but flight % is assigned aircraft %',
+                NEW.inbound_flight_id, inbound_aircraft_id, NEW.flight_id, NEW.aircraft_id;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_verify_flight_rotation ON flights;
+CREATE TRIGGER trg_verify_flight_rotation
+BEFORE INSERT OR UPDATE OF inbound_flight_id, aircraft_id ON flights
+FOR EACH ROW
+EXECUTE FUNCTION fn_verify_flight_rotation_aircraft();
 
 -- ============================================================
 -- SQL VIEW FOR SOFT-COPY & HARDCOPY BOARDING PASS PRINTING
