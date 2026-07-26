@@ -144,7 +144,8 @@ CREATE TABLE IF NOT EXISTS flights (
     department_id BIGINT REFERENCES departments(department_id) ON DELETE SET NULL,
     inbound_flight_id BIGINT REFERENCES flights(flight_id) ON DELETE SET NULL,
     UNIQUE (flight_number, airline_id, scheduled_departure_time),
-    CHECK (inbound_flight_id IS NULL OR inbound_flight_id <> flight_id)
+    CHECK (inbound_flight_id IS NULL OR inbound_flight_id <> flight_id),
+    UNIQUE (inbound_flight_id)
 );
 
 -- 16. TASKS TABLE (Enhanced with SLA Timestamps)
@@ -377,7 +378,8 @@ BEGIN
     IF NEW.inbound_flight_id IS NOT NULL THEN
         SELECT aircraft_id INTO inbound_aircraft_id
         FROM flights
-        WHERE flight_id = NEW.inbound_flight_id;
+        WHERE flight_id = NEW.inbound_flight_id
+        FOR SHARE;
         
         IF inbound_aircraft_id IS DISTINCT FROM NEW.aircraft_id THEN
             RAISE EXCEPTION 'Rotation integrity violation: Inbound flight % operates aircraft %, but flight % is assigned aircraft %',
@@ -400,7 +402,8 @@ BEGIN
     IF NEW.inbound_flight_id IS NOT NULL THEN
         SELECT aircraft_id INTO inbound_aircraft_id
         FROM flights
-        WHERE flight_id = NEW.inbound_flight_id;
+        WHERE flight_id = NEW.inbound_flight_id
+        FOR SHARE;
         
         IF inbound_aircraft_id IS DISTINCT FROM NEW.aircraft_id THEN
             RAISE EXCEPTION 'Rotation integrity violation: Inbound flight % operates aircraft %, but flight % is assigned aircraft %',
@@ -428,6 +431,7 @@ BEGIN
         SELECT 1 FROM flights
         WHERE inbound_flight_id = NEW.flight_id
           AND aircraft_id IS DISTINCT FROM NEW.aircraft_id
+        FOR KEY SHARE
     ) THEN
         RAISE EXCEPTION 'Aircraft reassignment violation: Reassigning aircraft on flight % breaks rotation consistency with dependent outbound flights',
             NEW.flight_id;
