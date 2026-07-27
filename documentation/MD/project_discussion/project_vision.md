@@ -1,6 +1,6 @@
 # Project Vision: The Mega Web App Hub
 
-This document defines the overarching design philosophy, software architecture, and final outcomes of the Airport Operations Coordination System (AOCS) project. It serves as a persistent context anchor for development.
+This document defines the overarching design philosophy, software architecture, and final outcomes of the Saphire Airport Operations Coordination System (AOCS) (AOCS) project. It serves as a persistent context anchor for development.
 
 ---
 

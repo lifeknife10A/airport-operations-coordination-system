@@ -115,4 +115,4 @@ While the Peter Chen ERD captures conceptual entity relationships via ovals and 
 * `user_id` **[FK]**: `BIGINT NOT NULL` ➔ `USERS(user_id) ON DELETE RESTRICT`
 
 ---
-*Author: Antigravity Agent (Google Deepmind) | Project: Airport Operations Coordination System (AOCS)*
+*Author: Antigravity Agent (Google Deepmind) | Project: Saphire Airport Operations Coordination System (AOCS) (AOCS)*

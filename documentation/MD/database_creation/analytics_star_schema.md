@@ -1,6 +1,6 @@
 # Analytics Star Schema Architecture
 
-**System:** Airport Operations Coordination System (AOCS) Data Warehouse  
+**System:** Saphire Airport Operations Coordination System (AOCS) (AOCS) Data Warehouse  
 **Model Type:** Star Schema (1 Central Fact Table + 6 Dimension Tables)  
 
 ---

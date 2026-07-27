@@ -145,7 +145,8 @@ CREATE TABLE IF NOT EXISTS flights (
     inbound_flight_id BIGINT REFERENCES flights(flight_id) ON DELETE SET NULL,
     UNIQUE (flight_number, airline_id, scheduled_departure_time),
     CHECK (inbound_flight_id IS NULL OR inbound_flight_id <> flight_id),
-    UNIQUE (inbound_flight_id)
+    UNIQUE (inbound_flight_id),
+    CONSTRAINT chk_saphire_hub CHECK (origin_airport_id = 1 OR destination_airport_id = 1)
 );
 
 -- 16. TASKS TABLE (Enhanced with SLA Timestamps)

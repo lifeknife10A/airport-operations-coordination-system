@@ -1,5 +1,5 @@
 # Entity-Relationship (ER) Diagram Specification
-**Project:** Airport Operations Coordination System (AOCS)  
+**Project:** Saphire Airport Operations Coordination System (AOCS) (AOCS)  
 **Document Version:** 1.0  
 **Date:** 2026-07-23  
 

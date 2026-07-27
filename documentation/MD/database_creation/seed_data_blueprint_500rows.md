@@ -61,4 +61,4 @@ To ensure realistic aviation analytics, the dataset maintains a strict **60% Nat
    * `AUDIT_LOGS` foreign key to `USERS` enforces `ON DELETE RESTRICT`. Attempts to delete user accounts associated with historical audit records will be blocked by PostgreSQL to guarantee legal audit trail immutability.
 
 ---
-*Author: Antigravity Agent (Google Deepmind) | Project: Airport Operations Coordination System (AOCS)*
+*Author: Antigravity Agent (Google Deepmind) | Project: Saphire Airport Operations Coordination System (AOCS) (AOCS)*

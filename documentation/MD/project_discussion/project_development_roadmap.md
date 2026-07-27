@@ -1,6 +1,6 @@
 # AOCS: Project Development Roadmap & Feature Allocation
 
-This document defines the 8-week developmental roadmap, team member responsibilities, workload distribution, and phase-by-phase execution plan for building the Airport Operations Coordination System (AOCS) from ground zero.
+This document defines the 8-week developmental roadmap, team member responsibilities, workload distribution, and phase-by-phase execution plan for building the Saphire Airport Operations Coordination System (AOCS) (AOCS) from ground zero.
 
 The workload is balanced to keep the core architectural and algorithmic features with **Krishna** and **Anuvrat**, while assigning simpler CRUD-based and frontend-focused features to **Anay** and **Chaitanya** to prevent development bottlenecks.
 
