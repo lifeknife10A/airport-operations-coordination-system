@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS gate_assignment_rules (
 CREATE TABLE IF NOT EXISTS flights (
     flight_id BIGSERIAL PRIMARY KEY,
     flight_number VARCHAR(10) NOT NULL,
-    flight_status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED' CHECK (flight_status IN ('SCHEDULED', 'LANDED', 'ON_BLOCK', 'SERVICING', 'READY', 'BOARDING', 'AIRBORNE', 'DEPARTED', 'DELAYED', 'CANCELLED')),
+    flight_status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED' CHECK (flight_status IN ('SCHEDULED', 'BOARDING', 'AIRBORNE', 'LANDED', 'DELAYED', 'CANCELLED')),
     flight_type VARCHAR(15) NOT NULL CHECK (flight_type IN ('DEPARTURE', 'ARRIVAL')),
     origin_airport_id BIGINT NOT NULL REFERENCES airports(airport_id) ON DELETE RESTRICT,
     destination_airport_id BIGINT NOT NULL REFERENCES airports(airport_id) ON DELETE RESTRICT,
