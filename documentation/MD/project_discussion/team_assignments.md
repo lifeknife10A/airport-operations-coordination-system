@@ -1,6 +1,6 @@
 # Team Roles and Project Ownership Division
 
-This document records the official architectural role division and operational responsibilities for the 4 team members of the **Airport Operations Coordination System (AOCS)** project.
+This document records the official architectural role division and operational responsibilities for the 4 team members of the **Saphire Airport Operations Coordination System (AOCS) (AOCS)** project.
 
 ---
 

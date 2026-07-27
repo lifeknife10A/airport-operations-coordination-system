@@ -1,4 +1,4 @@
-# Airport Operations Coordination System (AOCS)
+# Saphire Airport Operations Coordination System (AOCS) (AOCS)
 
 ## Initial Phase Project Handbook
 
@@ -46,7 +46,7 @@
 
 # Project Vision: The Mega Web App Hub
 
-This document defines the overarching design philosophy, software architecture, and final outcomes of the Airport Operations Coordination System (AOCS) project. It serves as a persistent context anchor for development.
+This document defines the overarching design philosophy, software architecture, and final outcomes of the Saphire Airport Operations Coordination System (AOCS) (AOCS) project. It serves as a persistent context anchor for development.
 
 ---
 
@@ -127,7 +127,7 @@ When building code:
 
 # AOCS: Airport Management & Usage Features (20 Core Features)
 
-This document outlines the **20 distinct airport usage and management features** provided by the Airport Operations Coordination System (AOCS). These features focus on operational efficiency, airfield safety, resource allocation, and terminal management.
+This document outlines the **20 distinct airport usage and management features** provided by the Saphire Airport Operations Coordination System (AOCS) (AOCS). These features focus on operational efficiency, airfield safety, resource allocation, and terminal management.
 
 ---
 
@@ -671,7 +671,7 @@ This document outlines the **20 distinct airport usage and management features**
 
 # AOCS: Project Development Roadmap & Feature Allocation
 
-This document defines the 8-week developmental roadmap, team member responsibilities, workload distribution, and phase-by-phase execution plan for building the Airport Operations Coordination System (AOCS) from ground zero.
+This document defines the 8-week developmental roadmap, team member responsibilities, workload distribution, and phase-by-phase execution plan for building the Saphire Airport Operations Coordination System (AOCS) (AOCS) from ground zero.
 
 The workload is balanced to keep the core architectural and algorithmic features with **Krishna** and **Anuvrat**, while assigning simpler CRUD-based and frontend-focused features to **Anay** and **Chaitanya** to prevent development bottlenecks.
 

@@ -6,7 +6,7 @@ Copy and paste the entire block below directly into **Claude (Claude 3.5 Sonnet)
 ```markdown
 Role: You are a Principal Aviation Database Architect and Senior Software Engineer.
 
-Objective: Final sign-off on the complete Grade 10.0 Enterprise PostgreSQL 18 DDL script for the Airport Operations Coordination System (AOCS). Confirm that:
+Objective: Final sign-off on the complete Grade 10.0 Enterprise PostgreSQL 18 DDL script for the Saphire Airport Operations Coordination System (AOCS) (AOCS). Confirm that:
 1. All 47 foreign key edges are indexed (44 explicit B-Tree indexes + 3 auto-indexed composite PK/UNIQUE edges + 1 PNR lookup).
 2. All silent classification/legal/billing defaults were dropped.
 3. Bidirectional flight rotation aircraft consistency is enforced via `DEFERRABLE INITIALLY DEFERRED` constraint triggers (`trg_verify_flight_rotation` & `trg_verify_downstream_rotation`) with `FOR SHARE` / `FOR KEY SHARE` concurrency row locking, solving both transaction statement ordering and cross-transaction concurrency isolation simultaneously.

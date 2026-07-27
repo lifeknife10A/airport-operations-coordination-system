@@ -311,7 +311,8 @@ INSERT INTO airlines (airline_id, iata_code, icao_code, airline_name, country) V
 INSERT INTO airlines (airline_id, iata_code, icao_code, airline_name, country) VALUES (25, 'TK', 'THY', 'Turkish Airlines', 'Turkey') ON CONFLICT DO NOTHING;
 
 -- 6. AIRPORTS (25)
-INSERT INTO airports (airport_id, iata_code, icao_code, airport_name, city, country, timezone) VALUES (1, 'BOM', 'VABB', 'Chhatrapati Shivaji Maharaj International Airport', 'Mumbai', 'India', 'Asia/Kolkata') ON CONFLICT DO NOTHING;
+INSERT INTO airports (airport_id, iata_code, icao_code, airport_name, city, country, timezone) VALUES (1, 'SPH', 'VASP', 'Saphire International Airport', 'Saphire City', 'India', 'Asia/Kolkata') ON CONFLICT DO NOTHING;
+INSERT INTO airports (airport_id, iata_code, icao_code, airport_name, city, country, timezone) VALUES (21, 'BOM', 'VABB', 'Chhatrapati Shivaji Maharaj International Airport', 'Mumbai', 'India', 'Asia/Kolkata') ON CONFLICT DO NOTHING;
 INSERT INTO airports (airport_id, iata_code, icao_code, airport_name, city, country, timezone) VALUES (2, 'DEL', 'VIDP', 'Indira Gandhi International Airport', 'New Delhi', 'India', 'Asia/Kolkata') ON CONFLICT DO NOTHING;
 INSERT INTO airports (airport_id, iata_code, icao_code, airport_name, city, country, timezone) VALUES (3, 'BLR', 'VOBL', 'Kempegowda International Airport', 'Bengaluru', 'India', 'Asia/Kolkata') ON CONFLICT DO NOTHING;
 INSERT INTO airports (airport_id, iata_code, icao_code, airport_name, city, country, timezone) VALUES (4, 'MAA', 'VOMM', 'Chennai International Airport', 'Chennai', 'India', 'Asia/Kolkata') ON CONFLICT DO NOTHING;

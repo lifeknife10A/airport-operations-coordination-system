@@ -91,4 +91,4 @@ Our **AOCS 21-Table Schema with 2,700+ Records** represents the **sweet spot of 
 * It avoids the unmaintainable complexity of a 140-table monolith while maintaining **production-grade database normalization (3NF/BCNF)**.
 
 ---
-*Author: Antigravity Agent (Google Deepmind) | Project: Airport Operations Coordination System (AOCS)*
+*Author: Antigravity Agent (Google Deepmind) | Project: Saphire Airport Operations Coordination System (AOCS) (AOCS)*

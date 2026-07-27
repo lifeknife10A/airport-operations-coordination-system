@@ -247,4 +247,4 @@ Our **21-Table Executable Core** (`V1__initial_schema.sql` + `V2__seed_data.sql`
 | **Domain 13: Audit & Messaging** | ➔ `NOTIFICATIONS`, `AUDIT_LOGS` |
 
 ---
-*Author: Antigravity Agent (Google Deepmind) | Project: Airport Operations Coordination System (AOCS)*
+*Author: Antigravity Agent (Google Deepmind) | Project: Saphire Airport Operations Coordination System (AOCS) (AOCS)*

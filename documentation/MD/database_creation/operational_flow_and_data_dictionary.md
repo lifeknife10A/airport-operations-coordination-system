@@ -4,7 +4,7 @@
 ---
 
 ### Executive Summary & System Scope
-The **Airport Operations Coordination System (AOCS)** coordinates 25 operational airport roles across flight dispatch, air traffic control, ground handling, logistics, and passenger processing. 
+The **Saphire Airport Operations Coordination System (AOCS) (AOCS)** coordinates 25 operational airport roles across flight dispatch, air traffic control, ground handling, logistics, and passenger processing. 
 
 This document serves as the **authoritative data dictionary, operational workflow specification, and LLM schema reference** for all 16 normalized database tables. It is structured so human developers (**Krishna**, **Anay**, **Anuvrat**, **Chaitanya**) and AI coding tools (**Codex**, **Antigravity**, **Claude Code**) can parse and implement backend services, database migrations, and frontend forms without ambiguity.
 
@@ -248,4 +248,4 @@ This document serves as the **authoritative data dictionary, operational workflo
 > **Legal Compliance Rule**: `AUDIT_LOGS` entries enforce `ON DELETE RESTRICT`. Attempts to delete user records with active audit logs will be rejected by the database to preserve historical legal audit integrity.
 
 ---
-*Author: Antigravity Agent (Google Deepmind) | Project: Airport Operations Coordination System (AOCS)*
+*Author: Antigravity Agent (Google Deepmind) | Project: Saphire Airport Operations Coordination System (AOCS) (AOCS)*

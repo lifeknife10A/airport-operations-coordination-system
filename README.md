@@ -215,4 +215,4 @@ For visual diagram review, open the vector PDF files in [`documentation/PDF/`](f
 * 🌟 **Star Schema Dimensional Model**: [Star Schema.pdf](file:///Users/krish/Desktop/Software%20Engineering/Mini%20Project/documentation/PDF/Star%20Schema.pdf)
 
 ---
-*Airport Operations Coordination System (AOCS) — Master Developer Execution Guide*
+*Saphire Airport Operations Coordination System (AOCS) (AOCS) — Master Developer Execution Guide*
