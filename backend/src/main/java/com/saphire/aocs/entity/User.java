@@ -22,6 +22,9 @@ public class User {
     @Column(name = "name", length = 100, nullable = false)
     private String name;
 
+    @Column(name = "password_hash", length = 255)
+    private String passwordHash;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
