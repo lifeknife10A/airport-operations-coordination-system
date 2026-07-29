@@ -19,10 +19,18 @@ public interface FlightRepository extends JpaRepository<Flight, Long> {
      * (originAirport, destinationAirport, airline, aircraft).
      * Note: Do NOT add @OneToMany collections (e.g. tasks/delayLogs) to this fetch query without DISTINCT.
      */
-    @Query("SELECT f FROM Flight f JOIN FETCH f.originAirport JOIN FETCH f.destinationAirport JOIN FETCH f.airline JOIN FETCH f.aircraft WHERE f.originAirport.airportId = 1 OR f.destinationAirport.airportId = 1")
-    List<Flight> findAllSaphireHubFlightsWithDetails();
+    @Query("SELECT f FROM Flight f JOIN FETCH f.originAirport JOIN FETCH f.destinationAirport JOIN FETCH f.airline JOIN FETCH f.aircraft LEFT JOIN FETCH f.gate LEFT JOIN FETCH f.stand LEFT JOIN FETCH f.department WHERE f.originAirport.airportId = 1 OR f.destinationAirport.airportId = 1")
+    List<Flight> findAllSaphireHubFlightsWithAllDetails();
 
     List<Flight> findByFlightStatus(String flightStatus);
 
     List<Flight> findByFlightNumberContainingIgnoreCase(String flightNumber);
+
+    List<Flight> findByGate_GateId(Long gateId);
+
+    List<Flight> findByStand_StandId(Long standId);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT f FROM Flight f WHERE f.flightId = :id")
+    java.util.Optional<Flight> findByIdForUpdate(@org.springframework.data.repository.query.Param("id") Long id);
 }
