@@ -38,7 +38,8 @@ Mini Project/
     │   ├── Information Package.pdf        <-- Matrix PDF
     │   └── Star Schema.pdf                <-- Data Warehouse PDF
     └── MD/                                <-- Markdown Discussion & Critique Artifacts
-        └── project_discussion/            <-- Claude & ChatGPT Peer Review Log
+        └── project_discussion/            <-- Architecture Logs & Anuvrat Plan Analysis
+            └── Anuvrat_Frontend_Plan_Analysis_and_RBAC_Architecture.md
 ```
 
 ---
@@ -64,9 +65,14 @@ Below is the complete, exhaustive operational specification for **Anuvrat (Front
 ---
 
 ## 🖥️ ANUVRAT'S FRONTEND EXECUTION SPECIFICATION
-### Total Webpages Required: **10 Modules**
+### Architecture: **CSMIA-Inspired Public Website + 1 Unified Dynamic Dashboard Shell**
 
-Anuvrat is responsible for building a modern, dynamic, responsive web application for airport staff, operators, airlines, and security agents.
+For complete architectural evaluation and sitemap analysis, see [Anuvrat_Frontend_Plan_Analysis_and_RBAC_Architecture.md](file:///Users/krish/Desktop/Software%20Engineering/Mini%20Project/documentation/MD/project_discussion/Anuvrat_Frontend_Plan_Analysis_and_RBAC_Architecture.md).
+
+Anuvrat is responsible for building a modern, responsive web application comprising:
+1. **Public Passenger Portal (CSMIA Mumbai Airport Framework):** Flight Search, Live FIDS Board, Terminal Map, Baggage Carousel lookup.
+2. **1 Unified Internal Dashboard Shell (`DashboardLayout.tsx`):** A single master dashboard layout shell that dynamically filters sidebar navigation modules based on the logged-in user's `role` and `department`.
+3. **Dual-Layer Security:** Front-end React `<ProtectedRoute />` wrappers combined with Anay's Spring Security `@PreAuthorize` annotations.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
