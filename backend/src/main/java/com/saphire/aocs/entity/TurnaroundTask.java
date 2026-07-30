@@ -42,4 +42,7 @@ public class TurnaroundTask {
 
     @Column(name = "actual_end")
     private ZonedDateTime actualEnd;
+
+    @Column(name = "notes")
+    private String notes;
 }
