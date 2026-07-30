@@ -1,96 +1,218 @@
-<p align="center">
-  <img src="assets/saphire_logo_modern_crest.png" alt="Saphire International Airport Logo" width="240" />
-</p>
+# AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)
+## Master System Documentation & Developer Execution Guide
 
-# ✈️ Saphire Airport Operations Coordination System (AOCS)
-
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen.svg)](https.spring.io)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-blue.svg)](https://www.postgresql.org)
-[![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org)
-[![Flyway](https://img.shields.io/badge/Flyway-Migrations-red.svg)](https://flywaydb.org)
-
-**Saphire Airport Operations Coordination System (AOCS)** is an enterprise-grade full-stack web application designed to digitize, monitor, and optimize real-time aircraft turnaround activities (landing to departure) at **Saphire International Airport (IATA: SPH, ICAO: VASP)**.
+---
 
 > [!IMPORTANT]
-> **Scope & Hub Constraint**: This is an internal operational coordination platform for airport ground staff (not a passenger ticket booking system). All tracked flights strictly adhere to the **Saphire Hub Constraint**: every flight must either originate at Saphire Airport (`origin = SPH`) or terminate at Saphire Airport (`destination = SPH`).
+> **DATABASE STATUS: LOCKED & FROZEN (Grade 9.9 / 10 Enterprise Production Architecture)**  
+> The AOCS database schema (38 normalized tables, 100% indexed 47 FK edges, zero security defaults, bidirectional deferrable turnaround rotation triggers, and **158,660+ Flyway-migrated live records**) is **OFFICIALLY LOCKED**. No further database DDL changes are required. All engineering focus is now directed to Backend API Development (**Anay**) and Web Application Frontend Development (**Anuvrat**).
 
 ---
 
-## 🎨 Official Hub Logo & Visual Identity
+## 📁 Repository Directory Structure
 
-**Saphire International Airport (`SPH` / `VASP`)** uses the **Modern Monogram 'S' Aircraft Apex Mark** (Option B) as its official airport brand emblem. Designed using the Refero Design methodology, it combines a sleek supersonic jet aircraft silhouette taking flight through faceted sapphire crystal cuts, symbolizing physical precision, luxury, and high-reliability aviation coordination.
-
-<p align="center">
-  <img src="assets/saphire_logo_modern_crest.png" alt="Saphire International Airport Official Logo Option B" width="380" />
-</p>
-
----
-
-## 👥 Team Roles & Responsibilities
-
-| Team Member | Project Role | Technical Deliverables & Primary Ownership |
-| :--- | :--- | :--- |
-| **Anuvrat Tripathi** | **Frontend UI/UX Lead** *(React + Material UI)* | 15+ Web pages, Material UI component library, real-time dashboard grid, and responsive styling. |
-| **Anay Modi** | **Backend API & Logic Lead** *(Java Spring Boot)* | REST Controllers (`/api/flights`, `/api/tasks`), Service business rules, turnaround state engine, and Spring Security (RBAC). |
-| **Krishna Solanki** | **Database & System Integration Lead** | Database schema, Flyway migrations (`V1`, `V2`), 17 JPA Entities, 16 Spring Data Repositories, and DB-to-API integration. |
-| **Chaitanya Tikku** | **Documentation, UML & QA Testing Lead** | Software Requirement Specification (SRS), ER & Sequence Diagrams, Postman API Test Suite, User Manual, & Final PPT presentation. |
-
----
-
-## 📂 Documentation & Specifications Directory
-
-All project specifications and design documents are located under `documentation/MD/`:
-
-* 📘 **Anay's Technical Handoff Guide**: [`Anay_Technical_Handoff_Guide.md`](documentation/MD/Anay_Technical_Handoff_Guide.md) *(Exhaustive guide explaining the project, entities, repositories, and backend roadmap)*
-* ✈️ **Saphire Hub Architecture**: [`saphire_hub_architecture.md`](documentation/MD/saphire_hub_architecture.md) *(Home hub routing constraints & SQL check rules)*
-* 📊 **ER Diagram & Schema**: [`ER_Diagram_Design.md`](documentation/MD/database_creation/ER_Diagram_Design.md) *(Complete 38-table relational schema)*
-* ⚡ **Non-Functional Requirements**: [`non_functional_requirements.md`](documentation/MD/non_functional_requirements.md) *(Performance, fuel tolerance ±1%, passport masking, & audit rules)*
-* 👥 **Team Role Breakdown**: [`roles.MD`](documentation/MD/project_discussion/team_assignments.md) *(Official team ownership matrix)*
-* 📋 **Academic Project Guidelines**: [`instruction.md`](instruction.md) *(Professor's evaluation criteria & deadlines)*
-
----
-
-## 🏗️ System Architecture & Tech Stack
-
-```mermaid
-graph TD
-    UI[React 18 + Material UI Frontend] -->|REST APIs / JSON| API[Spring Boot 3.x Backend]
-    API -->|Spring Data JPA ORM| DB[(PostgreSQL 18 Database - aocs_db)]
-    DB -->|Schema & Seed Migrations| FLY[Flyway Migration Engine V1 & V2]
+```
+Mini Project/
+├── README.md                              <-- Master Developer Execution Guide & API Specs
+├── flyway.conf                            <-- Flyway Migration Config (PostgreSQL 18)
+├── db/                                    <-- Database Diagrams & Migrations
+│   ├── AOCS Relational Schema.drawio.xml  <-- Step 1 Relational Schema Draw.io XML
+│   ├── AOCS ER Diagram.drawio.xml         <-- Step 1 Peter Chen ERD Draw.io XML
+│   ├── AOCS Information Package.drawio.xml<-- Step 2 Information Package Draw.io XML
+│   ├── AOCS Star Schema.drawio.xml        <-- Step 3 Star Schema Draw.io XML
+│   └── migration/                         <-- Flyway SQL Migration Scripts
+│       ├── V1__initial_schema.sql         <-- 38-Table DDL + Triggers + Indexes + Views
+│       └── V2__seed_data.sql              <-- 158,660+ Validated Production Records
+│
+├── tools/                                 <-- Python Automation, Generation & Sync Tools
+│   ├── build_100k_seed_data.py            <-- 158,660+ Seed Data Generator
+│   ├── build_38_table_perfect_100_final.py<-- Master DDL Generator
+│   ├── apply_participation_only.py        <-- ERD Double Line Sync Tool
+│   ├── update_all_38_table_diagrams.py    <-- Draw.io List Container Generator
+│   └── verify_db_counts.py                <-- PostgreSQL 18 Record Count Verifier
+│
+└── documentation/                         <-- Documentation Hub
+    ├── PDF/                               <-- Primary Visual Assets for Teammate Viewing
+    │   ├── Relational Schema.pdf
+    │   ├── ER Diagram.pdf                 <-- Peter Chen ERD PDF
+    │   ├── Information Package.pdf        <-- Matrix PDF
+    │   └── Star Schema.pdf                <-- Data Warehouse PDF
+    └── MD/                                <-- Markdown Discussion & Critique Artifacts
+        └── project_discussion/            <-- Claude & ChatGPT Peer Review Log
 ```
 
-### 1. Database & Data Access Layer (Completed ✅)
-* **Database**: PostgreSQL 18 with 38 normalized tables.
-* **Flyway Migrations**:
-  * `db/migration/V1__initial_schema.sql` (Master schema creation & constraints)
-  * `db/migration/V2__seed_data.sql` (7,000+ seed data rows centered around Saphire Airport SPH)
-* **17 JPA Entities** (`com.saphire.aocs.entity`): `Flight`, `TurnaroundTask`, `FuelRequest`, `PassengerManifest`, `Airport`, `Airline`, `AircraftType`, `Aircraft`, `Gate`, `Stand`, `Role`, `Department`, `User`, `DelayLog`, `DelayLogId`, `AuditLog`, `Notification`.
-* **16 Spring Data Repositories** (`com.saphire.aocs.repository`): `FlightRepository`, `TaskRepository`, `GateRepository`, `UserRepository`, `FuelRequestRepository`, `PassengerManifestRepository`, etc.
+---
+
+## 🛠️ Core Technology Stack
+
+| Layer | Primary Technology | Specification |
+|---|---|---|
+| **Database Engine** | PostgreSQL | Version 18.4 (Port 5432, `airport_db`) |
+| **Database Migrations** | Flyway CLI | Version 13.0.0 (`v1`, `v2`, `v3` applied) |
+| **Backend Framework** | Java / Spring Boot | Java 17/21 + Spring Boot 3.x |
+| **ORM / Data Access** | Spring Data JPA | Hibernate / PostgreSQL Driver |
+| **Frontend Framework** | React / TypeScript | React 18 + TypeScript |
+| **UI Component Library**| Material UI (MUI) | MUI v5 / TailwindCSS |
+| **API Protocol** | RESTful JSON & WebSockets | Spring WebSockets / Webhooks |
 
 ---
 
-## ⚡ Getting Started (Local Development)
+# 🚀 TEAM MEMBER EXECUTION ROADMAP
 
-### 1. Database & Backend Setup
-1. Ensure PostgreSQL 18 is running locally:
-   ```bash
-   createdb aocs_db
-   ```
-2. Navigate to the backend directory and run Spring Boot:
-   ```bash
-   cd backend
-   mvn spring-boot:run
-   ```
-3. Flyway will automatically run `V1` and `V2` migrations and populate your database. Visit `http://localhost:8080/api/flights` to test!
+Below is the complete, exhaustive operational specification for **Anuvrat (Frontend Lead)** and **Anay (Backend Lead)** based on the 158,660+ dataset and 38-table architecture.
 
 ---
 
-## 🗓️ Milestone Schedule (Due: 05 October 2026)
+## 🖥️ ANUVRAT'S FRONTEND EXECUTION SPECIFICATION
+### Total Webpages Required: **10 Modules**
 
-- [x] **Week 1-2**: Domain research, 38-table database schema, Flyway migrations, and ER diagrams.
-- [x] **Week 3**: Spring Boot data layer setup (17 JPA Entities, 16 Repositories, Saphire Hub SPH routing constraints).
-- [ ] **Week 4**: Backend REST Controllers & Turnaround Service Logic (Anay).
-- [ ] **Week 5**: React Frontend 15+ Web Screens & MUI Component Library (Anuvrat).
-- [ ] **Week 6**: Full-Stack API Integration & Wire Up (Krishna & Anuvrat).
-- [ ] **Week 7**: Quality Assurance, Postman API Testing, & Bug Fixes (Chaitanya).
-- [ ] **Week 8**: SRS Document, User Manual, Presentation PPT, and Final Evaluation.
+Anuvrat is responsible for building a modern, dynamic, responsive web application for airport staff, operators, airlines, and security agents.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          AOCS WEB APPLICATION                               │
+├──────────────┬──────────────┬──────────────┬──────────────┬─────────────────┤
+│ 1. Flight    │ 2. Turnaround│ 3. Airside   │ 4. Baggage   │ 5. Border       │
+│    Ops Hub   │    Task Grid │    Gate Map  │    BRS Scan  │    Security Desk│
+├──────────────┼──────────────┼──────────────┼──────────────┼─────────────────┤
+│ 6. Traveler  │ 7. Airline   │ 8. Weather   │ 9. Security  │10. Analytics &  │
+│    Directory │    Billing   │    Radar     │    Audit Log │    Delay Reports│
+└──────────────┴──────────────┴──────────────┴──────────────┴─────────────────┘
+```
+
+#### 1. Flight Operations Hub (`/flights`)
+* **Purpose**: Central FIDS (Flight Information Display System) dashboard.
+* **UI Features**: Searchable, filterable table of all 5,000 scheduled arrival/departure flights. Real-time status chips (`SCHEDULED`, `BOARDING`, `AIRBORNE`, `LANDED`, `DELAYED`, `CANCELLED`).
+* **Key Components**: Quick-filter by Airline, Gate, Stand, or Airport; Modal to edit estimated timestamps (`estimated_departure_time`).
+
+#### 2. Turnaround Task Manager (`/tasks`)
+* **Purpose**: Ground crew dispatch board for ramp agents, fueling, catering, and cleaning.
+* **UI Features**: Kanban board or Grid view showing 10,000 tasks grouped by status (`PENDING`, `IN_PROGRESS`, `COMPLETED`, `BLOCKED`). SLA countdown timers.
+* **Key Components**: Drag-and-drop task status update, ground equipment assignment modal (`ground_equipment`).
+
+#### 3. Airside Gate & Stand Allocation Map (`/airside`)
+* **Purpose**: Visual graphical map of 200 Gates, 200 Stands, and 20 Runways.
+* **UI Features**: Interactive terminal map showing occupied vs. available stands, remote stand badges, and jetbridge indicators.
+* **Key Components**: Click-to-assign gate rules inspector (`wingspan_meters`, `mtow_kg` validation check).
+
+#### 4. Baggage Reconciliation System (BRS) Console (`/baggage`)
+* **Purpose**: Baggage tracking and mishandled luggage management.
+* **UI Features**: Search 12,000 bag tag numbers (`tag_number`), 20,000 scan event history timeline (Check-in ➔ Inline Screening ➔ Makeup Area ➔ Cart ➔ Cargo Hold).
+* **Key Components**: PIR report filing modal for `MISHANDLED_BAGGAGE` (`LOST`, `DAMAGED`, `DELAYED`, `PILFERED`).
+
+#### 5. Border Control & Security Desk (`/security`)
+* **Purpose**: Immigration officer and security checkpoint terminal.
+* **UI Features**: Passenger passport scanner interface (`passport_number`), barcode scanner verification for boarding passes.
+* **Key Components**: Biometric facial match status badge, visa type validator, and `PASSENGER_CLEARANCE_LOGS` flag button (`APPROVED`, `FLAGGED_SECURITY`, `DENIED`).
+
+#### 6. Traveler & Passenger Directory (`/travelers`)
+* **Purpose**: 3NF normalized traveler profile directory.
+* **UI Features**: View 8,000 unique human `TRAVELERS` and their associated flight segment `PASSENGERS` history (10,000 records).
+* **Key Components**: PNR lookup tool, transit passenger indicator (`is_transit_passenger`), frequent flyer status details.
+
+#### 7. Airline Billing & Invoice Portal (`/billing`)
+* **Purpose**: Finance team invoice management for 50 airlines.
+* **UI Features**: Tabular list of 500 `AIRLINE_BILLING_INVOICES`, payment status badges (`UNPAID`, `PAID`, `OVERDUE`).
+* **Key Components**: Invoice detail drill-down showing itemized landing fees, parking charges, and jetbridge usage line items (5,000 `invoice_line_items`).
+
+#### 8. Weather & Field Condition Radar (`/weather`)
+* **Purpose**: Meteorological monitoring view.
+* **UI Features**: Meteorological charts for 2,500 weather reports (visibility meters, wind speed knots, temperature celsius, and runway surface conditions: `DRY`, `WET`, `FOG`, `HEAVY_RAIN`).
+
+#### 9. Security Audit & Notification Feed (`/audit`)
+* **Purpose**: Immutable compliance trail.
+* **UI Features**: Real-time notification feed (5,000 notifications), JSONB change payload viewer for 8,000 `AUDIT_LOGS` (`entity_type`, `entity_id`, `change_payload`).
+
+#### 10. Executive Analytics & Delay Report Dashboard (`/analytics`)
+* **Purpose**: Operational BI reporting.
+* **UI Features**: Pie charts for IATA delay code breakdown (`delay_codes`), turnaround delay minutes (3,000 delay logs), passenger lounge visit analytics (4,000 visits), and customer feedback ratings (4,000 feedback logs).
+
+---
+
+## ⚙️ ANAY'S BACKEND EXECUTION SPECIFICATION
+### Total REST Controllers & Webhooks Required: **8 Controllers + 3 Webhook Event Handlers**
+
+Anay is responsible for building the Spring Boot 3.x REST API layer connecting the React frontend to the PostgreSQL 18 database (`airport_db`).
+
+```
+                              ┌─────────────────────────────────┐
+                              │     SPRING BOOT REST API        │
+                              └────────────────┬────────────────┘
+                                               │
+         ┌──────────────────┬──────────────────┼──────────────────┬──────────────────┐
+         ▼                  ▼                  ▼                  ▼                  ▼
+  FlightController    TaskController     BaggageController   SecurityController BillingController
+  (Flight Dispatch)   (Turnaround Task)  (BRS Scans & PIR)   (Border Clearance) (Invoices & Fees)
+```
+
+#### 1. `FlightDispatchController` (`/api/v1/flights`)
+* **Endpoints**:
+  * `GET /api/v1/flights`: Paginated, filterable list of flights (filters: `status`, `type`, `airline_id`).
+  * `GET /api/v1/flights/{id}`: Detailed flight movement payload including assigned aircraft, gate, stand, and inbound turnaround flight.
+  * `PUT /api/v1/flights/{id}/times`: Update estimated/actual departure & arrival timestamps.
+  * `PUT /api/v1/flights/{id}/aircraft`: Reassign aircraft (fires PostgreSQL deferrable rotation constraint trigger).
+
+#### 2. `TurnaroundTaskController` (`/api/v1/tasks`)
+* **Endpoints**:
+  * `GET /api/v1/tasks/flight/{flightId}`: Get all turnaround sub-tasks for a flight.
+  * `PUT /api/v1/tasks/{taskId}/status`: Update task status (`PENDING` ➔ `IN_PROGRESS` ➔ `COMPLETED`).
+  * `POST /api/v1/tasks/{taskId}/equipment`: Assign ground equipment (`equipment_assignments`).
+
+#### 3. `AirsideGateController` (`/api/v1/airside`)
+* **Endpoints**:
+  * `GET /api/v1/airside/gates`: List all gates and stand occupancy statuses.
+  * `POST /api/v1/airside/assign-gate`: Validate aircraft wingspan/MTOW against `gate_assignment_rules` and assign gate.
+
+#### 4. `BaggageReconciliationController` (`/api/v1/baggage`)
+* **Endpoints**:
+  * `GET /api/v1/baggage/track/{tagNumber}`: Fetch complete baggage scan timeline (`baggage_scan_events`).
+  * `POST /api/v1/baggage/scan`: Ingest new barcode scan event.
+  * `POST /api/v1/baggage/mishandled`: Create new PIR mishandled baggage report.
+
+#### 5. `BorderControlController` (`/api/v1/border-control`)
+* **Endpoints**:
+  * `POST /api/v1/border-control/verify-passport`: Lookup traveler profile by passport number.
+  * `POST /api/v1/border-control/clearance`: Log security clearance (`PASSENGER_CLEARANCE_LOGS`). Enforces `RESTRICT` delete retention.
+  * `POST /api/v1/border-control/immigration`: Log immigration departure/arrival stamp record (`IMMIGRATION_RECORDS`).
+
+#### 6. `AirlineBillingController` (`/api/v1/billing`)
+* **Endpoints**:
+  * `GET /api/v1/billing/invoices`: List billing invoices by airline and period.
+  * `POST /api/v1/billing/generate-invoice`: Calculate flight movement line items and total USD amount.
+
+#### 7. `SecurityAuditController` (`/api/v1/audit`)
+* **Endpoints**:
+  * `GET /api/v1/audit/logs`: Query `AUDIT_LOGS` with JSONB payload filtering.
+  * `POST /api/v1/audit/log-action`: Ingest automated security audit trail.
+
+#### 8. `AnalyticsReportController` (`/api/v1/reports`)
+* **Endpoints**:
+  * `GET /api/v1/reports/delays`: Aggregated IATA delay minutes report (`delay_logs`).
+  * `GET /api/v1/reports/efficiency`: Ground turnaround SLA performance metrics.
+
+---
+
+### 🔌 Webhooks & Real-Time Event Handlers Required (Anay)
+
+1. **`FlightStatusWebhook` (`/api/v1/webhooks/flight-status`)**:
+   * Receives external radar / ATC flight status updates (`AIRBORNE`, `LANDED`, `CANCELLED`).
+   * Automatically updates `FLIGHTS` table and emits WebSocket alert to Anuvrat's Flight Ops Hub.
+
+2. **`BaggageScanWebhook` (`/api/v1/webhooks/baggage-scan`)**:
+   * Ingests automated barcode scanner events from airport BHS conveyor belt sorting systems into `BAGGAGE_SCAN_EVENTS`.
+
+3. **`TurnaroundDelayAlertWebhook` (`/api/v1/webhooks/delay-alert`)**:
+   * Triggers automatically when a turnaround task exceeds its scheduled end time, creating an entry in `DELAY_LOGS` and pushing a notification to the assigned user (`NOTIFICATIONS`).
+
+---
+
+## 📄 Diagram Quick Reference for Teammates
+
+For visual diagram review, open the vector PDF files in [`documentation/PDF/`](file:///Users/krish/Desktop/Software%20Engineering/Mini%20Project/documentation/PDF):
+* 📐 **Relational Schema**: [Relational Schema.pdf](file:///Users/krish/Desktop/Software%20Engineering/Mini%20Project/documentation/PDF/Relational%20Schema.pdf)
+* 📐 **Peter Chen ER Diagram**: [ER Diagram.pdf](file:///Users/krish/Desktop/Software%20Engineering/Mini%20Project/documentation/PDF/ER%20Diagram.pdf)
+* 📊 **Information Package Matrix**: [Information Package.pdf](file:///Users/krish/Desktop/Software%20Engineering/Mini%20Project/documentation/PDF/Information%20Package.pdf)
+* 🌟 **Star Schema Dimensional Model**: [Star Schema.pdf](file:///Users/krish/Desktop/Software%20Engineering/Mini%20Project/documentation/PDF/Star%20Schema.pdf)
+
+---
+*Airport Operations Coordination System (AOCS) — Master Developer Execution Guide*
