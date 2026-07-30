@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/saphire_logo_modern_crest.png" alt="Saphire International Airport Logo" width="240" />
+</p>
+
 # ✈️ Saphire Airport Operations Coordination System (AOCS)
 
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen.svg)](https.spring.io)
@@ -9,6 +13,16 @@
 
 > [!IMPORTANT]
 > **Scope & Hub Constraint**: This is an internal operational coordination platform for airport ground staff (not a passenger ticket booking system). All tracked flights strictly adhere to the **Saphire Hub Constraint**: every flight must either originate at Saphire Airport (`origin = SPH`) or terminate at Saphire Airport (`destination = SPH`).
+
+---
+
+## 🎨 Official Hub Logo & Visual Identity
+
+**Saphire International Airport (`SPH` / `VASP`)** uses the **Modern Monogram 'S' Aircraft Apex Mark** (Option B) as its official airport brand emblem. Designed using the Refero Design methodology, it combines a sleek supersonic jet aircraft silhouette taking flight through faceted sapphire crystal cuts, symbolizing physical precision, luxury, and high-reliability aviation coordination.
+
+<p align="center">
+  <img src="assets/saphire_logo_modern_crest.png" alt="Saphire International Airport Official Logo Option B" width="380" />
+</p>
 
 ---
 
