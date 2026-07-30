@@ -11,11 +11,14 @@ lines.append("-- ============================================================")
 lines.append("-- AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)")
 lines.append("-- Flyway V2 Seed Data Migration (150,000+ Records Enterprise Dataset)")
 lines.append("-- Author: Krishna Solanki & AOCS Engineering Team")
-lines.append("-- Fully Validated across 38 Tables with Deferrable Rotation Triggers & JSONB Audits")
+lines.append("-- Includes Past, Present, and Future-Dated Flight Schedules (Up to 60+ Days in Future)")
 lines.append("-- ============================================================\n")
 
 # Random seed for reproducible dataset
 random.seed(42)
+
+# Current reference time
+now_time = datetime(2026, 7, 30, 16, 0, 0)
 
 # Helper for SQL string escape
 def esc(val):
@@ -27,8 +30,6 @@ def dt_str(dt):
     if dt is None:
         return "NULL"
     return f"'{dt.strftime('%Y-%m-%d %H:%M:%S')}+05:30'"
-
-base_time = datetime(2026, 7, 27, 8, 0, 0)
 
 # Helper to write batched multi-row inserts for maximum Flyway parse & DB insertion speed
 def add_batched_inserts(table_name, columns, values_list, batch_size=500):
@@ -246,7 +247,7 @@ for i in range(1, 2501):
     wind = random.randint(5, 35)
     temp = round(random.uniform(15.0, 38.0), 1)
     rcond = r_conds[(i - 1) % len(r_conds)]
-    obs_t = base_time - timedelta(minutes=i * 10)
+    obs_t = now_time + timedelta(minutes=(i - 1250) * 15)
     w_vals.append([str(i), str(vis), str(wind), str(temp), esc(rcond), dt_str(obs_t)])
 add_batched_inserts("weather_reports", ["report_id", "visibility_meters", "wind_speed_knots", "temperature_celsius", "runway_condition", "observation_time"], w_vals)
 
@@ -261,42 +262,72 @@ for i in range(1, 1001):
     gr_vals.append([str(i), str(gate_id), str(type_id), str(max_wing), str(max_mtow)])
 add_batched_inserts("gate_assignment_rules", ["rule_id", "gate_id", "type_id", "max_wingspan_meters", "max_weight_mtow_kg"], gr_vals)
 
-# 15. FLIGHTS (5,000) - 2,500 Arrival/Departure Turnaround Pairs (100% Aircraft Rotation Aligned)
+# 15. FLIGHTS (5,000) - Real-World Time Distribution:
+# 30% Past (f_id 1..1500) - Landed/Completed in past 10 days
+# 10% Present (f_id 1501..2000) - Departing/Arriving today (now_time)
+# 60% FUTURE-DATED (f_id 2001..5000) - Tomorrow to +60 Days in Future (August & September 2026)
 lines.append("-- 15. FLIGHTS (5,000)")
 f_vals = []
-flight_statuses = ["SCHEDULED", "BOARDING", "AIRBORNE", "LANDED", "DELAYED", "CANCELLED"]
 
 flight_aircraft_map = {}
 
 for f_id in range(1, 5001):
+    pair_idx = (f_id - 1) // 2  # 0 .. 2499
+    
+    # Calculate scheduled departure time spanning past (-10 days) to future (+60 days)
+    if f_id <= 1500:
+        # Past flights (-10 days to -1 day)
+        offset_hours = -240 + (f_id * 0.15)
+        status = "LANDED" if f_id % 15 != 0 else "CANCELLED"
+    elif f_id <= 2000:
+        # Present flights (Today around now_time)
+        offset_hours = -6 + ((f_id - 1500) * 0.024)
+        status = "BOARDING" if f_id % 3 == 0 else ("AIRBORNE" if f_id % 3 == 1 else "DELAYED")
+    else:
+        # FUTURE-DATED FLIGHTS (+1 day to +60 days into future: Aug & Sept 2026!)
+        offset_hours = 24 + ((f_id - 2000) * 0.48)
+        status = "SCHEDULED" if f_id % 20 != 0 else "BOARDING"
+
     if f_id % 2 == 1:
+        # Inbound Arrival
         inbound_flight_id = None
-        aircraft_id = ((f_id // 2) % 1000) + 1
+        aircraft_id = (pair_idx % 1000) + 1
         flight_aircraft_map[f_id] = aircraft_id
         ftype = "ARRIVAL"
         orig_ap = ((f_id % 49) + 2)
-        dest_ap = 1
+        dest_ap = 1  # BOM
+        sch_dep = now_time + timedelta(hours=offset_hours)
+        sch_arr = sch_dep + timedelta(hours=2, minutes=30)
     else:
+        # Outbound Departure turnaround linked to inbound flight f_id - 1
         inbound_flight_id = f_id - 1
         aircraft_id = flight_aircraft_map[inbound_flight_id]
         flight_aircraft_map[f_id] = aircraft_id
         ftype = "DEPARTURE"
-        orig_ap = 1
+        orig_ap = 1  # BOM
         dest_ap = ((f_id % 49) + 2)
+        # Departure happens 1.5 hours after inbound arrival
+        inbound_sch_arr = now_time + timedelta(hours=-240 + ((f_id - 1) * 0.15) if f_id <= 1500 else (-6 + ((f_id - 1501) * 0.024) if f_id <= 2000 else 24 + ((f_id - 2001) * 0.48))) + timedelta(hours=2, minutes=30)
+        sch_dep = inbound_sch_arr + timedelta(hours=1, minutes=30)
+        sch_arr = sch_dep + timedelta(hours=3)
 
     airline_idx = (f_id - 1) % 50
     airline_code = al_vals[airline_idx][1].replace("'", "")
     f_num = f"{airline_code}{1000 + f_id}"
-    status = flight_statuses[(f_id - 1) % len(flight_statuses)]
     airline_id = airline_idx + 1
     
-    sch_dep = base_time + timedelta(minutes=f_id * 10)
+    # Timestamps
     est_dep = sch_dep + timedelta(minutes=10) if status in ["DELAYED", "BOARDING"] else sch_dep
-    act_dep = sch_dep + timedelta(minutes=15) if status in ["AIRBORNE", "LANDED"] else None
-    
-    sch_arr = sch_dep + timedelta(hours=2)
     est_arr = sch_arr + timedelta(minutes=12) if status in ["DELAYED", "AIRBORNE"] else sch_arr
-    act_arr = sch_arr + timedelta(minutes=20) if status == "LANDED" else None
+    
+    # Actual departure and arrival times are ONLY populated for past/present flights!
+    # For FUTURE-DATED flights (status = 'SCHEDULED'), actual times are NULL!
+    if status in ["LANDED", "AIRBORNE"]:
+        act_dep = sch_dep + timedelta(minutes=12)
+        act_arr = sch_arr + timedelta(minutes=18) if status == "LANDED" else None
+    else:
+        act_dep = None
+        act_arr = None
     
     board_t = sch_dep - timedelta(minutes=45)
     
@@ -328,10 +359,18 @@ task_names = ["Baggage Unloading", "Refueling", "Catering Replenishment", "Cabin
 
 for i in range(1, 10001):
     tname = task_names[(i - 1) % len(task_names)]
-    tstat = task_statuses[(i - 1) % len(task_statuses)]
     flight_id = ((i - 1) % 5000) + 1
     assigned_user_id = ((i - 1) % 500) + 1
-    sch_s = base_time + timedelta(minutes=flight_id * 5)
+    
+    # Task status matches flight lifecycle
+    if flight_id <= 1500:
+        tstat = "COMPLETED"
+    elif flight_id <= 2000:
+        tstat = task_statuses[(i - 1) % len(task_statuses)]
+    else:
+        tstat = "PENDING"
+        
+    sch_s = now_time + timedelta(minutes=(flight_id - 2000) * 10) - timedelta(minutes=30)
     sch_e = sch_s + timedelta(minutes=45)
     act_s = sch_s if tstat in ["IN_PROGRESS", "COMPLETED"] else None
     act_e = sch_e if tstat == "COMPLETED" else None
@@ -357,7 +396,7 @@ ea_vals = []
 for i in range(1, 10001):
     eq_id = ((i - 1) % 1000) + 1
     task_id = i
-    a_ts = base_time + timedelta(minutes=i * 2)
+    a_ts = now_time + timedelta(minutes=i * 2)
     r_ts = a_ts + timedelta(minutes=45) if i % 2 == 0 else None
     ea_vals.append([str(i), str(eq_id), str(task_id), dt_str(a_ts), dt_str(r_ts)])
 add_batched_inserts("equipment_assignments", ["assignment_id", "equipment_id", "task_id", "assigned_timestamp", "released_timestamp"], ea_vals)
@@ -488,7 +527,7 @@ scan_locs = ["CHECKIN_DESK_01", "BHS_INLINE_SCREENING", "MAKEUP_AREA_BAY_04", "R
 for i in range(1, 20001):
     btag_id = ((i - 1) % 12000) + 1
     sloc = scan_locs[(i - 1) % len(scan_locs)]
-    sts = base_time + timedelta(minutes=i)
+    sts = now_time + timedelta(minutes=i)
     bse_vals.append([str(i), str(btag_id), esc(sloc), dt_str(sts)])
 add_batched_inserts("baggage_scan_events", ["scan_id", "bag_tag_id", "scan_location", "scan_timestamp"], bse_vals)
 
@@ -523,7 +562,7 @@ pcl_vals = []
 clr_stats = ["APPROVED", "FLAGGED_SECURITY", "DENIED", "BOARDED"]
 ver_methods = ["BARCODE_SCANNER", "BIOMETRIC_FACIAL", "PASSPORT_CHIP_READER"]
 for i in range(1, 10001):
-    scan_t = base_time + timedelta(minutes=i)
+    scan_t = now_time + timedelta(minutes=i)
     cstat = clr_stats[(i - 1) % len(clr_stats)]
     dreason = "Passport Expiry Alert" if cstat == "DENIED" else None
     vmethod = ver_methods[(i - 1) % len(ver_methods)]
@@ -566,7 +605,7 @@ for i in range(1, 4001):
     term = f"T{(i%4)+1}"
     rating = (i % 5) + 1
     cat = fb_cats[(i - 1) % len(fb_cats)]
-    sub_at = base_time + timedelta(minutes=i * 2)
+    sub_at = now_time + timedelta(minutes=i * 2)
     cf_vals.append([str(i), str(pass_id), esc(term), str(rating), esc(cat), dt_str(sub_at)])
 add_batched_inserts("customer_feedback_logs", ["feedback_id", "passenger_id", "terminal", "rating", "category", "submitted_at"], cf_vals)
 
@@ -613,9 +652,9 @@ for i in range(1, 8001):
     act = actions[(i - 1) % len(actions)]
     etype = "FLIGHTS" if "FLIGHT" in act or "STAND" in act or "SWAP" in act else "PASSENGERS"
     eid = ((i - 1) % 5000) + 1
-    payload = json.dumps({"action": act, "actor_id": i, "timestamp": base_time.isoformat(), "details": f"Automated operational audit log #{i}"})
+    payload = json.dumps({"action": act, "actor_id": i, "timestamp": now_time.isoformat(), "details": f"Automated operational audit log #{i}"})
     u_id = ((i - 1) % 500) + 1
-    c_at = base_time + timedelta(minutes=i * 2)
+    c_at = now_time + timedelta(minutes=i * 2)
     aud_vals.append([str(i), esc(act), esc(etype), str(eid), f"{esc(payload)}::jsonb", str(u_id), dt_str(c_at)])
 add_batched_inserts("audit_logs", ["log_id", "action", "entity_type", "entity_id", "change_payload", "user_id", "created_at"], aud_vals)
 
@@ -627,4 +666,4 @@ with open(v2_path, "w", encoding="utf-8") as f:
 with open(tool_path, "w", encoding="utf-8") as f:
     f.write(sql_text)
 
-print("Successfully generated 158,660+ records across 38 tables in V2__seed_data.sql!")
+print("Successfully generated 158,660+ records with FUTURE-DATED FLIGHT SCHEDULES across 38 tables in V2__seed_data.sql!")
