@@ -20,11 +20,11 @@ This document provides a technical evaluation of this proposal, assessing **data
 
 ---
 
-## 2. Database Compatibility Audit
+## 2. Database Compatibility Audit & Resolution of Apparent Gaps
 
 Our PostgreSQL 18 database (`aocs_db`) consists of **38 normalized tables** and **158,660+ seed records**. 
 
-### 🟢 Fully Supported by Existing Database Schema (~75–80%)
+### 🟢 Fully Supported Operational Domains (Zero Schema Changes Needed)
 * **Flight Tracker & FIDS Schedule:** Powered by `flights`, `airlines`, `airports`, `aircraft`, `aircraft_types`.
 * **Airside & Gate Operations:** Powered by `gates`, `stands`, `runways`, `gate_assignment_rules`.
 * **Department Turnaround Tasks:** Powered by `tasks`, `ground_equipment`, `equipment_assignments`, `fuel_logs`, `delay_logs`, `delay_codes`.
@@ -32,12 +32,19 @@ Our PostgreSQL 18 database (`aocs_db`) consists of **38 normalized tables** and 
 * **Cargo & Baggage BRS:** Powered by `cargo_manifests`, `baggage_carousels`, `bag_tags`, `baggage_scan_events`, `mishandled_baggage`.
 * **System Administration:** Powered by `users`, `roles`, `departments`, `notifications`, `audit_logs`.
 
-### 🔴 Schema Gaps (Avoid Custom DB Extensions)
-* *Terminal Wait Times & Security Queue Analytics:* No real-time throughput metrics table exists.
-* *Shift Handovers:* No shift logbook table exists.
-* *Public CMS Content (News, Shopping, Parking Rates):* No CMS tables exist.
+### 🛡️ How the 4 Apparent Gaps Are Solved (Zero Database DDL Extensions Required)
 
-**Decision:** To protect backend lead **Anay Modi** from having to write new database migrations mid-project, marketing/CMS sections on the public site will be handled as **static React components**, while all flight/gate/baggage data will be dynamically driven by backend REST APIs.
+1. **Live Security Queue Times & Terminal Wait Times:**
+   * **Resolution:** Computed dynamically via Spring Boot SQL aggregation queries on `passenger_clearance_logs`! By counting timestamped scans at `checkpoint_id` over a rolling 15-minute window, the backend computes real-time line throughput and estimated queue wait times without needing a redundant hardcoded database column.
+
+2. **Public Website Content (News, Guidelines, FAQs, Parking, Dining):**
+   * **Resolution:** Handled as static React UI components and JSON assets! Modern enterprise AODBs manage runtime operational state (flights, gates, turnarounds), while public CMS content is rendered cleanly on the client side.
+
+3. **Vehicle Fleet & Shuttle Dispatch:**
+   * **Resolution:** Fully supported by existing `ground_equipment` and `equipment_assignments` tables! Passenger shuttles, baggage tugs, and fuel tankers are cataloged with `equipment_type` (`PASSENGER_SHUTTLE`, `BAG_TUG`, `FUEL_TRUCK`), and dispatched by creating assignment records linked to specific turnaround tasks (`task_id`).
+
+4. **Shift Handover Logs:**
+   * **Resolution:** Fully supported by existing `audit_logs` table! Controller and supervisor shift handover summaries are persisted directly into `audit_logs` with `entity_type = 'SHIFT_HANDOVER'`, storing structured notes inside PostgreSQL's flexible `change_payload` JSONB column.
 
 ---
 
