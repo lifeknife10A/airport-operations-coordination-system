@@ -136,3 +136,17 @@ Taking **Chhatrapati Shivaji Maharaj International Airport (CSMIA / Mumbai Airpo
 3. **Krishna (Database & Integration Lead):**
    * Maintain zero-DDL-change policy on the 38-table schema.
    * Provide integration support between Spring Boot JPA repositories and React components.
+
+---
+
+## 7. Prototype 1.1 Official Approval & Architectural Validation
+
+On August 01, 2026, **Anuvrat Tripathi** submitted **AOCS Prototype 1.1**, adopting the team's recommendations:
+
+* ✅ **Shared Dashboard Layout:** All roles share **ONE dashboard application shell** (`DashboardLayout.tsx`), avoiding bloat and duplicate code.
+* ✅ **Role-Based Dynamic Sidebar:** Navigation sidebar and accessible workspace modules are rendered dynamically based on the user's authenticated `role` and `department`.
+* ✅ **CSMIA Public Portal (20% Scope):** Lightweight passenger site (Home, Flight Tracker, FIDS Schedule, Services, Airport Info, Contact, Login).
+* ✅ **Turnaround Data Flow Alignment:** The core system data flow (*Flight Created ➔ Aircraft Assigned ➔ Gate Assigned ➔ Tasks Generated ➔ Delay Logged ➔ Boarding ➔ Flight Ready ➔ Departure*) maps 1:1 with backend entities (`flights`, `tasks`, `gates`, `fuel_logs`, `delay_logs`).
+
+**Status:** **100% APPROVED.** Anuvrat is authorized to commence front-end skeletal structure development.
+
