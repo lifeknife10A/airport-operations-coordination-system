@@ -169,23 +169,42 @@ export const LandingPage: React.FC = () => {
   // Video Scroll Scrubbing Controller (Scrub Video on Window Scroll)
   useEffect(() => {
     const video = videoRef.current;
-    const heroSection = heroSectionRef.current;
-    if (!video || !heroSection) return;
+    if (!video) return;
+
+    // Ensure video starts playing immediately
+    video.play().catch(() => {});
+
+    let animId: number;
+    let targetTime = 0;
 
     const handleScroll = () => {
-      const heroRect = heroSection.getBoundingClientRect();
-      const heroHeight = heroSection.offsetHeight;
-      
-      // Calculate how far down the hero section we scrolled (0 to 1)
-      const scrolled = Math.max(0, Math.min(1, -heroRect.top / (heroHeight - window.innerHeight)));
-      
+      const scrollY = window.scrollY;
+      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      const progress = Math.min(1, Math.max(0, scrollY / (window.innerHeight * 1.2)));
+
       if (video.duration && !isNaN(video.duration)) {
-        video.currentTime = scrolled * video.duration;
+        targetTime = progress * video.duration;
       }
     };
 
+    const loop = () => {
+      if (video && video.duration && !isNaN(video.duration)) {
+        // If user is actively scrolling, sync video.currentTime smoothly
+        const diff = targetTime - video.currentTime;
+        if (Math.abs(diff) > 0.05) {
+          video.currentTime += diff * 0.15;
+        }
+      }
+      animId = requestAnimationFrame(loop);
+    };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    animId = requestAnimationFrame(loop);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      cancelAnimationFrame(animId);
+    };
   }, []);
 
   const handleQuickRoleLogin = (role: string) => {
@@ -402,6 +421,8 @@ export const LandingPage: React.FC = () => {
           <video
             ref={videoRef}
             src="/sph_takeoff_video.mp4"
+            autoPlay
+            loop
             muted
             playsInline
             preload="auto"
@@ -409,7 +430,7 @@ export const LandingPage: React.FC = () => {
               width: '100%',
               height: '100%',
               objectFit: 'cover',
-              filter: 'brightness(0.65) contract(1.1)',
+              filter: 'brightness(0.75) contrast(1.1)',
             }}
           />
           <Box

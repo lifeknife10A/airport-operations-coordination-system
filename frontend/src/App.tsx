@@ -25,11 +25,6 @@ import { PassengerManifestPage } from './pages/PassengerManifestPage';
 import { ReportsAnalyticsPage } from './pages/ReportsAnalyticsPage';
 import { AuditLogViewer } from './pages/AuditLogViewer';
 
-const RootRouteHandler: React.FC = () => {
-  const { user } = useAuth();
-  return user ? <DashboardPage /> : <LandingPage />;
-};
-
 const AppLayout: React.FC = () => {
   const location = useLocation();
   const isFullPage = location.pathname === '/login' || location.pathname === '/landing' || location.pathname === '/';
@@ -49,7 +44,7 @@ const AppLayout: React.FC = () => {
         }}
       >
         <Routes>
-          <Route path="/" element={<RootRouteHandler />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/landing" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           
