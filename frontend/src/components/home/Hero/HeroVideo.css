@@ -1,0 +1,39 @@
+.hero-video-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.hero-video-hidden {
+  display: none;
+}
+
+.hero-video-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  transition: background 0.3s ease, backdrop-filter 0.3s ease;
+}
+
+.hero-overlay.dark-overlay {
+  background: rgba(11, 16, 32, 0.55);
+}
+
+.hero-overlay.light-overlay {
+  background: transparent;
+}

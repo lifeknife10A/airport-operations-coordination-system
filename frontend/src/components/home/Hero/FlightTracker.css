@@ -1,0 +1,140 @@
+.tracker-positioner {
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  width: 90%;
+  max-width: 950px;
+  z-index: 20;
+}
+
+.tracker-card {
+  background: rgba(15, 23, 42, 0.88) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(20px) !important;
+  padding: 24px 32px !important;
+}
+
+.tracker-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94A3B8;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 6px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  color: #F8FAFC;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+  color: #38BDF8;
+  background: rgba(30, 58, 138, 0.4);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.tracker-form {
+  display: flex;
+  gap: 16px;
+}
+
+.input-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 18px;
+  color: #64748B;
+  pointer-events: none;
+}
+
+.tracker-input {
+  width: 100%;
+  padding: 16px 20px 16px 50px;
+  font-size: 0.95rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(2, 6, 23, 0.8);
+  color: #F8FAFC;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s ease;
+}
+
+.tracker-input:focus {
+  border-color: #2563EB;
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.3);
+}
+
+.tracker-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  border-radius: 10px;
+  padding: 0 28px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tracker-button:hover {
+  background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4);
+}
+
+.tracker-result-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34D399;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.result-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #34D399;
+  box-shadow: 0 0 8px #34D399;
+}
+
+@media (max-width: 768px) {
+  .tracker-form { flex-direction: column; }
+  .tracker-button { padding: 14px; justify-content: center; }
+  .tracker-positioner { bottom: 20px; }
+}

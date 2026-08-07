@@ -1,0 +1,331 @@
+═══════════════════════════════════════════════════════════════════════════════
+              AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)
+                              PROTOTYPE 1.1
+═══════════════════════════════════════════════════════════════════════════════
+
+
+                            USER ENTERS WEBSITE
+                                   │
+                                   ▼
+
+                     PUBLIC PASSENGER WEBSITE (20%)
+
+                                   │
+         ┌─────────────────────────┼──────────────────────────┐
+         │                         │                          │
+         ▼                         ▼                          ▼
+
+       Home                 Flight Tracker            Flight Schedule
+         │                         │                          │
+         ▼                         ▼                          ▼
+
+ Passenger Services         Cargo Information       Airport Information
+         │
+         ▼
+
+      Contact
+         │
+         ▼
+
+       Login
+
+═══════════════════════════════════════════════════════════════════════════════
+
+                         USER AUTHENTICATION
+
+                  Username + Password Validation
+                               │
+                               ▼
+
+                     Role Identified by Backend
+                               │
+                               ▼
+
+                 Redirect to Assigned Dashboard
+
+═══════════════════════════════════════════════════════════════════════════════
+
+                        SHARED DASHBOARD LAYOUT
+
+                    ┌───────────────────────────────┐
+                    │ Search │ Notifications │ Profile│
+                    │ Theme │ Time │ Logout          │
+                    ├──────────────┬────────────────┤
+                    │              │                │
+                    │   Sidebar    │   Workspace    │
+                    │              │                │
+                    └──────────────┴────────────────┘
+
+All users share ONE dashboard application.
+
+Only the Sidebar, Accessible Modules and Data
+change according to the authenticated Role.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+                            ROLE ROUTING
+
+                                Login
+                                  │
+                                  ▼
+
+                    Backend returns User Role
+
+                                  │
+
+ ┌──────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
+ │          │          │          │          │          │          │
+ ▼          ▼          ▼          ▼          ▼          ▼          ▼
+
+Admin     AOCC      Ground      Dept.     Airside    Logistics   Passenger
+          Ctrl.     Ops Sup.               Ops                   & Security
+
+═══════════════════════════════════════════════════════════════════════════════
+
+SYSTEM ADMINISTRATOR
+
+Dashboard
+│
+├── Dashboard Overview
+│
+├── User Management
+│
+├── Flight Management
+│
+├── Roles & Permissions
+│
+├── Reports
+│
+├── Audit Logs
+│
+├── Notifications
+│
+├── System Settings
+│
+└── Profile
+
+═══════════════════════════════════════════════════════════════════════════════
+
+AOCC CONTROLLER
+
+Dashboard
+│
+├── Dashboard Overview
+│
+├── Live Flight Monitor
+│
+├── Flight Details
+│
+├── Gate Occupancy
+│
+├── Turnaround Timeline
+│
+├── Delay Logs
+│
+├── Notifications
+│
+└── Profile
+
+═══════════════════════════════════════════════════════════════════════════════
+
+GROUND OPERATIONS SUPERVISOR
+
+Dashboard
+│
+├── Dashboard Overview
+│
+├── Active Flights
+│
+├── Task Center
+│
+├── Task Assignment
+│
+├── Shift Handover
+│
+├── Notifications
+│
+└── Profile
+
+═══════════════════════════════════════════════════════════════════════════════
+
+DEPARTMENT WORKSPACE
+
+Department Selection
+
+│
+├── Cleaning
+├── Fuel
+├── Maintenance
+└── Security
+
+═══════════════════════════════════════════════════════════════════════════════
+
+CLEANING
+
+Dashboard
+│
+├── Assigned Flights
+├── Cleaning Tasks
+├── Cleaning Checklist
+├── Completed Tasks
+├── Notifications
+└── Profile
+
+──────────────────────────────────────────────────────────────────────────────
+
+FUEL
+
+Dashboard
+│
+├── Assigned Flights
+├── Fuel Calculator
+├── Fuel Logs
+├── Completed Tasks
+├── Notifications
+└── Profile
+
+──────────────────────────────────────────────────────────────────────────────
+
+MAINTENANCE
+
+Dashboard
+│
+├── Assigned Flights
+├── Maintenance Tasks
+├── Fault Reports
+├── Completed Tasks
+├── Notifications
+└── Profile
+
+──────────────────────────────────────────────────────────────────────────────
+
+SECURITY
+
+Dashboard
+│
+├── Assigned Flights
+├── Security Checklist
+├── Incident Reports
+├── Completed Tasks
+├── Notifications
+└── Profile
+
+═══════════════════════════════════════════════════════════════════════════════
+
+AIRSIDE OPERATIONS
+
+Dashboard
+│
+├── Gate Allocation
+│
+├── Runway Status
+│
+├── Flight Assignment
+│
+├── Notifications
+│
+└── Profile
+
+═══════════════════════════════════════════════════════════════════════════════
+
+LOGISTICS
+
+Dashboard
+│
+├── Cargo Manifest
+│
+├── Fuel Operations
+│
+├── Baggage Carousel
+│
+├── Notifications
+│
+└── Profile
+
+═══════════════════════════════════════════════════════════════════════════════
+
+PASSENGER & SECURITY OPERATIONS
+
+Dashboard
+│
+├── Passenger Manifest
+│
+├── Boarding Gates
+│
+├── Lounge Visits
+│
+├── Incident Management
+│
+├── Notifications
+│
+└── Profile
+
+═══════════════════════════════════════════════════════════════════════════════
+
+COMMON COMPONENTS
+
+Top Navigation
+
+├── Search
+├── Notifications
+├── User Profile
+├── Theme Toggle
+├── Current Time
+└── Logout
+
+──────────────────────────────────────────────────────────────────────────────
+
+Sidebar
+
+├── Dashboard
+├── Role Modules
+├── Notifications
+├── Profile
+└── Logout
+
+═══════════════════════════════════════════════════════════════════════════════
+
+GLOBAL FEATURES
+
+├── Role-Based Access Control
+├── Notifications
+├── Search
+├── Charts & Analytics
+├── Export Data
+├── Loading States
+├── Error Pages
+└── Responsive Design
+
+═══════════════════════════════════════════════════════════════════════════════
+
+                    CORE SYSTEM DATA FLOW
+
+Flight Created
+      │
+      ▼
+Aircraft Assigned
+      │
+      ▼
+Gate Assigned
+      │
+      ▼
+Tasks Generated
+      │
+      ├─────────────► Cleaning
+      ├─────────────► Fuel
+      ├─────────────► Maintenance
+      └─────────────► Security
+      │
+      ▼
+Delay Logged (if required)
+      │
+      ▼
+Passenger Boarding
+      │
+      ▼
+Flight Ready
+      │
+      ▼
+Departure
+
+═══════════════════════════════════════════════════════════════════════════════

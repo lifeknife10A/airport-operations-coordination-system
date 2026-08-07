@@ -1,0 +1,133 @@
+.services-section {
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 60px 24px 80px 24px;
+}
+
+.services-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.services-tag {
+  display: inline-block;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #3B82F6;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.services-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  font-weight: 700;
+  color: #F4F4F4;
+  margin: 0 0 16px 0;
+}
+
+.services-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.1rem;
+  color: rgba(244, 244, 244, 0.7);
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+.service-card {
+  background: rgba(15, 23, 42, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.3s ease !important;
+}
+
+.service-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(76, 81, 226, 0.5) !important;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+.service-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.service-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(76, 81, 226, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
+  border: 1px solid rgba(76, 81, 226, 0.4);
+  color: #60A5FA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.service-badge {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38BDF8;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.service-card-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0 0 10px 0;
+}
+
+.service-card-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(244, 244, 244, 0.7);
+  margin: 0 0 24px 0;
+  flex: 1;
+}
+
+.service-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #60A5FA;
+  text-decoration: none;
+  transition: gap 0.2s ease, color 0.2s ease;
+}
+
+.service-link:hover {
+  gap: 12px;
+  color: #93C5FD;
+}
+
+@media (max-width: 1024px) {
+  .services-grid { grid-template-columns: repeat(2, 1fr); }
+  .services-title { font-size: 2.3rem; }
+}
+
+@media (max-width: 600px) {
+  .services-grid { grid-template-columns: 1fr; }
+}

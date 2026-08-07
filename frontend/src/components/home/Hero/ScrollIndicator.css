@@ -1,0 +1,41 @@
+.scroll-indicator-wrapper {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.scroll-text {
+  font-family: 'Inter', sans-serif;
+  color: #D4C8A6; /* Soft Neutral (Pale Oak) */
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  font-weight: 600;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.scroll-arrow {
+  color: #D4C8A6;
+  font-size: 1rem;
+  animation: scrollBounce 2s infinite;
+  opacity: 0.8;
+}
+
+@keyframes scrollBounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(6px);
+  }
+  60% {
+    transform: translateY(3px);
+  }
+}
