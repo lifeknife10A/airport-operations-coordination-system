@@ -4,6 +4,7 @@ import Footer from '../../components/layout/Footer';
 import { Box, Container, Typography, Paper, TextField, InputAdornment, Button, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import { Search, Plane, AlertTriangle, Clock, CheckCircle2, ShieldAlert, RefreshCw } from 'lucide-react';
 import LiveFlightMatrix from '../../components/home/LiveFlightMatrix';
+import { SpotlightCard } from '../../components/reactbits';
 
 interface FlightRecord {
   flightNo: string;
@@ -239,7 +240,7 @@ export const FlightTracker: React.FC = () => {
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3 }}>
             {mockAlerts.map((alert) => (
-              <Paper key={alert.id} elevation={0} sx={{ p: 3, background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '14px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <SpotlightCard key={alert.id} spotlightColor="rgba(245, 158, 11, 0.2)" style={{ padding: '24px', background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '14px', height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Chip label="OPERATIONAL ADVISORY" size="small" sx={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#FBBF24', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.7rem' }} />
                   <Typography sx={{ fontSize: '0.78rem', color: '#94A3B8' }}>{alert.time}</Typography>
@@ -251,7 +252,7 @@ export const FlightTracker: React.FC = () => {
                 <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.5, flexGrow: 1 }}>
                   {alert.message}
                 </Typography>
-              </Paper>
+              </SpotlightCard>
             ))}
           </Box>
         </Box>

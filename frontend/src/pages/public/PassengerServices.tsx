@@ -3,6 +3,7 @@ import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { Box, Container, Typography, Paper, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import { Wifi, Luggage, DollarSign, Info, ShieldCheck, Hotel, Coffee, HeartPulse, Accessibility, Search, ChevronDown, Sparkles } from 'lucide-react';
+import { SpotlightCard } from '../../components/reactbits';
 
 const facilitiesList = [
   { icon: <Wifi size={22} color="#38BDF8" />, title: 'High-Speed 5G Wi-Fi', desc: 'Unlimited complimentary high-speed internet throughout both Terminal 1 and Terminal 2 concourses.' },
@@ -61,7 +62,7 @@ export const PassengerServices: React.FC = () => {
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 3 }}>
             {facilitiesList.map((fac, idx) => (
-              <Paper key={idx} elevation={0} sx={{ p: 3, background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '16px', height: '100%' }}>
+              <SpotlightCard key={idx} spotlightColor="rgba(56, 189, 248, 0.2)" style={{ padding: '24px', background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '16px', height: '100%' }}>
                 <Box sx={{ p: 1.2, width: 'fit-content', borderRadius: '10px', background: 'rgba(56, 189, 248, 0.12)', mb: 2 }}>
                   {fac.icon}
                 </Box>
@@ -71,7 +72,7 @@ export const PassengerServices: React.FC = () => {
                 <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.55 }}>
                   {fac.desc}
                 </Typography>
-              </Paper>
+              </SpotlightCard>
             ))}
           </Box>
         </Box>
@@ -83,7 +84,7 @@ export const PassengerServices: React.FC = () => {
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 3 }}>
             {loungesList.concat(servicesList).map((item, idx) => (
-              <Paper key={idx} elevation={0} sx={{ p: 3, background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(224, 135, 255, 0.2)', borderRadius: '16px', height: '100%' }}>
+              <SpotlightCard key={idx} spotlightColor="rgba(224, 135, 255, 0.2)" style={{ padding: '24px', background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(224, 135, 255, 0.2)', borderRadius: '16px', height: '100%' }}>
                 <Box sx={{ p: 1.2, width: 'fit-content', borderRadius: '10px', background: 'rgba(224, 135, 255, 0.12)', mb: 2 }}>
                   {item.icon}
                 </Box>
@@ -93,7 +94,7 @@ export const PassengerServices: React.FC = () => {
                 <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.55 }}>
                   {item.desc}
                 </Typography>
-              </Paper>
+              </SpotlightCard>
             ))}
           </Box>
         </Box>
@@ -105,7 +106,7 @@ export const PassengerServices: React.FC = () => {
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
             {medicalAccessibilityList.map((item, idx) => (
-              <Paper key={idx} elevation={0} sx={{ p: 3.5, background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(248, 113, 113, 0.25)', borderRadius: '16px', display: 'flex', gap: 2.5, alignItems: 'flex-start' }}>
+              <SpotlightCard key={idx} spotlightColor="rgba(248, 113, 113, 0.2)" style={{ padding: '28px', background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(248, 113, 113, 0.25)', borderRadius: '16px', display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
                 <Box sx={{ p: 1.5, borderRadius: '12px', background: 'rgba(248, 113, 113, 0.15)' }}>
                   {item.icon}
                 </Box>
@@ -117,7 +118,7 @@ export const PassengerServices: React.FC = () => {
                     {item.desc}
                   </Typography>
                 </Box>
-              </Paper>
+              </SpotlightCard>
             ))}
           </Box>
         </Box>
