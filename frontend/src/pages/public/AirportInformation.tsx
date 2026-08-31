@@ -3,6 +3,7 @@ import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { Box, Container, Typography, Paper, Table, TableBody, TableCell, TableHead, TableRow, TableContainer } from '@mui/material';
 import { Building2, Car, Train, Compass, MapPin } from 'lucide-react';
+import { SpotlightCard } from '../../components/reactbits';
 
 const parkingRates = [
   { type: 'Short-Term Parking (P1)', rate: '₹150 / hr', maxDaily: '₹1,200 / day', notes: 'Direct skywalk access to T1 & T2 Departure gates.' },
@@ -91,7 +92,7 @@ export const AirportInformation: React.FC = () => {
             Terminal Precinct Overview
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-            <Paper elevation={0} sx={{ p: 4, background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '16px', height: '100%' }}>
+            <SpotlightCard spotlightColor="rgba(56, 189, 248, 0.2)" style={{ padding: '32px', background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '16px', height: '100%' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                 <Building2 size={24} color="#38BDF8" />
                 <Typography variant="h5" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#FFFFFF' }}>
@@ -106,9 +107,9 @@ export const AirportInformation: React.FC = () => {
                 <Box sx={{ color: '#CBD5E1', fontSize: '0.88rem' }}>• Direct Metro Line 3 Connection</Box>
                 <Box sx={{ color: '#CBD5E1', fontSize: '0.88rem' }}>• Express Check-in Counters 1 to 45</Box>
               </Box>
-            </Paper>
+            </SpotlightCard>
 
-            <Paper elevation={0} sx={{ p: 4, background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '16px', height: '100%' }}>
+            <SpotlightCard spotlightColor="rgba(56, 189, 248, 0.2)" style={{ padding: '32px', background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '16px', height: '100%' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                 <Building2 size={24} color="#38BDF8" />
                 <Typography variant="h5" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#FFFFFF' }}>
@@ -123,7 +124,7 @@ export const AirportInformation: React.FC = () => {
                 <Box sx={{ color: '#CBD5E1', fontSize: '0.88rem' }}>• Biometric Immigration E-Gates</Box>
                 <Box sx={{ color: '#CBD5E1', fontSize: '0.88rem' }}>• Integrated Transit Hotel & Luxury Spa</Box>
               </Box>
-            </Paper>
+            </SpotlightCard>
           </Box>
         </Box>
 
@@ -133,7 +134,7 @@ export const AirportInformation: React.FC = () => {
             Ground Transportation Connections
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 3 }}>
-            <Paper elevation={0} sx={{ p: 3, background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px' }}>
+            <SpotlightCard spotlightColor="rgba(255, 255, 255, 0.1)" style={{ padding: '24px', background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px' }}>
               <Train size={24} color="#38BDF8" style={{ marginBottom: '12px' }} />
               <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, color: '#FFFFFF', mb: 1 }}>
                 Airport Express Metro
@@ -141,9 +142,9 @@ export const AirportInformation: React.FC = () => {
               <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', color: '#94A3B8' }}>
                 Direct high-speed train connection every 8 minutes linking T1 & T2 to downtown city center.
               </Typography>
-            </Paper>
+            </SpotlightCard>
 
-            <Paper elevation={0} sx={{ p: 3, background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px' }}>
+            <SpotlightCard spotlightColor="rgba(255, 255, 255, 0.1)" style={{ padding: '24px', background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px' }}>
               <Car size={24} color="#38BDF8" style={{ marginBottom: '12px' }} />
               <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, color: '#FFFFFF', mb: 1 }}>
                 Pre-Paid Taxi & App Cabs
@@ -151,9 +152,9 @@ export const AirportInformation: React.FC = () => {
               <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', color: '#94A3B8' }}>
                 Designated taxi pick-up lanes at Arrival Level 0 with 24/7 fixed fare counters.
               </Typography>
-            </Paper>
+            </SpotlightCard>
 
-            <Paper elevation={0} sx={{ p: 3, background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px' }}>
+            <SpotlightCard spotlightColor="rgba(255, 255, 255, 0.1)" style={{ padding: '24px', background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px' }}>
               <Compass size={24} color="#38BDF8" style={{ marginBottom: '12px' }} />
               <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, color: '#FFFFFF', mb: 1 }}>
                 Inter-Terminal Shuttle
@@ -161,9 +162,9 @@ export const AirportInformation: React.FC = () => {
               <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', color: '#94A3B8' }}>
                 Complimentary 24/7 airside and landside monorail shuttle between T1 & T2.
               </Typography>
-            </Paper>
+            </SpotlightCard>
 
-            <Paper elevation={0} sx={{ p: 3, background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px' }}>
+            <SpotlightCard spotlightColor="rgba(255, 255, 255, 0.1)" style={{ padding: '24px', background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px' }}>
               <MapPin size={24} color="#38BDF8" style={{ marginBottom: '12px' }} />
               <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, color: '#FFFFFF', mb: 1 }}>
                 Car Rental Desks
@@ -171,7 +172,7 @@ export const AirportInformation: React.FC = () => {
               <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', color: '#94A3B8' }}>
                 International car rental agencies located in the main arrival halls of both terminals.
               </Typography>
-            </Paper>
+            </SpotlightCard>
           </Box>
         </Box>
 
