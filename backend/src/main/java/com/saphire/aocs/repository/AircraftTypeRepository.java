@@ -7,5 +7,5 @@ import java.util.Optional;
 
 @Repository
 public interface AircraftTypeRepository extends JpaRepository<AircraftType, Long> {
-    Optional<AircraftType> findByTypecode(String typecode);
+    Optional<AircraftType> findByTypeCode(String typeCode);
 }
