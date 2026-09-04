@@ -19,7 +19,7 @@ const promoCards: PromoItem[] = [
     title: 'Duty Free World',
     category: 'LUXURY RETAIL & LIQUOR',
     description: 'Explore tax-free prices on global perfumes, premium spirits, designer watches, and luxury confectionery before your flight.',
-    image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=800&auto=format&fit=crop',
+    image: '/images/duty_free.jpg',
     icon: <ShoppingBag size={20} color="#38BDF8" />,
     spotlightColor: 'rgba(56, 189, 248, 0.25)',
   },
@@ -28,7 +28,7 @@ const promoCards: PromoItem[] = [
     title: 'ASOLO Fashion Hub',
     category: 'MULTI-BRAND APPAREL',
     description: 'Discover high-street fashion, travel couture, and Italian craftsmanship footwear across Terminal 1 & 2 flagship stores.',
-    image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=800&auto=format&fit=crop',
+    image: '/images/fashion_boutique.jpg',
     icon: <Shirt size={20} color="#E087FF" />,
     spotlightColor: 'rgba(224, 135, 255, 0.25)',
   },
@@ -37,7 +37,7 @@ const promoCards: PromoItem[] = [
     title: 'SAPHIRE VIP Lounges',
     category: 'EXECUTIVE RELAXATION',
     description: 'Relax in quiet suites featuring high-speed Wi-Fi, private shower rooms, gourmet buffet spreads, and complimentary bar service.',
-    image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=800&auto=format&fit=crop',
+    image: '/images/vip_lounge.jpg',
     icon: <Coffee size={20} color="#34D399" />,
     spotlightColor: 'rgba(52, 211, 153, 0.25)',
   },
@@ -46,7 +46,7 @@ const promoCards: PromoItem[] = [
     title: 'Airport Fine Dining',
     category: 'GOURMET & QUICK BITES',
     description: 'Savor Michelin-starred restaurant concepts, artisanal coffee, and authentic global delicacies available 24/7.',
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800&auto=format&fit=crop',
+    image: '/images/fine_dining.jpg',
     icon: <Utensils size={20} color="#FBBF24" />,
     spotlightColor: 'rgba(251, 191, 36, 0.25)',
   },
@@ -113,14 +113,26 @@ export const PromotionsSection: React.FC = () => {
               {/* Image Header */}
               <Box
                 sx={{
-                  height: '180px',
+                  height: '190px',
                   width: '100%',
-                  backgroundImage: `url(${promo.image})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
                   position: 'relative',
+                  overflow: 'hidden',
+                  backgroundColor: '#0F172A',
                 }}
               >
+                <Box
+                  component="img"
+                  src={promo.image}
+                  alt={promo.title}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                    transition: 'transform 0.4s ease',
+                    '&:hover': { transform: 'scale(1.05)' },
+                  }}
+                />
                 <Box
                   sx={{
                     position: 'absolute',
@@ -128,7 +140,8 @@ export const PromotionsSection: React.FC = () => {
                     left: 0,
                     width: '100%',
                     height: '100%',
-                    background: 'linear-gradient(180deg, rgba(15,23,42,0.2) 0%, rgba(15,23,42,0.95) 100%)',
+                    background: 'linear-gradient(180deg, rgba(15,23,42,0.1) 0%, rgba(15,23,42,0.85) 100%)',
+                    pointerEvents: 'none',
                   }}
                 />
                 <Box
@@ -136,13 +149,14 @@ export const PromotionsSection: React.FC = () => {
                     position: 'absolute',
                     top: 14,
                     left: 14,
-                    background: 'rgba(15, 23, 42, 0.8)',
+                    background: 'rgba(15, 23, 42, 0.85)',
                     backdropFilter: 'blur(8px)',
                     p: 1,
                     borderRadius: '10px',
                     border: '1px solid rgba(255, 255, 255, 0.15)',
                     display: 'flex',
                     alignItems: 'center',
+                    zIndex: 2,
                   }}
                 >
                   {promo.icon}

@@ -5,7 +5,7 @@ import { AccordionGallery, AccordionGalleryItem } from '../reactbits';
 const galleryItems: AccordionGalleryItem[] = [
   {
     id: 'terminal',
-    image: 'https://images.unsplash.com/photo-1542296332-2e4473faf563?q=80&w=1200&auto=format&fit=crop',
+    image: '/images/terminal_exterior_day_1785780999460.jpg',
     badge: 'Terminal Telemetry',
     subtitle: 'PASSENGER HUB',
     title: 'Intelligent Terminal Scheduling',
@@ -14,7 +14,7 @@ const galleryItems: AccordionGalleryItem[] = [
   },
   {
     id: 'airside',
-    image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=1200&auto=format&fit=crop',
+    image: '/images/tarmac_jetway_view_1785781058195.jpg',
     badge: 'Airside Command',
     subtitle: 'AIRPORT CONTROL',
     title: 'Precision Airside Management',
@@ -23,7 +23,7 @@ const galleryItems: AccordionGalleryItem[] = [
   },
   {
     id: 'ground',
-    image: 'https://images.unsplash.com/photo-1508873696983-2df515122519?q=80&w=1200&auto=format&fit=crop',
+    image: '/images/boarding_gate_lounge_1785781551556.jpg',
     badge: 'Ground Handling',
     subtitle: 'GROUND DISPATCH',
     title: 'Ground Handling Operations',
@@ -32,7 +32,7 @@ const galleryItems: AccordionGalleryItem[] = [
   },
   {
     id: 'cargo',
-    image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=1200&auto=format&fit=crop',
+    image: '/images/balanced_4limb_quad_runway_airport_1785780879496.jpg',
     badge: 'Cargo Logistics',
     subtitle: 'FREIGHT CONTROL',
     title: 'Smart Cargo Telemetry',

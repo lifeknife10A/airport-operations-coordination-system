@@ -21,12 +21,10 @@ import {
   ArrowRight,
   ShieldCheck,
   Globe2,
-  Compass,
   Radio,
   Sparkles,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { SpotlightCard } from '../../components/reactbits';
 
 interface DemoAccount {
   role: string;
@@ -158,8 +156,8 @@ export const Login: React.FC = () => {
               justifyContent: 'space-between',
               minHeight: { xs: '320px', md: '640px' },
               backgroundImage: `
-                linear-gradient(180deg, rgba(7, 11, 22, 0.4) 0%, rgba(7, 11, 22, 0.85) 100%),
-                url('https://images.unsplash.com/photo-1542296332-2e4473faf563?q=80&w=1600&auto=format&fit=crop')
+                linear-gradient(180deg, rgba(7, 11, 22, 0.4) 0%, rgba(7, 11, 22, 0.88) 100%),
+                url('/images/terminal_exterior_night_1785781017015.jpg')
               `,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
@@ -207,7 +205,7 @@ export const Login: React.FC = () => {
                   mb: 3,
                 }}
               >
-                <Radio size={14} color="#34D399" className="animate-pulse" />
+                <Radio size={14} color="#34D399" />
                 <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.75rem', fontWeight: 700, color: '#F8FAFC', letterSpacing: '0.05em' }}>
                   CAT-III DUAL RUNWAY ACTIVE
                 </Typography>
@@ -221,7 +219,7 @@ export const Login: React.FC = () => {
               </Typography>
             </Box>
 
-            {/* Travel Flight Ticket Card Preview (20% Travel Touch) */}
+            {/* Live Precinct Telemetry Stats */}
             <Box
               sx={{
                 mt: 4,
@@ -275,6 +273,42 @@ export const Login: React.FC = () => {
               </Typography>
             </Box>
 
+            {/* Quick-Fill Role Chips */}
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.75rem', fontWeight: 700, color: '#64748B', letterSpacing: '0.08em', textTransform: 'uppercase', mb: 1.2 }}>
+                Quick Test Credentials (Click to Select)
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {DEMO_ACCOUNTS.map((acc) => {
+                  const isSelected = email.toLowerCase() === acc.email.toLowerCase();
+                  return (
+                    <Chip
+                      key={acc.email}
+                      label={acc.role}
+                      onClick={() => handleSelectDemoAccount(acc)}
+                      size="small"
+                      sx={{
+                        fontFamily: "'Outfit', sans-serif",
+                        fontWeight: 600,
+                        fontSize: '0.76rem',
+                        cursor: 'pointer',
+                        backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                        color: isSelected ? '#38BDF8' : '#94A3B8',
+                        border: isSelected ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.08)',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                          color: '#FFFFFF',
+                          borderColor: 'rgba(56, 189, 248, 0.4)',
+                        },
+                      }}
+                    />
+                  );
+                })}
+              </Box>
+            </Box>
+
+            {/* Form */}
             <form onSubmit={handleLogin}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                 {/* Email Field */}
@@ -287,12 +321,14 @@ export const Login: React.FC = () => {
                     placeholder="e.g. admin@saphire.in"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Mail size={18} color="#64748B" />
-                        </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Mail size={18} color="#64748B" />
+                          </InputAdornment>
+                        ),
+                      },
                     }}
                     sx={{
                       '& .MuiOutlinedInput-root': {
@@ -334,19 +370,21 @@ export const Login: React.FC = () => {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Lock size={18} color="#64748B" />
-                        </InputAdornment>
-                      ),
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" sx={{ color: '#64748B' }}>
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Lock size={18} color="#64748B" />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" sx={{ color: '#64748B' }}>
+                              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
                     }}
                     sx={{
                       '& .MuiOutlinedInput-root': {
@@ -413,7 +451,7 @@ export const Login: React.FC = () => {
               </Box>
             </form>
 
-            {/* Quick Demo Credentials Autofill Pills (5% Creative Control) */}
+            {/* Quick Demo Credentials Autofill Pills */}
             <Box sx={{ mt: 4, pt: 3, borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.78rem', fontWeight: 700, color: '#94A3B8', letterSpacing: '0.08em', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Sparkles size={14} color="#38BDF8" /> QUICK LOGIN AS ROLE (CLICK TO AUTOFILL):
