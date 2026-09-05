@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/baggage")
+@RequestMapping({"/api/baggage", "/api/v1/baggage"})
 @RequiredArgsConstructor
 public class BaggageController {
 

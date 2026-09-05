@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/billing")
+@RequestMapping({"/api/billing", "/api/v1/billing"})
 @RequiredArgsConstructor
 public class AirlineBillingController {
 

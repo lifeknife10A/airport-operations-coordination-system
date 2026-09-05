@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/webhooks")
+@RequestMapping({"/api/webhooks", "/api/v1/webhooks"})
 @RequiredArgsConstructor
 public class WebhooksController {
 
