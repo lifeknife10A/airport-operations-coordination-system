@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/border-control")
+@RequestMapping({"/api/border-control", "/api/v1/border-control"})
 @RequiredArgsConstructor
 public class BorderControlController {
 
