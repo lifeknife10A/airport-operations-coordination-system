@@ -1,0 +1,13 @@
+package com.saphire.aocs.repository;
+
+import com.saphire.aocs.entity.ImmigrationRecord;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface ImmigrationRecordRepository extends JpaRepository<ImmigrationRecord, Long> {
+    Optional<ImmigrationRecord> findByStampNumber(String stampNumber);
+    List<ImmigrationRecord> findByPassengerPassengerId(Long passengerId);
+}
