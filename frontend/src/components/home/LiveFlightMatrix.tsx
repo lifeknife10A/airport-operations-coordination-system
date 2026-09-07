@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './LiveFlightMatrix.css';
 import { SpotlightCard } from '../reactbits';
-import { Plane, ArrowUpRight, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { Plane, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
 
 interface FlightRow {
   flightNo: string;

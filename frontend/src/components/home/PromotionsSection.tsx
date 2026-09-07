@@ -10,7 +10,6 @@ interface PromoItem {
   description: string;
   image: string;
   icon: React.ReactNode;
-  spotlightColor: string;
 }
 
 const promoCards: PromoItem[] = [
@@ -20,8 +19,7 @@ const promoCards: PromoItem[] = [
     category: 'LUXURY RETAIL & LIQUOR',
     description: 'Explore tax-free prices on global perfumes, premium spirits, designer watches, and luxury confectionery before your flight.',
     image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=800&auto=format&fit=crop',
-    icon: <ShoppingBag size={20} color="#38BDF8" />,
-    spotlightColor: 'rgba(56, 189, 248, 0.25)',
+    icon: <ShoppingBag size={20} />,
   },
   {
     id: 'asolo',
@@ -29,8 +27,7 @@ const promoCards: PromoItem[] = [
     category: 'MULTI-BRAND APPAREL',
     description: 'Discover high-street fashion, travel couture, and Italian craftsmanship footwear across Terminal 1 & 2 flagship stores.',
     image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=800&auto=format&fit=crop',
-    icon: <Shirt size={20} color="#E087FF" />,
-    spotlightColor: 'rgba(224, 135, 255, 0.25)',
+    icon: <Shirt size={20} />,
   },
   {
     id: 'lounges',
@@ -38,8 +35,7 @@ const promoCards: PromoItem[] = [
     category: 'EXECUTIVE RELAXATION',
     description: 'Relax in quiet suites featuring high-speed Wi-Fi, private shower rooms, gourmet buffet spreads, and complimentary bar service.',
     image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=800&auto=format&fit=crop',
-    icon: <Coffee size={20} color="#34D399" />,
-    spotlightColor: 'rgba(52, 211, 153, 0.25)',
+    icon: <Coffee size={20} />,
   },
   {
     id: 'dining',
@@ -47,8 +43,7 @@ const promoCards: PromoItem[] = [
     category: 'GOURMET & QUICK BITES',
     description: 'Savor Michelin-starred restaurant concepts, artisanal coffee, and authentic global delicacies available 24/7.',
     image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800&auto=format&fit=crop',
-    icon: <Utensils size={20} color="#FBBF24" />,
-    spotlightColor: 'rgba(251, 191, 36, 0.25)',
+    icon: <Utensils size={20} />,
   },
 ];
 
@@ -64,7 +59,7 @@ export const PromotionsSection: React.FC = () => {
               fontSize: '0.82rem',
               fontWeight: 700,
               letterSpacing: '0.15em',
-              color: '#38BDF8',
+              color: 'primary.main',
               textTransform: 'uppercase',
               display: 'inline-block',
               mb: 1,
@@ -77,7 +72,7 @@ export const PromotionsSection: React.FC = () => {
             sx={{
               fontFamily: "'Outfit', sans-serif",
               fontWeight: 800,
-              color: '#FFFFFF',
+              color: 'text.primary',
               fontSize: { xs: '1.8rem', md: '2.4rem' },
               letterSpacing: '-0.02em',
             }}
@@ -90,24 +85,26 @@ export const PromotionsSection: React.FC = () => {
           sx={{
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' },
-            gap: 3,
+            gap: 4,
           }}
         >
-          {promoCards.map((promo) => (
+          {promoCards.map((promo, index) => (
             <SpotlightCard
               key={promo.id}
-              spotlightColor={promo.spotlightColor}
-              className="promo-card"
-              style={{
+              variant={index % 2 === 0 ? 'outlined' : 'contained'}
+              sx={{
                 height: '100%',
-                background: 'rgba(15, 23, 42, 0.88)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: '16px',
+                borderRadius: 16,
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'all 0.3s ease',
-                padding: 0,
+                bgcolor: 'background.paper',
+                boxShadow: 0,
+                '&:hover': {
+                  boxShadow: '0 8px 30px rgba(0, 0, 0, 0.2)',
+                  transform: 'translateY(-2px)',
+                },
               }}
             >
               {/* Image Header */}
@@ -128,19 +125,18 @@ export const PromotionsSection: React.FC = () => {
                     left: 0,
                     width: '100%',
                     height: '100%',
-                    background: 'linear-gradient(180deg, rgba(15,23,42,0.2) 0%, rgba(15,23,42,0.95) 100%)',
+                    background: 'linear-gradient(180deg, rgba(11, 16, 32, 0.2) 0%, rgba(11, 16, 32, 0.8) 100%)',
                   }}
                 />
                 <Box
                   sx={{
                     position: 'absolute',
-                    top: 14,
-                    left: 14,
-                    background: 'rgba(15, 23, 42, 0.8)',
-                    backdropFilter: 'blur(8px)',
+                    top: 12,
+                    left: 12,
+                    background: 'rgba(11, 16, 32, 0.6)',
+                    backdropFilter: 'blur(4px)',
                     p: 1,
-                    borderRadius: '10px',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: 8,
                     display: 'flex',
                     alignItems: 'center',
                   }}
@@ -150,16 +146,15 @@ export const PromotionsSection: React.FC = () => {
               </Box>
 
               {/* Content */}
-              <Box sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Typography
                   sx={{
                     fontFamily: "'Outfit', sans-serif",
                     fontSize: '0.75rem',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     letterSpacing: '0.1em',
-                    color: '#94A3B8',
                     textTransform: 'uppercase',
-                    mb: 0.8,
+                    color: 'text.secondary',
                   }}
                 >
                   {promo.category}
@@ -169,10 +164,8 @@ export const PromotionsSection: React.FC = () => {
                   variant="h6"
                   sx={{
                     fontFamily: "'Outfit', sans-serif",
-                    fontWeight: 700,
-                    color: '#F8FAFC',
-                    fontSize: '1.25rem',
-                    mb: 1.2,
+                    fontWeight: 600,
+                    color: 'text.primary',
                   }}
                 >
                   {promo.title}
@@ -181,10 +174,9 @@ export const PromotionsSection: React.FC = () => {
                 <Typography
                   sx={{
                     fontFamily: "'Inter', sans-serif",
-                    fontSize: '0.88rem',
-                    lineHeight: 1.55,
-                    color: '#94A3B8',
-                    mb: 2,
+                    fontSize: '0.875rem',
+                    lineHeight: 1.6,
+                    color: 'text.secondary',
                     flexGrow: 1,
                   }}
                 >
@@ -195,17 +187,16 @@ export const PromotionsSection: React.FC = () => {
                   sx={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: 0.8,
-                    color: '#38BDF8',
+                    gap: 1,
+                    color: 'primary.main',
                     fontFamily: "'Outfit', sans-serif",
                     fontWeight: 600,
-                    fontSize: '0.85rem',
+                    fontSize: '0.875rem',
                     cursor: 'pointer',
-                    '&:hover': { color: '#60A5FA' },
                   }}
                 >
-                  <span>Explore Stores</span>
-                  <ArrowUpRight size={16} />
+                  <span>Explore</span>
+                  <ArrowUpRight size={16} sx={{ ml: 0.5 }} />
                 </Box>
               </Box>
             </SpotlightCard>
