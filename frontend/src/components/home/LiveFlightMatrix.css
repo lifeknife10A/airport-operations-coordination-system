@@ -2,66 +2,68 @@
   width: 100%;
   max-width: 1300px;
   margin: 0 auto;
-  padding: 40px 24px 80px 24px;
+  padding: 48px 24px 64px 24px;
 }
 
 .matrix-card {
-  background: rgba(15, 23, 42, 0.85) !important;
+  background: rgba(11, 16, 32, 0.85) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   padding: 32px !important;
+  border-radius: 16px;
 }
 
 .matrix-top {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 28px;
+  margin-bottom: 32px;
 }
 
 .matrix-tag {
   font-family: 'Outfit', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: #38BDF8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: #38bdf8;
   text-transform: uppercase;
 }
 
 .matrix-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 2.2rem;
+  font-family: 'Outfit', sans-serif;
   font-weight: 700;
-  color: #F8FAFC;
-  margin: 4px 0 0 0;
+  font-size: 2.25rem;
+  letter-spacing: -0.02em;
+  color: #f8fafc;
+  margin: 12px 0 0 0;
 }
 
 .matrix-filter-buttons {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .filter-btn {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #94A3B8;
+  color: #94a3b8;
   font-family: 'Outfit', sans-serif;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .filter-btn:hover {
   background: rgba(255, 255, 255, 0.12);
-  color: #FFFFFF;
+  color: #f8fafc;
 }
 
 .filter-btn.active {
-  background: rgba(30, 58, 138, 0.4);
-  border-color: rgba(56, 189, 248, 0.4);
-  color: #38BDF8;
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #38bdf8;
 }
 
 .table-responsive {
@@ -79,10 +81,10 @@
 .flight-table th {
   padding: 14px 18px;
   font-family: 'Outfit', sans-serif;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #E2E8F0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: #94a3b8;
   text-transform: uppercase;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -90,83 +92,89 @@
 .flight-table td {
   padding: 18px;
   font-size: 0.95rem;
-  color: #94A3B8;
+  color: #94a3b8;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .flight-table tr:hover td {
-  background: rgba(255, 255, 255, 0.03);
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .flight-number-cell {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: #FFFFFF !important;
+  gap: 8px;
+  color: #f8fafc !important;
 }
 
 .plane-icon {
-  color: #38BDF8;
+  color: #38bdf8;
 }
 
 .route-cell {
-  color: #F8FAFC !important;
+  color: #f8fafc !important;
   font-weight: 500;
 }
 
 .gate-chip {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 8px;
   background: rgba(56, 189, 248, 0.12);
   border: 1px solid rgba(56, 189, 248, 0.3);
-  color: #38BDF8;
-  font-weight: 700;
+  color: #38bdf8;
+  font-weight: 600;
   font-family: 'Outfit', sans-serif;
 }
 
 .status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 20px;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
   font-family: 'Outfit', sans-serif;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   letter-spacing: 0.04em;
 }
 
 .status-badge.boarding {
   background: rgba(16, 185, 129, 0.15);
   border: 1px solid rgba(16, 185, 129, 0.4);
-  color: #34D399;
+  color: #34d399;
 }
 
 .status-badge.taxing {
   background: rgba(56, 189, 248, 0.15);
   border: 1px solid rgba(56, 189, 248, 0.4);
-  color: #38BDF8;
+  color: #38bdf8;
 }
 
 .status-badge.on-time {
   background: rgba(16, 185, 129, 0.15);
   border: 1px solid rgba(16, 185, 129, 0.4);
-  color: #34D399;
+  color: #34d399;
 }
 
 .status-badge.scheduled {
   background: rgba(148, 163, 184, 0.15);
   border: 1px solid rgba(148, 163, 184, 0.3);
-  color: #94A3B8;
+  color: #94a3b8;
 }
 
 .status-badge.delayed {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #F87171;
+  color: #f87171;
 }
 
 @media (max-width: 768px) {
-  .matrix-top { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .matrix-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
 }

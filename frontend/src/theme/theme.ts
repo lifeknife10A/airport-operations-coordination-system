@@ -4,39 +4,117 @@ export const theme = createTheme({
   palette: {
     mode: 'dark',
     background: {
-      default: '#0B1020', // Operational Navy
-      paper: '#151B2F',   // Dark Glass Cards
+      default: '#070B16', // Deep Luxury Airside Obsidian
+      paper: '#0F172A',   // Clean Dark Precision Slate
     },
     primary: {
-      main: '#210780',   // Primary Navy
-      light: '#4C51E2',
-      dark: '#12172B',
-      contrastText: '#ffffff',
+      main: '#38BDF8',   // Calibrated Cyan Accent
+      light: '#7DD3FC',
+      dark: '#0284C7',
+      contrastText: '#070B16',
     },
     secondary: {
-      main: '#4C51E2',   // Secondary Blue
-      light: '#818cf8',
-      dark: '#210780',
-      contrastText: '#ffffff',
+      main: '#94A3B8',   // Refined Slate
+      light: '#CBD5E1',
+      dark: '#64748B',
+      contrastText: '#FFFFFF',
     },
     text: {
-      primary: '#F4F4F4',
-      secondary: 'rgba(244, 244, 244, 0.75)',
+      primary: '#F8FAFC',
+      secondary: '#94A3B8',
     },
-    divider: '#D4C8A6', // Soft Neutral (Pale Oak)
+    divider: 'rgba(255, 255, 255, 0.08)',
   },
   typography: {
-    fontFamily: ['Playfair Display', 'Outfit', 'Inter', '-apple-system', 'sans-serif'].join(','),
+    fontFamily: ['Outfit', 'Inter', 'Geist', 'sans-serif'].join(','),
+    h1: {
+      fontWeight: 800,
+      fontSize: '2.75rem',
+      lineHeight: 1.15,
+      letterSpacing: '-0.03em',
+    },
+    h2: {
+      fontWeight: 700,
+      fontSize: '2.15rem',
+      lineHeight: 1.2,
+      letterSpacing: '-0.02em',
+    },
+    h3: {
+      fontWeight: 700,
+      fontSize: '1.75rem',
+      lineHeight: 1.3,
+      letterSpacing: '-0.01em',
+    },
+    h4: {
+      fontWeight: 600,
+      fontSize: '1.4rem',
+      lineHeight: 1.35,
+    },
+    h5: {
+      fontWeight: 600,
+      fontSize: '1.15rem',
+      lineHeight: 1.4,
+    },
+    h6: {
+      fontWeight: 600,
+      fontSize: '0.95rem',
+      lineHeight: 1.5,
+    },
+    body1: {
+      fontSize: '0.95rem',
+      fontWeight: 400,
+      lineHeight: 1.6,
+    },
+    body2: {
+      fontSize: '0.85rem',
+      fontWeight: 400,
+      lineHeight: 1.5,
+    },
+  },
+  shape: {
+    borderRadius: 14,
   },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          backgroundColor: '#0B1020',
-          color: '#F4F4F4',
-          transition: 'background-color 0.3s ease, color 0.3s ease',
+          backgroundColor: '#070B16',
+          color: '#F8FAFC',
+        },
+        '*::-webkit-scrollbar': {
+          width: '6px',
+          height: '6px',
+        },
+        '*::-webkit-scrollbar-track': {
+          background: '#070B16',
+        },
+        '*::-webkit-scrollbar-thumb': {
+          backgroundColor: 'rgba(255, 255, 255, 0.15)',
+          borderRadius: '4px',
+        },
+        '*::-webkit-scrollbar-thumb:hover': {
+          backgroundColor: '#38BDF8',
         },
       },
     },
-  }
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 10,
+          textTransform: 'none',
+          fontWeight: 600,
+          boxShadow: 'none',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+        },
+      },
+    },
+  },
 });
+
+export default theme;
