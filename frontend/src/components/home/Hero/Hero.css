@@ -1,27 +1,230 @@
-.hero-track {
+.ve-hero {
   position: relative;
-  width: 100%;
-  height: 100vh;
-}
-
-.hero-container {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  min-height: 100vh;
+  min-height: 108vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  justifyContent: space-between;
+  padding: 110px 32px 90px;
   overflow: visible;
-  transition: background-color 0.3s ease;
+  background-color: #faf9f6;
+}
+
+.ve-aircraft-stage {
+  position: absolute;
+  top: 12%;
+  left: 4%;
+  right: 4%;
+  bottom: 8%;
+  z-index: 0;
+  max-width: 1480px;
+  margin: 0 auto;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 32px 70px -15px rgba(15, 41, 66, 0.15);
+  border: 1px solid rgba(229, 231, 235, 0.9);
+}
+
+.ve-hero-container {
+  position: relative;
+  z-index: 3;
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 50px clamp(48px, 6vw, 100px);
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.ve-hero-content-left {
+  max-width: 640px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 10px 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.ve-headline-italic {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: clamp(60px, 7.2vw, 106px);
+  line-height: 1.15;
+  color: #0F2942;
+  letter-spacing: -0.02em;
+  margin: 0 0 16px 0;
+  padding-bottom: 0.12em;
+  overflow: visible;
+  text-shadow: 0 1px 2px rgba(15, 41, 66, 0.2), 0 0 24px rgba(2, 132, 199, 0.35), 0 0 48px rgba(14, 165, 233, 0.2);
+}
+
+.ve-subheading-italic {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: clamp(17px, 1.3vw, 21px);
+  line-height: 1.6;
+  color: #F7EFE5;
+  max-width: 540px;
+  margin: 0;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-shadow: none;
+}
+
+/* Floating Seam Bridge */
+.ve-seam-bridge {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  transform: translateY(50%);
   z-index: 10;
+  display: flex;
+  justify-content: center;
+  padding: 0 24px;
 }
 
-.hero-container.dark-theme {
-  background-color: #0B1020;
+.ve-seam-card {
+  width: 100%;
+  max-width: 960px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px -10px rgba(15, 41, 66, 0.12), 0 6px 20px rgba(15, 41, 66, 0.04);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.hero-container.light-theme {
-  background-color: #F8F9FA;
+/* Finder Card */
+.ve-finder-card {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 6px 8px 6px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(15, 41, 66, 0.04);
+}
+
+.ve-finder-input-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.ve-search-icon {
+  font-size: 15px;
+  opacity: 0.6;
+}
+
+.ve-finder-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 14.5px;
+  color: #0f2942;
+  font-family: 'Inter', sans-serif;
+  background: transparent;
+}
+
+.ve-finder-input::placeholder {
+  color: #94a3b8;
+}
+
+.ve-btn-search {
+  background: #1e3a5f;
+  color: #ffffff;
+  border: none;
+  padding: 11px 24px;
+  border-radius: 10px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(30, 58, 95, 0.2);
+}
+
+.ve-btn-search:hover {
+  background: #0f2942;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(30, 58, 95, 0.3);
+}
+
+/* Stats Row */
+.ve-stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 14px;
+}
+
+.ve-stat-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.ve-stat-number {
+  font-family: 'Geist Mono', monospace;
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f2942;
+  letter-spacing: -0.02em;
+}
+
+.ve-stat-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.ve-stat-divider {
+  width: 1px;
+  height: 30px;
+  background: #e2e8f0;
+}
+
+@media (max-width: 1024px) {
+  .ve-hero {
+    min-height: auto;
+    padding: 100px 20px 140px;
+  }
+  .ve-hero-content-left {
+    max-width: 100%;
+    padding: 24px;
+  }
+  .ve-stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 8px 4px;
+  }
+  .ve-stat-divider {
+    display: none;
+  }
+  .ve-finder-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+  }
+  .ve-btn-search {
+    width: 100%;
+  }
 }

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './LiveFlightMatrix.css';
 import { SpotlightCard } from '../reactbits';
 import { Plane, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { aocsDataStore } from '../../services/aocsDataStore';
+import { Flight } from '../../types';
 
 interface FlightRow {
   flightNo: string;
@@ -12,43 +14,70 @@ interface FlightRow {
   status: 'ON TIME' | 'BOARDING' | 'TAXING' | 'SCHEDULED' | 'DELAYED';
 }
 
-const mockFlights: FlightRow[] = [
-  { flightNo: 'SPH-102', route: 'JFK (New York) ➔ LHR (London)', aircraft: 'Boeing 787-9', gate: 'B12', schedule: '14:45 UTC', status: 'BOARDING' },
-  { flightNo: 'SPH-204', route: 'SIN (Singapore) ➔ DXB (Dubai)', aircraft: 'Airbus A350-900', gate: 'A04', schedule: '15:10 UTC', status: 'TAXING' },
-  { flightNo: 'SPH-308', route: 'HND (Tokyo) ➔ LAX (Los Angeles)', aircraft: 'Boeing 777-300ER', gate: 'C22', schedule: '15:30 UTC', status: 'ON TIME' },
-  { flightNo: 'SPH-412', route: 'CDG (Paris) ➔ SFO (San Francisco)', aircraft: 'Airbus A330neo', gate: 'B08', schedule: '16:00 UTC', status: 'SCHEDULED' },
-  { flightNo: 'SPH-518', route: 'FRA (Frankfurt) ➔ ORD (Chicago)', aircraft: 'Boeing 787-10', gate: 'A15', schedule: '16:25 UTC', status: 'DELAYED' },
-];
+const mapStoreFlightToRow = (f: Flight): FlightRow => {
+  let displayStatus: FlightRow['status'] = 'SCHEDULED';
+  if (f.status === 'BOARDING') displayStatus = 'BOARDING';
+  else if (f.status === 'DELAYED') displayStatus = 'DELAYED';
+  else if (f.status === 'LANDED' || f.status === 'ON_BLOCK') displayStatus = 'TAXING';
+  else if (f.status === 'READY' || f.status === 'AIRBORNE' || f.status === 'DEPARTED') displayStatus = 'ON TIME';
+
+  return {
+    flightNo: f.flightNumber,
+    route: `${f.originAirportCode} (${f.originAirportName.split(' ')[0]}) ➔ ${f.destinationAirportCode} (${f.destinationAirportName.split(' ')[0]})`,
+    aircraft: f.aircraftType,
+    gate: f.gateCode || 'TBD',
+    schedule: f.scheduledTime,
+    status: displayStatus,
+  };
+};
 
 export const LiveFlightMatrix: React.FC = () => {
   const [filter, setFilter] = useState<'ALL' | 'ACTIVE'>('ALL');
+  const [flights, setFlights] = useState<FlightRow[]>(() =>
+    aocsDataStore.getFlights().map(mapStoreFlightToRow)
+  );
+
+  useEffect(() => {
+    const update = () => {
+      setFlights(aocsDataStore.getFlights().map(mapStoreFlightToRow));
+    };
+    update();
+    const unsub = aocsDataStore.subscribe((event) => {
+      if (event.type.includes('FLIGHT') || event.type.includes('GATE') || event.type === 'REFRESH') {
+        update();
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const activeCount = flights.filter((f) => f.status === 'BOARDING' || f.status === 'TAXING').length;
 
   const filteredFlights = filter === 'ACTIVE'
-    ? mockFlights.filter((f) => f.status === 'BOARDING' || f.status === 'TAXING')
-    : mockFlights;
+    ? flights.filter((f) => f.status === 'BOARDING' || f.status === 'TAXING')
+    : flights;
 
   const getStatusBadge = (status: FlightRow['status']) => {
     switch (status) {
       case 'BOARDING':
-        return <span className="status-badge boarding"><CheckCircle2 size={13} /> BOARDING</span>;
+        return <span className="status-badge boarding"><CheckCircle2 size={12} /> BOARDING</span>;
       case 'TAXING':
-        return <span className="status-badge taxing"><Plane size={13} /> TAXING</span>;
+        return <span className="status-badge taxing"><Plane size={12} /> TAXING</span>;
       case 'ON TIME':
-        return <span className="status-badge on-time"><CheckCircle2 size={13} /> ON TIME</span>;
+        return <span className="status-badge on-time"><CheckCircle2 size={12} /> ON TIME</span>;
       case 'SCHEDULED':
-        return <span className="status-badge scheduled"><Clock size={13} /> SCHEDULED</span>;
+        return <span className="status-badge scheduled"><Clock size={12} /> SCHEDULED</span>;
       case 'DELAYED':
-        return <span className="status-badge delayed"><AlertTriangle size={13} /> DELAYED +15m</span>;
+        return <span className="status-badge delayed"><AlertTriangle size={12} /> DELAYED +15m</span>;
     }
   };
 
   return (
     <section className="matrix-section">
-      <SpotlightCard spotlightColor="rgba(59, 130, 246, 0.2)" className="matrix-card">
+      <SpotlightCard spotlightColor="rgba(30, 58, 95, 0.08)" className="matrix-card">
         <div className="matrix-top">
           <div>
-            <span className="matrix-tag">LIVE TELEMETRY MATRIX</span>
-            <h2 className="matrix-title">Current Terminal & Flight Schedule</h2>
+            <span className="matrix-tag">AIRPORT INFORMATION DISPLAY SYSTEM</span>
+            <h2 className="matrix-title">Live Terminal Departures</h2>
           </div>
           <div className="matrix-filter-buttons">
             <button
@@ -61,7 +90,7 @@ export const LiveFlightMatrix: React.FC = () => {
               className={`filter-btn ${filter === 'ACTIVE' ? 'active' : ''}`}
               onClick={() => setFilter('ACTIVE')}
             >
-              ● Active Boarding (2)
+              ● Active Movements ({activeCount})
             </button>
           </div>
         </div>
@@ -71,10 +100,10 @@ export const LiveFlightMatrix: React.FC = () => {
             <thead>
               <tr>
                 <th>Flight No</th>
-                <th>Route</th>
+                <th>Route Destination</th>
                 <th>Aircraft</th>
                 <th>Gate</th>
-                <th>Departure Time</th>
+                <th>Time (UTC)</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -82,13 +111,13 @@ export const LiveFlightMatrix: React.FC = () => {
               {filteredFlights.map((flight) => (
                 <tr key={flight.flightNo}>
                   <td className="flight-number-cell">
-                    <Plane size={15} className="plane-icon" />
+                    <Plane size={14} className="plane-icon" />
                     <strong>{flight.flightNo}</strong>
                   </td>
                   <td className="route-cell">{flight.route}</td>
-                  <td>{flight.aircraft}</td>
+                  <td className="aircraft-cell">{flight.aircraft}</td>
                   <td><span className="gate-chip">{flight.gate}</span></td>
-                  <td>{flight.schedule}</td>
+                  <td className="time-cell">{flight.schedule}</td>
                   <td>{getStatusBadge(flight.status)}</td>
                 </tr>
               ))}

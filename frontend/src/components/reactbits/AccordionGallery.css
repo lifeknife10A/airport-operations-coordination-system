@@ -20,23 +20,24 @@
   flex-grow: 1;
   flex-shrink: 1;
   flex-basis: 0%;
-  border-radius: 20px;
+  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: flex-grow;
+  background: #12141A;
 }
 
 .accordion-card:hover {
-  border-color: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 20px 45px rgba(14, 165, 233, 0.25);
+  border-color: rgba(196, 62, 58, 0.4);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
 }
 
 .accordion-card.is-expanded {
-  border-color: rgba(56, 189, 248, 0.6);
-  box-shadow: 0 20px 50px rgba(14, 165, 233, 0.35);
+  border-color: rgba(196, 62, 58, 0.65);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.75);
 }
 
 .card-bg {
@@ -47,16 +48,16 @@
   height: 100%;
   background-size: cover;
   background-position: center;
-  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), filter 0.5s ease;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), filter 0.35s ease;
 }
 
 .accordion-card:hover .card-bg,
 .accordion-card.is-expanded .card-bg {
-  transform: scale(1.05);
+  transform: scale(1.04);
 }
 
 .accordion-card.grayscale-effect.is-collapsed .card-bg {
-  filter: grayscale(80%) brightness(0.6);
+  filter: grayscale(85%) brightness(0.45);
 }
 
 .card-overlay {
@@ -67,31 +68,15 @@
   height: 100%;
   background: linear-gradient(
     180deg,
-    rgba(11, 16, 32, 0.2) 0%,
-    rgba(11, 16, 32, 0.75) 60%,
-    rgba(7, 10, 20, 0.95) 100%
+    rgba(10, 11, 14, 0.25) 0%,
+    rgba(10, 11, 14, 0.7) 50%,
+    rgba(10, 11, 14, 0.96) 100%
   );
   pointer-events: none;
 }
 
 .card-glow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(
-    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-    rgba(56, 189, 248, 0.15),
-    transparent 40%
-  );
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.accordion-card:hover .card-glow {
-  opacity: 1;
+  display: none;
 }
 
 /* Badge */
@@ -103,46 +88,47 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  border-radius: 30px;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  color: #38BDF8;
+  padding: 5px 12px;
+  background: rgba(10, 11, 14, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  font-family: 'Geist Mono', 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: #F0EDEA;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .badge-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background-color: #38BDF8;
-  box-shadow: 0 0 8px #38BDF8;
+  background-color: #C43E3A;
+  box-shadow: 0 0 8px rgba(196, 62, 58, 0.7);
 }
 
-/* Collapsed label */
+/* Collapsed label - vertically centered without bottom clipping */
 .card-collapsed-label {
   position: absolute;
-  bottom: 28px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%) rotate(-90deg);
+  transform: translate(-50%, -50%) rotate(-90deg);
   transform-origin: center center;
   white-space: nowrap;
   z-index: 4;
   pointer-events: none;
+  width: max-content;
 }
 
 .collapsed-title {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.1rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  color: rgba(248, 250, 252, 0.75);
+  letter-spacing: 0.18em;
+  color: rgba(245, 245, 242, 0.75);
   text-transform: uppercase;
 }
 
@@ -162,11 +148,11 @@
 }
 
 .card-subtitle {
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: #38BDF8;
+  font-family: 'Geist Mono', 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  color: #C43E3A;
   text-transform: uppercase;
   margin-bottom: 6px;
 }
@@ -175,41 +161,44 @@
   font-family: 'Outfit', sans-serif;
   font-size: 1.65rem;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #F5F5F2;
   margin: 0 0 10px 0;
-  line-height: 1.25;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .card-description {
   font-family: 'Inter', sans-serif;
-  font-size: 0.92rem;
-  line-height: 1.55;
-  color: #94A3B8;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: #CBD5E1;
   margin: 0 0 20px 0;
-  max-width: 480px;
+  max-width: 460px;
 }
 
 .card-action-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.9) 0%, rgba(29, 78, 216, 0.9) 100%);
+  padding: 8px 20px;
+  background: #FAF8F5;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  color: #FFFFFF;
-  font-family: 'Outfit', sans-serif;
+  border-radius: 6px;
+  color: #0E1012;
+  font-family: 'Inter', sans-serif;
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   text-decoration: none;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(8px);
+  letter-spacing: 0.02em;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .card-action-btn:hover {
-  background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
-  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
-  transform: translateY(-2px);
+  background: #C43E3A;
+  color: #FFFFFF;
+  border-color: #C43E3A;
+  box-shadow: 0 4px 16px rgba(196, 62, 58, 0.4);
+  transform: translateY(-1px);
 }
 
 @media (max-width: 900px) {

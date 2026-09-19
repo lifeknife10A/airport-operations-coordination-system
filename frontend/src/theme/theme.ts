@@ -2,73 +2,87 @@ import { createTheme } from '@mui/material/styles';
 
 export const theme = createTheme({
   palette: {
-    mode: 'dark',
+    mode: 'light',
     background: {
-      default: '#070B16', // Deep Luxury Airside Obsidian
-      paper: '#0F172A',   // Clean Dark Precision Slate
+      default: '#FAF9F6', // vE Warm Porcelain White
+      paper: '#FFFFFF',   // Crisp Surface
     },
     primary: {
-      main: '#38BDF8',   // Calibrated Cyan Accent
-      light: '#7DD3FC',
-      dark: '#0284C7',
-      contrastText: '#070B16',
+      main: '#1E3A5F',   // vE Authoritative Navy
+      light: '#2D5584',
+      dark: '#0F2942',
+      contrastText: '#FFFFFF',
     },
     secondary: {
-      main: '#94A3B8',   // Refined Slate
-      light: '#CBD5E1',
-      dark: '#64748B',
+      main: '#0284C7',   // Precision Sky Cyan
+      light: '#38BDF8',
+      dark: '#0369A1',
+      contrastText: '#FFFFFF',
+    },
+    success: {
+      main: '#10B981',   // Status Sage Green
+      light: '#34D399',
+      dark: '#059669',
       contrastText: '#FFFFFF',
     },
     text: {
-      primary: '#F8FAFC',
-      secondary: '#94A3B8',
+      primary: '#0F2942', // Deep Navy
+      secondary: '#475569', // Muted Slate
     },
-    divider: 'rgba(255, 255, 255, 0.08)',
+    divider: '#E5E7EB',
   },
   typography: {
-    fontFamily: ['Outfit', 'Inter', 'Geist', 'sans-serif'].join(','),
+    fontFamily: ['Plus Jakarta Sans', 'Inter', 'Outfit', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'].join(','),
     h1: {
-      fontWeight: 800,
-      fontSize: '2.75rem',
-      lineHeight: 1.15,
+      fontWeight: 700,
+      fontSize: '2.85rem',
+      lineHeight: 1.12,
       letterSpacing: '-0.03em',
+      color: '#0F2942',
     },
     h2: {
       fontWeight: 700,
-      fontSize: '2.15rem',
-      lineHeight: 1.2,
+      fontSize: '2.2rem',
+      lineHeight: 1.18,
       letterSpacing: '-0.02em',
+      color: '#0F2942',
     },
     h3: {
       fontWeight: 700,
-      fontSize: '1.75rem',
-      lineHeight: 1.3,
-      letterSpacing: '-0.01em',
+      fontSize: '1.65rem',
+      lineHeight: 1.25,
+      letterSpacing: '-0.015em',
+      color: '#0F2942',
     },
     h4: {
       fontWeight: 600,
-      fontSize: '1.4rem',
+      fontSize: '1.35rem',
       lineHeight: 1.35,
+      color: '#0F2942',
     },
     h5: {
       fontWeight: 600,
       fontSize: '1.15rem',
       lineHeight: 1.4,
+      color: '#0F2942',
     },
     h6: {
       fontWeight: 600,
       fontSize: '0.95rem',
       lineHeight: 1.5,
+      color: '#0F2942',
     },
     body1: {
       fontSize: '0.95rem',
       fontWeight: 400,
-      lineHeight: 1.6,
+      lineHeight: 1.65,
+      color: '#475569',
     },
     body2: {
       fontSize: '0.85rem',
       fontWeight: 400,
-      lineHeight: 1.5,
+      lineHeight: 1.55,
+      color: '#475569',
     },
   },
   shape: {
@@ -78,29 +92,30 @@ export const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          backgroundColor: '#070B16',
-          color: '#F8FAFC',
+          backgroundColor: '#FAF9F6',
+          color: '#0F2942',
+          fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
         },
         '*::-webkit-scrollbar': {
           width: '6px',
           height: '6px',
         },
         '*::-webkit-scrollbar-track': {
-          background: '#070B16',
+          background: '#FAF9F6',
         },
         '*::-webkit-scrollbar-thumb': {
-          backgroundColor: 'rgba(255, 255, 255, 0.15)',
+          backgroundColor: '#CBD5E1',
           borderRadius: '4px',
         },
         '*::-webkit-scrollbar-thumb:hover': {
-          backgroundColor: '#38BDF8',
+          backgroundColor: '#94A3B8',
         },
       },
     },
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 10,
+          borderRadius: 8,
           textTransform: 'none',
           fontWeight: 600,
           boxShadow: 'none',
@@ -111,6 +126,8 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
+          boxShadow: '0 10px 30px rgba(30, 58, 95, 0.04)',
+          border: '1px solid #E5E7EB',
         },
       },
     },

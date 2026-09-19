@@ -88,10 +88,9 @@ export const PromotionsSection: React.FC = () => {
             gap: 4,
           }}
         >
-          {promoCards.map((promo, index) => (
+          {promoCards.map((promo) => (
             <SpotlightCard
               key={promo.id}
-              variant={index % 2 === 0 ? 'outlined' : 'contained'}
               sx={{
                 height: '100%',
                 borderRadius: 16,
@@ -196,7 +195,7 @@ export const PromotionsSection: React.FC = () => {
                   }}
                 >
                   <span>Explore</span>
-                  <ArrowUpRight size={16} sx={{ ml: 0.5 }} />
+                  <ArrowUpRight size={16} />
                 </Box>
               </Box>
             </SpotlightCard>
