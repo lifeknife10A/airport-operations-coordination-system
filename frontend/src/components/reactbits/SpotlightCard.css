@@ -1,21 +1,77 @@
 .spotlight-card {
   position: relative;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background-color: rgba(21, 27, 47, 0.7);
-  backdrop-filter: blur(12px);
+  border-radius: 18px;
+  border: 1px solid #E2E8F0;
+  background-color: #FFFFFF;
   overflow: hidden;
   padding: 24px;
-  transition: border-color 0.3s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .spotlight-card:hover {
-  border-color: rgba(212, 200, 166, 0.4);
+  border-color: #0284C7;
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(15, 41, 66, 0.08);
+}
+
+.spotlight-card.accent-blue:hover {
+  border-color: #0284C7;
+  box-shadow: 0 16px 36px rgba(2, 132, 199, 0.12);
+}
+
+.spotlight-card.accent-green:hover {
+  border-color: #10B981;
+  box-shadow: 0 16px 36px rgba(16, 185, 129, 0.12);
+}
+
+.spotlight-card.accent-orange:hover {
+  border-color: #D97706;
+  box-shadow: 0 16px 36px rgba(217, 119, 6, 0.12);
+}
+
+.spotlight-card.accent-purple:hover {
+  border-color: #6366F1;
+  box-shadow: 0 16px 36px rgba(99, 102, 241, 0.14);
+}
+
+.spotlight-card.home-pillar {
+  padding: 36px 32px;
+  border-radius: 20px;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 10px 30px rgba(15, 41, 66, 0.03);
+  display: flex;
+  flex-direction: column;
+}
+
+.spotlight-card.apple-glass {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 24px rgba(15, 41, 66, 0.04);
+}
+
+.spotlight-card.apple-glass:hover {
+  border-color: rgba(2, 132, 199, 0.5);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(2, 132, 199, 0.08);
+}
+
+.spotlight-card.dark-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(15, 41, 66, 0.7);
+  backdrop-filter: blur(16px);
+}
+
+.spotlight-card.dark-card:hover {
+  border-color: #38BDF8;
 }
 
 .spotlight-overlay {
   pointer-events: none;
   position: absolute;
   inset: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.15s ease;
+  border-radius: inherit;
+  z-index: 0;
 }

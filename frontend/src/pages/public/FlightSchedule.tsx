@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
-import { Box, Container, Typography, Paper, ToggleButtonGroup, ToggleButton, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip } from '@mui/material';
+import { Box, Container, Typography, Paper, ToggleButtonGroup, ToggleButton, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import { PlaneLanding, PlaneTakeoff, Calendar, CheckCircle2, Clock, AlertTriangle, Plane } from 'lucide-react';
 
 interface ScheduleFlight {
@@ -35,133 +35,260 @@ export const FlightSchedule: React.FC = () => {
   const getStatusBadge = (status: ScheduleFlight['status']) => {
     switch (status) {
       case 'BOARDING':
-        return <Chip icon={<CheckCircle2 size={13} />} label="BOARDING" color="success" size="small" sx={{ fontWeight: 700 }} />;
+        return (
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.8, px: 1.4, py: 0.5, borderRadius: '6px', background: '#FEF3C7', border: '1px solid #FDE68A', color: '#B45309', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600 }}>
+            <CheckCircle2 size={12} /> BOARDING
+          </Box>
+        );
       case 'ON TIME':
-        return <Chip icon={<CheckCircle2 size={13} />} label="ON TIME" color="success" size="small" sx={{ fontWeight: 700 }} />;
+        return (
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.8, px: 1.4, py: 0.5, borderRadius: '6px', background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600 }}>
+            <CheckCircle2 size={12} /> ON TIME
+          </Box>
+        );
       case 'LANDED':
-        return <Chip icon={<PlaneLanding size={13} />} label="LANDED" color="info" size="small" sx={{ fontWeight: 700 }} />;
+        return (
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.8, px: 1.4, py: 0.5, borderRadius: '6px', background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#166534', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600 }}>
+            <PlaneLanding size={12} /> LANDED
+          </Box>
+        );
       case 'SCHEDULED':
-        return <Chip icon={<Clock size={13} />} label="SCHEDULED" color="default" size="small" sx={{ fontWeight: 700 }} />;
+        return (
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.8, px: 1.4, py: 0.5, borderRadius: '6px', background: '#F1F5F9', border: '1px solid #CBD5E1', color: '#475569', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600 }}>
+            <Clock size={12} /> SCHEDULED
+          </Box>
+        );
       case 'DELAYED':
-        return <Chip icon={<AlertTriangle size={13} />} label="DELAYED" color="error" size="small" sx={{ fontWeight: 700 }} />;
+        return (
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.8, px: 1.4, py: 0.5, borderRadius: '6px', background: '#FEE2E2', border: '1px solid #FECACA', color: '#B91C1C', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600 }}>
+            <AlertTriangle size={12} /> DELAYED
+          </Box>
+        );
     }
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#0B1020', color: '#F4F4F4' }}>
+    <Box sx={{ minHeight: '100vh', backgroundColor: '#FAF9F6', color: '#0F2942' }}>
       <Navbar />
 
-      {/* Header Banner */}
-      <Box sx={{ pt: 14, pb: 6, background: 'linear-gradient(180deg, #1E1B4B 0%, #0B1020 100%)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+      {/* Header Banner: 1. Digital Timetable Board Image, 2. Apple Liquid Glass, 3. Content */}
+      <Box
+        sx={{
+          pt: { xs: 14, md: 17 },
+          pb: { xs: 5, md: 7 },
+          px: { xs: 2, md: 4 },
+          position: 'relative',
+          backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.42) 0%, rgba(15, 41, 66, 0.65) 100%), url('/images/airport-digital-board.png')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 40%',
+          overflow: 'hidden',
+        }}
+      >
         <Container maxWidth="xl">
-          <Typography component="span" sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.15em', color: '#38BDF8', textTransform: 'uppercase' }}>
-            MASTER TERMINAL TIMETABLE
-          </Typography>
-          <Typography variant="h3" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#FFFFFF', mt: 1, mb: 1 }}>
-            Airport Flight Schedule
-          </Typography>
-          <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#94A3B8', maxWidth: '650px' }}>
-            Comprehensive real-time schedule of all arriving and departing flights across Terminal 1 & Terminal 2.
-          </Typography>
+          <Box
+            className="apple-liquid-glass"
+            sx={{
+              p: { xs: 4, md: 5.5 },
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
+          >
+            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.4, py: 0.4, borderRadius: '100px', backgroundColor: 'rgba(30, 58, 95, 0.06)', border: '1px solid rgba(30, 58, 95, 0.12)', width: 'fit-content', mb: 2 }}>
+              <Clock size={12} color="#1E3A5F" />
+              <Typography
+                sx={{
+                  fontFamily: "'Geist Mono', 'JetBrains Mono', monospace",
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.14em',
+                  color: '#1E3A5F',
+                  textTransform: 'uppercase',
+                }}
+              >
+                MASTER TERMINAL TIMETABLE
+              </Typography>
+            </Box>
+            <Typography
+              variant="h3"
+              sx={{
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontWeight: 800,
+                color: '#0F2942',
+                mt: 0.5,
+                mb: 1.5,
+                fontSize: { xs: '2rem', md: '2.75rem' },
+                letterSpacing: '-0.025em',
+              }}
+            >
+              Airport Flight Schedules
+            </Typography>
+            <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#475569', maxWidth: '680px', lineHeight: 1.65, fontSize: '1rem' }}>
+              Synchronized master schedule of all arriving and departing commercial flights across Terminal 1 &amp; Terminal 2 concourses.
+            </Typography>
+          </Box>
         </Container>
       </Box>
 
       <Container maxWidth="xl" sx={{ py: 6 }}>
         {/* Toggle & Date Selector Bar */}
-        <Paper elevation={0} sx={{ p: 2.5, mb: 4, background: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '16px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2.5,
+            mb: 4,
+            background: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 4px 20px rgba(15, 41, 66, 0.04)',
+            borderRadius: '16px',
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
           {/* Departures / Arrivals Toggle */}
           <ToggleButtonGroup
             id="departures"
             value={flightType}
             exclusive
             onChange={(_, val) => val && setFlightType(val)}
-            sx={{ background: 'rgba(2, 6, 23, 0.8)', p: 0.5, borderRadius: '12px' }}
+            sx={{ background: '#FAF9F6', p: 0.5, borderRadius: '10px', border: '1px solid #E2E8F0' }}
           >
             <ToggleButton
               value="DEPARTURE"
               sx={{
-                px: 3,
-                py: 1,
+                px: 2.8,
+                py: 0.9,
                 borderRadius: '8px !important',
-                color: flightType === 'DEPARTURE' ? '#FFFFFF' : '#94A3B8',
-                backgroundColor: flightType === 'DEPARTURE' ? '#2563EB !important' : 'transparent',
-                fontFamily: "'Outfit', sans-serif",
-                fontWeight: 700,
+                color: flightType === 'DEPARTURE' ? '#FFFFFF !important' : '#475569',
+                backgroundColor: flightType === 'DEPARTURE' ? '#1E3A5F !important' : 'transparent',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontWeight: 600,
+                fontSize: '0.86rem',
                 textTransform: 'none',
                 gap: 1,
+                border: 'none',
+                boxShadow: flightType === 'DEPARTURE' ? '0 2px 10px rgba(30, 58, 95, 0.25)' : 'none',
               }}
             >
-              <PlaneTakeoff size={18} />
+              <PlaneTakeoff size={16} />
               Departures
             </ToggleButton>
             <ToggleButton
               id="arrivals"
               value="ARRIVAL"
               sx={{
-                px: 3,
-                py: 1,
+                px: 2.8,
+                py: 0.9,
                 borderRadius: '8px !important',
-                color: flightType === 'ARRIVAL' ? '#FFFFFF' : '#94A3B8',
-                backgroundColor: flightType === 'ARRIVAL' ? '#059669 !important' : 'transparent',
-                fontFamily: "'Outfit', sans-serif",
-                fontWeight: 700,
+                color: flightType === 'ARRIVAL' ? '#FFFFFF !important' : '#475569',
+                backgroundColor: flightType === 'ARRIVAL' ? '#1E3A5F !important' : 'transparent',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontWeight: 600,
+                fontSize: '0.86rem',
                 textTransform: 'none',
                 gap: 1,
+                border: 'none',
+                boxShadow: flightType === 'ARRIVAL' ? '0 2px 10px rgba(30, 58, 95, 0.25)' : 'none',
               }}
             >
-              <PlaneLanding size={18} />
+              <PlaneLanding size={16} />
               Arrivals
             </ToggleButton>
           </ToggleButtonGroup>
 
           {/* Date Picker Buttons */}
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <Calendar size={18} color="#94A3B8" />
+          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+            <Calendar size={16} color="#64748B" />
             <Button
               onClick={() => setSelectedDate('TODAY')}
-              variant={selectedDate === 'TODAY' ? 'contained' : 'outlined'}
+              variant="outlined"
               size="small"
-              sx={{ borderRadius: '8px', fontFamily: "'Outfit', sans-serif", fontWeight: 600, textTransform: 'none' }}
+              sx={{
+                borderRadius: '8px',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontWeight: 600,
+                fontSize: '0.82rem',
+                textTransform: 'none',
+                backgroundColor: selectedDate === 'TODAY' ? '#1E3A5F' : '#FFFFFF',
+                color: selectedDate === 'TODAY' ? '#FFFFFF' : '#475569',
+                borderColor: selectedDate === 'TODAY' ? '#1E3A5F' : '#CBD5E1',
+                boxShadow: selectedDate === 'TODAY' ? '0 2px 8px rgba(30, 58, 95, 0.2)' : 'none',
+                '&:hover': {
+                  backgroundColor: selectedDate === 'TODAY' ? '#162C46' : '#F1F5F9',
+                  borderColor: selectedDate === 'TODAY' ? '#162C46' : '#94A3B8',
+                },
+              }}
             >
-              Today (07 Aug)
+              Today
             </Button>
             <Button
               onClick={() => setSelectedDate('TOMORROW')}
-              variant={selectedDate === 'TOMORROW' ? 'contained' : 'outlined'}
+              variant="outlined"
               size="small"
-              sx={{ borderRadius: '8px', fontFamily: "'Outfit', sans-serif", fontWeight: 600, textTransform: 'none' }}
+              sx={{
+                borderRadius: '8px',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontWeight: 600,
+                fontSize: '0.82rem',
+                textTransform: 'none',
+                backgroundColor: selectedDate === 'TOMORROW' ? '#1E3A5F' : '#FFFFFF',
+                color: selectedDate === 'TOMORROW' ? '#FFFFFF' : '#475569',
+                borderColor: selectedDate === 'TOMORROW' ? '#1E3A5F' : '#CBD5E1',
+                boxShadow: selectedDate === 'TOMORROW' ? '0 2px 8px rgba(30, 58, 95, 0.2)' : 'none',
+                '&:hover': {
+                  backgroundColor: selectedDate === 'TOMORROW' ? '#162C46' : '#F1F5F9',
+                  borderColor: selectedDate === 'TOMORROW' ? '#162C46' : '#94A3B8',
+                },
+              }}
             >
-              Tomorrow (08 Aug)
+              Tomorrow
             </Button>
           </Box>
         </Paper>
 
-        {/* Schedule Table */}
-        <TableContainer component={Paper} elevation={0} sx={{ background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '16px', overflow: 'hidden' }}>
+        {/* Schedule FIDS Table */}
+        <TableContainer
+          component={Paper}
+          elevation={0}
+          sx={{
+            background: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 8px 30px rgba(15, 41, 66, 0.04)',
+            borderRadius: '16px',
+            overflow: 'hidden',
+          }}
+        >
           <Table>
-            <TableHead sx={{ background: 'rgba(2, 6, 23, 0.7)' }}>
+            <TableHead sx={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
               <TableRow>
-                <TableCell sx={{ color: '#94A3B8', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>FLIGHT NO</TableCell>
-                <TableCell sx={{ color: '#94A3B8', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>AIRLINE</TableCell>
-                <TableCell sx={{ color: '#94A3B8', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>{flightType === 'DEPARTURE' ? 'DESTINATION AIRPORT' : 'ORIGIN AIRPORT'}</TableCell>
-                <TableCell sx={{ color: '#94A3B8', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>SCHEDULED</TableCell>
-                <TableCell sx={{ color: '#94A3B8', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>GATE / TML</TableCell>
-                <TableCell sx={{ color: '#94A3B8', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>STATUS</TableCell>
+                <TableCell sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600, letterSpacing: '0.08em', py: 2 }}>FLIGHT NO</TableCell>
+                <TableCell sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600, letterSpacing: '0.08em', py: 2 }}>AIRLINE</TableCell>
+                <TableCell sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600, letterSpacing: '0.08em', py: 2 }}>{flightType === 'DEPARTURE' ? 'DESTINATION AIRPORT' : 'ORIGIN AIRPORT'}</TableCell>
+                <TableCell sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600, letterSpacing: '0.08em', py: 2 }}>SCHEDULED (UTC)</TableCell>
+                <TableCell sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600, letterSpacing: '0.08em', py: 2 }}>GATE / TML</TableCell>
+                <TableCell sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600, letterSpacing: '0.08em', py: 2 }}>STATUS</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredSchedule.map((row) => (
-                <TableRow key={row.id} hover sx={{ '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.04)' } }}>
-                  <TableCell sx={{ color: '#FFFFFF', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>
+                <TableRow key={row.id} hover sx={{ '&:hover': { backgroundColor: 'rgba(30, 58, 95, 0.02)' }, borderBottom: '1px solid #F1F5F9' }}>
+                  <TableCell sx={{ color: '#0F2942', fontFamily: "'Geist Mono', monospace", fontWeight: 700, fontSize: '0.88rem' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Plane size={15} color="#38BDF8" />
+                      <Plane size={14} color="#0284C7" />
                       {row.flightNo}
                     </Box>
                   </TableCell>
-                  <TableCell sx={{ color: '#CBD5E1', fontFamily: "'Inter', sans-serif" }}>{row.airline}</TableCell>
-                  <TableCell sx={{ color: '#F8FAFC', fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>{row.airport}</TableCell>
-                  <TableCell sx={{ color: '#CBD5E1', fontFamily: "'Inter', sans-serif" }}>{row.time}</TableCell>
-                  <TableCell sx={{ color: '#38BDF8', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>{row.gate} ({row.terminal})</TableCell>
+                  <TableCell sx={{ color: '#334155', fontFamily: "'Inter', sans-serif", fontSize: '0.9rem', fontWeight: 500 }}>{row.airline}</TableCell>
+                  <TableCell sx={{ color: '#0F2942', fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: '0.9rem' }}>{row.airport}</TableCell>
+                  <TableCell sx={{ color: '#475569', fontFamily: "'Geist Mono', monospace", fontSize: '0.84rem' }}>{row.time}</TableCell>
+                  <TableCell sx={{ color: '#0F2942', fontFamily: "'Geist Mono', monospace", fontSize: '0.82rem' }}>
+                    <span style={{ padding: '4px 10px', borderRadius: '6px', background: '#F8FAFC', border: '1px solid #E2E8F0', fontWeight: 600, color: '#1E3A5F' }}>
+                      {row.gate} ({row.terminal})
+                    </span>
+                  </TableCell>
                   <TableCell>{getStatusBadge(row.status)}</TableCell>
                 </TableRow>
               ))}

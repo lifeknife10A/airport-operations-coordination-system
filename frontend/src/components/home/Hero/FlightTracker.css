@@ -3,22 +3,23 @@
   bottom: 0px;
   left: 50%;
   transform: translate(-50%, 50%);
-  width: 90%;
-  max-width: 950px;
+  width: 92%;
+  max-width: 960px;
   z-index: 20;
 }
 
 .tracker-card {
-  background: rgba(15, 23, 42, 0.88) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
-  backdrop-filter: blur(20px) !important;
-  padding: 24px 32px !important;
+  background: rgba(18, 20, 26, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(24px) !important;
+  border-radius: 12px !important;
+  padding: 22px 28px !important;
 }
 
 .tracker-tabs {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   margin-bottom: 16px;
 }
 
@@ -28,30 +29,30 @@
   gap: 8px;
   background: transparent;
   border: 1px solid transparent;
-  color: #94A3B8;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 600;
-  font-size: 0.88rem;
-  padding: 6px 16px;
-  border-radius: 8px;
+  color: #8E939E;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 0.82rem;
+  padding: 6px 14px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .tab-btn:hover {
-  color: #F8FAFC;
-  background: rgba(255, 255, 255, 0.05);
+  color: #F5F5F2;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .tab-btn.active {
-  color: #38BDF8;
-  background: rgba(30, 58, 138, 0.4);
-  border-color: rgba(56, 189, 248, 0.4);
+  color: #FFFFFF;
+  background: rgba(196, 62, 58, 0.16);
+  border-color: rgba(196, 62, 58, 0.4);
 }
 
 .tracker-form {
   display: flex;
-  gap: 16px;
+  gap: 12px;
 }
 
 .input-wrapper {
@@ -63,78 +64,79 @@
 
 .search-icon {
   position: absolute;
-  left: 18px;
-  color: #64748B;
+  left: 16px;
+  color: #525866;
   pointer-events: none;
 }
 
 .tracker-input {
   width: 100%;
-  padding: 16px 20px 16px 50px;
-  font-size: 0.95rem;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(2, 6, 23, 0.8);
-  color: #F8FAFC;
+  padding: 14px 18px 14px 46px;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0E1012;
+  color: #F5F5F2;
   outline: none;
   font-family: 'Inter', sans-serif;
   transition: all 0.2s ease;
 }
 
 .tracker-input:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 15px rgba(37, 99, 235, 0.3);
+  border-color: #C43E3A;
+  box-shadow: 0 0 0 1px #C43E3A;
 }
 
 .tracker-button {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  gap: 8px;
+  background: #C43E3A;
+  border: 1px solid #C43E3A;
   color: #FFFFFF;
-  border-radius: 10px;
-  padding: 0 28px;
-  font-family: 'Outfit', sans-serif;
+  border-radius: 8px;
+  padding: 0 24px;
+  font-family: 'Inter', sans-serif;
   font-weight: 600;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: 0.84rem;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
 }
 
 .tracker-button:hover {
-  background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
-  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4);
+  background: #8B2E2B;
+  border-color: #8B2E2B;
+  box-shadow: 0 4px 16px rgba(196, 62, 58, 0.45);
+  transform: translateY(-1px);
 }
 
 .tracker-result-chip {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 16px;
-  padding: 10px 18px;
-  border-radius: 8px;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #34D399;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.88rem;
+  margin-top: 14px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  color: #86EFAC;
+  font-family: 'Geist Mono', 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
   font-weight: 500;
 }
 
 .result-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background-color: #34D399;
-  box-shadow: 0 0 8px #34D399;
+  background-color: #4ADE80;
+  box-shadow: 0 0 6px #4ADE80;
 }
 
 @media (max-width: 768px) {
   .tracker-form { flex-direction: column; }
-  .tracker-button { padding: 14px; justify-content: center; }
+  .tracker-button { padding: 12px; justify-content: center; }
   .tracker-positioner { bottom: 20px; }
 }

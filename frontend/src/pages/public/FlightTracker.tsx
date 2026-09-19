@@ -1,10 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
-import { Box, Container, Typography, Paper, TextField, InputAdornment, Button, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
-import { Search, Plane, AlertTriangle, Clock, CheckCircle2, ShieldAlert, RefreshCw } from 'lucide-react';
+import {
+  Box,
+  Container,
+  Typography,
+  Paper,
+  TextField,
+  InputAdornment,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+} from '@mui/material';
+import {
+  Search,
+  Plane,
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
+  ShieldAlert,
+  RefreshCw,
+  Luggage,
+  QrCode,
+  ArrowRight,
+  ShieldCheck,
+  Check,
+} from 'lucide-react';
 import LiveFlightMatrix from '../../components/home/LiveFlightMatrix';
 import { SpotlightCard } from '../../components/reactbits';
+import { aocsDataStore } from '../../services/aocsDataStore';
+import { Flight, BagTag, BaggageScanEvent } from '../../types';
 
 interface FlightRecord {
   flightNo: string;
@@ -20,236 +50,775 @@ interface FlightRecord {
   aircraft: string;
 }
 
-const mockTrackerFlights: FlightRecord[] = [
-  { flightNo: 'SPH-102', airline: 'Saphire Air', route: 'JFK ➔ LHR', origin: 'New York (JFK)', destination: 'London (LHR)', gate: 'B12', terminal: 'T2', scheduledTime: '14:45 UTC', estimatedTime: '14:45 UTC', status: 'BOARDING', aircraft: 'Boeing 787-9' },
-  { flightNo: 'SPH-204', airline: 'Singapore Trans', route: 'SIN ➔ DXB', origin: 'Singapore (SIN)', destination: 'Dubai (DXB)', gate: 'A04', terminal: 'T1', scheduledTime: '15:10 UTC', estimatedTime: '15:10 UTC', status: 'TAXING', aircraft: 'Airbus A350-900' },
-  { flightNo: 'SPH-308', airline: 'Pacific Global', route: 'HND ➔ LAX', origin: 'Tokyo (HND)', destination: 'Los Angeles (LAX)', gate: 'C22', terminal: 'T2', scheduledTime: '15:30 UTC', estimatedTime: '15:30 UTC', status: 'ON TIME', aircraft: 'Boeing 777-300ER' },
-  { flightNo: 'SPH-412', airline: 'Air Europe', route: 'CDG ➔ SFO', origin: 'Paris (CDG)', destination: 'San Francisco (SFO)', gate: 'B08', terminal: 'T2', scheduledTime: '16:00 UTC', estimatedTime: '16:00 UTC', status: 'SCHEDULED', aircraft: 'Airbus A330neo' },
-  { flightNo: 'SPH-518', airline: 'Lufthansa Express', route: 'FRA ➔ ORD', origin: 'Frankfurt (FRA)', destination: 'Chicago (ORD)', gate: 'A15', terminal: 'T1', scheduledTime: '16:25 UTC', estimatedTime: '16:45 UTC', status: 'DELAYED', aircraft: 'Boeing 787-10' },
-];
+const mapFlightToRecord = (f: Flight): FlightRecord => {
+  let displayStatus: FlightRecord['status'] = 'SCHEDULED';
+  if (f.status === 'BOARDING') displayStatus = 'BOARDING';
+  else if (f.status === 'DELAYED') displayStatus = 'DELAYED';
+  else if (f.status === 'LANDED' || f.status === 'ON_BLOCK') displayStatus = 'TAXING';
+  else if (f.status === 'READY' || f.status === 'AIRBORNE' || f.status === 'DEPARTED') displayStatus = 'ON TIME';
+
+  return {
+    flightNo: f.flightNumber,
+    airline: f.airlineName,
+    route: `${f.originAirportCode} ➔ ${f.destinationAirportCode}`,
+    origin: `${f.originAirportName} (${f.originAirportCode})`,
+    destination: `${f.destinationAirportName} (${f.destinationAirportCode})`,
+    gate: f.gateCode || 'TBD',
+    terminal: f.gateCode?.startsWith('C') ? 'T2' : 'T1',
+    scheduledTime: f.scheduledTime,
+    estimatedTime: f.estimatedTime || f.scheduledTime,
+    status: displayStatus,
+    aircraft: `${f.aircraftType} (${f.aircraftRegistration})`,
+  };
+};
 
 const mockAlerts = [
-  { id: 1, type: 'warning', title: 'Runway 09R/27L Scheduled Maintenance', message: 'Runway 09R/27L will undergo routine maintenance from 02:00 to 05:00 UTC. Minor taxiway rerouting in effect.', time: '10 mins ago' },
-  { id: 2, type: 'info', title: 'Terminal 2 Gate Expansion Active', message: 'Gates C20 through C25 in Terminal 2 are now operating with enhanced automated biometric boarding gates.', time: '1 hour ago' },
-  { id: 3, type: 'caution', title: 'Weather Advisory: Low Visibility Fog', message: 'VFR landing procedures active due to early morning fog. Instrument Landing Systems (ILS Category III) fully operational.', time: '2 hours ago' },
+  { id: 1, type: 'warning', title: 'Runway 09R/27L Scheduled Maintenance', message: 'Runway 09R/27L routine maintenance scheduled from 02:00 to 05:00 UTC. Minor taxiway rerouting in effect.', time: '10 mins ago' },
+  { id: 2, type: 'info', title: 'Terminal 2 Automated e-Gates Active', message: 'Gates C20 through C25 in Terminal 2 now operate with biometric facial matching clearance for international departures.', time: '1 hour ago' },
+  { id: 3, type: 'caution', title: 'Low Visibility Approach Procedures (LVP)', message: 'Instrument Landing System (ILS Category III B) active across Runway 09L. Approach intervals adjusted to 5 nm.', time: '2 hours ago' },
 ];
 
 export const FlightTracker: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [trackerTab, setTrackerTab] = useState<'FLIGHTS' | 'BAGGAGE'>('FLIGHTS');
+  const [flights, setFlights] = useState<FlightRecord[]>(() =>
+    aocsDataStore.getFlights().map(mapFlightToRecord)
+  );
+  const [searchQuery, setSearchQuery] = useState(() => {
+    return new URLSearchParams(window.location.search).get('flight') || '';
+  });
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [selectedFlight, setSelectedFlight] = useState<FlightRecord>(mockTrackerFlights[0]);
+  const [selectedFlight, setSelectedFlight] = useState<FlightRecord | null>(null);
 
-  const filteredFlights = mockTrackerFlights.filter((f) => {
-    const matchesQuery = f.flightNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         f.route.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         f.destination.toLowerCase().includes(searchQuery.toLowerCase());
+  // Baggage Tracker State
+  const [bagQuery, setBagQuery] = useState('BAG-AI203-8821');
+  const [trackedBag, setTrackedBag] = useState<BagTag | undefined>(undefined);
+  const [bagScans, setBagScans] = useState<BaggageScanEvent[]>([]);
+
+  useEffect(() => {
+    const refreshData = () => {
+      const allFlights = aocsDataStore.getFlights().map(mapFlightToRecord);
+      setFlights(allFlights);
+      setSelectedFlight((prev) => {
+        if (!prev && allFlights.length > 0) return allFlights[0];
+        if (prev) {
+          const updated = allFlights.find((f) => f.flightNo === prev.flightNo);
+          if (updated) return updated;
+        }
+        return prev || allFlights[0] || null;
+      });
+
+      // Update baggage tracking
+      const { bagTag, scanEvents } = aocsDataStore.trackBaggage(bagQuery);
+      setTrackedBag(bagTag);
+      setBagScans(scanEvents);
+    };
+
+    refreshData();
+
+    const unsub = aocsDataStore.subscribe((event) => {
+      if (
+        event.type.includes('FLIGHT') ||
+        event.type.includes('GATE') ||
+        event.type.includes('BAGGAGE') ||
+        event.type === 'REFRESH'
+      ) {
+        refreshData();
+      }
+    });
+
+    return () => unsub();
+  }, [bagQuery]);
+
+  const handleSelectBag = (tag: string) => {
+    setBagQuery(tag);
+    const { bagTag, scanEvents } = aocsDataStore.trackBaggage(tag);
+    setTrackedBag(bagTag);
+    setBagScans(scanEvents);
+  };
+
+  const filteredFlights = flights.filter((f) => {
+    const matchesQuery =
+      f.flightNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      f.route.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      f.destination.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'ALL' || f.status === statusFilter;
     return matchesQuery && matchesStatus;
   });
 
-  const getStatusChip = (status: FlightRecord['status']) => {
+  const getStatusBadge = (status: FlightRecord['status']) => {
     switch (status) {
       case 'BOARDING':
-        return <Chip icon={<CheckCircle2 size={14} />} label="BOARDING" color="success" size="small" sx={{ fontWeight: 700 }} />;
+        return (
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.8, px: 1.4, py: 0.4, borderRadius: '999px', background: '#FEF3C7', border: '1px solid #FDE68A', color: '#B45309', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 700 }}>
+            <CheckCircle2 size={12} /> BOARDING
+          </Box>
+        );
       case 'TAXING':
-        return <Chip icon={<Plane size={14} />} label="TAXING" color="info" size="small" sx={{ fontWeight: 700 }} />;
+        return (
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.8, px: 1.4, py: 0.4, borderRadius: '999px', background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1D4ED8', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 700 }}>
+            <Plane size={12} /> TAXING
+          </Box>
+        );
       case 'ON TIME':
-        return <Chip icon={<CheckCircle2 size={14} />} label="ON TIME" color="success" size="small" sx={{ fontWeight: 700 }} />;
+        return (
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.8, px: 1.4, py: 0.4, borderRadius: '999px', background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 700 }}>
+            <CheckCircle2 size={12} /> ON TIME
+          </Box>
+        );
       case 'SCHEDULED':
-        return <Chip icon={<Clock size={14} />} label="SCHEDULED" color="default" size="small" sx={{ fontWeight: 700 }} />;
+        return (
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.8, px: 1.4, py: 0.4, borderRadius: '999px', background: '#F1F5F9', border: '1px solid #E2E8F0', color: '#475569', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 700 }}>
+            <Clock size={12} /> SCHEDULED
+          </Box>
+        );
       case 'DELAYED':
-        return <Chip icon={<AlertTriangle size={14} />} label="DELAYED" color="error" size="small" sx={{ fontWeight: 700 }} />;
+        return (
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.8, px: 1.4, py: 0.4, borderRadius: '999px', background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 700 }}>
+            <AlertTriangle size={12} /> DELAYED
+          </Box>
+        );
+    }
+  };
+
+  const getBaggageStageLevel = (status?: BagTag['status']) => {
+    switch (status) {
+      case 'CHECKED_IN': return 1;
+      case 'SCREENED': return 2;
+      case 'TRANSIT': return 3;
+      case 'LOADED': return 4;
+      case 'ARRIVED': return 5;
+      default: return 1;
     }
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#0B1020', color: '#F4F4F4' }}>
+    <Box sx={{ minHeight: '100vh', backgroundColor: '#FAF9F6', color: '#0F2942' }}>
       <Navbar />
       
-      {/* Header Banner */}
-      <Box sx={{ pt: 14, pb: 6, background: 'linear-gradient(180deg, #1E1B4B 0%, #0B1020 100%)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+      {/* Header Banner: 1. Aircraft Wing over Clouds Image, 2. Apple Liquid Glass, 3. Content */}
+      <Box
+        sx={{
+          pt: { xs: 14, md: 17 },
+          pb: { xs: 5, md: 7 },
+          px: { xs: 2, md: 4 },
+          position: 'relative',
+          backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.48) 0%, rgba(15, 41, 66, 0.72) 100%), url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2000&auto=format&fit=crop')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          overflow: 'hidden',
+        }}
+      >
         <Container maxWidth="xl">
-          <Typography component="span" sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.15em', color: '#38BDF8', textTransform: 'uppercase' }}>
-            REAL-TIME FLIGHT TELEMETRY
-          </Typography>
-          <Typography variant="h3" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#FFFFFF', mt: 1, mb: 1 }}>
-            Flight Status & Radar Tracker
-          </Typography>
-          <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#94A3B8', maxWidth: '650px' }}>
-            Look up live flight departures, terminal gate assignments, arrival timelines, and airside operational notices.
-          </Typography>
+          <Box
+            className="apple-liquid-glass"
+            sx={{
+              p: { xs: 4, md: 5.5 },
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
+          >
+            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.4, py: 0.4, borderRadius: '100px', backgroundColor: 'rgba(30, 58, 95, 0.06)', border: '1px solid rgba(30, 58, 95, 0.12)', width: 'fit-content', mb: 2 }}>
+              <Typography
+                component="span"
+                sx={{
+                  fontFamily: "'Geist Mono', monospace",
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.14em',
+                  color: '#1E3A5F',
+                  textTransform: 'uppercase',
+                }}
+              >
+                AIR TRAFFIC RADAR &amp; HUB SCHEDULES
+              </Typography>
+            </Box>
+            <Typography
+              variant="h3"
+              sx={{
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontWeight: 800,
+                color: '#0F2942',
+                mt: 0.5,
+                mb: 1.5,
+                fontSize: { xs: '2rem', md: '2.75rem' },
+                letterSpacing: '-0.025em',
+              }}
+            >
+              Flight Status &amp; Radar Telemetry
+            </Typography>
+            <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#475569', maxWidth: '680px', lineHeight: 1.65, fontSize: '1rem' }}>
+              Monitor live commercial arrivals, departures, stand allocations, and airside operational notices in dependable real time.
+            </Typography>
+          </Box>
         </Container>
       </Box>
 
       {/* Main Search & Content Area */}
-      <Container maxWidth="xl" sx={{ py: 6 }}>
-        {/* Search & Filter Bar */}
-        <Paper id="search" elevation={0} sx={{ p: 3, mb: 4, background: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '16px', backdropFilter: 'blur(16px)' }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, alignItems: 'center' }}>
-            <Box>
-              <TextField
-                fullWidth
-                placeholder="Search by flight number (e.g. SPH-102), city, or destination..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Search size={20} color="#64748B" />
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    color: '#FFFFFF',
-                    backgroundColor: 'rgba(2, 6, 23, 0.8)',
-                    borderRadius: '10px',
-                    fontFamily: "'Inter', sans-serif",
-                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.15)' },
-                    '&:hover fieldset': { borderColor: '#38BDF8' },
-                  },
-                }}
-              />
-            </Box>
+      <Container maxWidth="xl" sx={{ py: 8 }}>
+        {/* Navigation Tabs: Flight Radar vs. Baggage Luggage Journey */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 4, borderBottom: '1px solid #E2E8F0', pb: 2, flexWrap: 'wrap' }}>
+          <Button
+            onClick={() => setTrackerTab('FLIGHTS')}
+            variant={trackerTab === 'FLIGHTS' ? 'contained' : 'outlined'}
+            startIcon={<Plane size={18} />}
+            sx={{
+              borderRadius: '10px',
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              textTransform: 'none',
+              px: 3,
+              py: 1.2,
+              backgroundColor: trackerTab === 'FLIGHTS' ? '#1E3A5F' : '#FFFFFF',
+              borderColor: trackerTab === 'FLIGHTS' ? '#1E3A5F' : '#E2E8F0',
+              color: trackerTab === 'FLIGHTS' ? '#FFFFFF' : '#475569',
+              boxShadow: trackerTab === 'FLIGHTS' ? '0 4px 12px rgba(30, 58, 95, 0.2)' : 'none',
+              '&:hover': {
+                backgroundColor: trackerTab === 'FLIGHTS' ? '#0F2942' : '#F8FAFC',
+                borderColor: '#1E3A5F',
+              },
+            }}
+          >
+            Commercial Flight Radar &amp; Schedules
+          </Button>
 
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
-              {['ALL', 'BOARDING', 'ON TIME', 'TAXING', 'DELAYED'].map((filter) => (
-                <Button
-                  key={filter}
-                  onClick={() => setStatusFilter(filter)}
-                  variant={statusFilter === filter ? 'contained' : 'outlined'}
-                  size="small"
-                  sx={{
-                    borderRadius: '8px',
-                    fontFamily: "'Outfit', sans-serif",
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    backgroundColor: statusFilter === filter ? '#2563EB' : 'transparent',
-                    borderColor: statusFilter === filter ? '#2563EB' : 'rgba(255, 255, 255, 0.2)',
-                    color: '#FFFFFF',
-                    '&:hover': { backgroundColor: statusFilter === filter ? '#1D4ED8' : 'rgba(255, 255, 255, 0.08)' },
-                  }}
-                >
-                  {filter}
-                </Button>
-              ))}
-            </Box>
-          </Box>
-        </Paper>
-
-        {/* Results & Selected Card Grid */}
-        <Box id="results" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 4 }}>
-          {/* Flight Table */}
-          <TableContainer component={Paper} elevation={0} sx={{ background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '16px', overflow: 'hidden' }}>
-            <Table>
-              <TableHead sx={{ background: 'rgba(2, 6, 23, 0.6)' }}>
-                <TableRow>
-                  <TableCell sx={{ color: '#94A3B8', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>FLIGHT</TableCell>
-                  <TableCell sx={{ color: '#94A3B8', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>ROUTE</TableCell>
-                  <TableCell sx={{ color: '#94A3B8', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>GATE / TML</TableCell>
-                  <TableCell sx={{ color: '#94A3B8', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>SCHEDULE</TableCell>
-                  <TableCell sx={{ color: '#94A3B8', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>STATUS</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredFlights.map((flight) => (
-                  <TableRow
-                    key={flight.flightNo}
-                    hover
-                    onClick={() => setSelectedFlight(flight)}
-                    selected={selectedFlight.flightNo === flight.flightNo}
-                    sx={{
-                      cursor: 'pointer',
-                      '&.Mui-selected': { backgroundColor: 'rgba(56, 189, 248, 0.12) !important' },
-                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.04)' },
-                    }}
-                  >
-                    <TableCell sx={{ color: '#FFFFFF', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Plane size={16} color="#38BDF8" />
-                        {flight.flightNo}
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ color: '#CBD5E1', fontFamily: "'Inter', sans-serif" }}>{flight.route}</TableCell>
-                    <TableCell sx={{ color: '#38BDF8', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>{flight.gate} ({flight.terminal})</TableCell>
-                    <TableCell sx={{ color: '#CBD5E1', fontFamily: "'Inter', sans-serif" }}>{flight.scheduledTime}</TableCell>
-                    <TableCell>{getStatusChip(flight.status)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {/* Detailed Selected Flight Status Card */}
-          <Paper elevation={0} sx={{ p: 3.5, background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '16px', backdropFilter: 'blur(16px)' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.8rem', fontWeight: 700, color: '#38BDF8', letterSpacing: '0.1em' }}>
-                SELECTED TELEMETRY
-              </Typography>
-              {getStatusChip(selectedFlight.status)}
-            </Box>
-
-            <Typography variant="h4" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#FFFFFF', mb: 0.5 }}>
-              {selectedFlight.flightNo}
-            </Typography>
-            <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#94A3B8', mb: 3 }}>
-              {selectedFlight.airline} • {selectedFlight.aircraft}
-            </Typography>
-
-            <Box sx={{ p: 2, background: 'rgba(2, 6, 23, 0.8)', borderRadius: '12px', mb: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
-                <Box>
-                  <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8' }}>ORIGIN</Typography>
-                  <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, color: '#F8FAFC' }}>{selectedFlight.origin}</Typography>
-                </Box>
-                <Plane size={20} color="#38BDF8" style={{ transform: 'rotate(90deg)', marginTop: '8px' }} />
-                <Box sx={{ textAlign: 'right' }}>
-                  <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8' }}>DESTINATION</Typography>
-                  <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, color: '#F8FAFC' }}>{selectedFlight.destination}</Typography>
-                </Box>
-              </Box>
-            </Box>
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 3 }}>
-              <Box sx={{ p: 1.5, background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8' }}>GATE</Typography>
-                <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.2rem', color: '#38BDF8' }}>{selectedFlight.gate}</Typography>
-              </Box>
-              <Box sx={{ p: 1.5, background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8' }}>TERMINAL</Typography>
-                <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.2rem', color: '#FFFFFF' }}>{selectedFlight.terminal}</Typography>
-              </Box>
-            </Box>
-
-            <Button fullWidth variant="contained" startIcon={<RefreshCw size={16} />} sx={{ background: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%)', textTransform: 'none', fontFamily: "'Outfit', sans-serif", fontWeight: 600, borderRadius: '8px' }}>
-              Refresh Flight Telemetry
-            </Button>
-          </Paper>
+          <Button
+            onClick={() => setTrackerTab('BAGGAGE')}
+            variant={trackerTab === 'BAGGAGE' ? 'contained' : 'outlined'}
+            startIcon={<Luggage size={18} />}
+            sx={{
+              borderRadius: '10px',
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              textTransform: 'none',
+              px: 3,
+              py: 1.2,
+              backgroundColor: trackerTab === 'BAGGAGE' ? '#0284C7' : '#FFFFFF',
+              borderColor: trackerTab === 'BAGGAGE' ? '#0284C7' : '#E2E8F0',
+              color: trackerTab === 'BAGGAGE' ? '#FFFFFF' : '#475569',
+              boxShadow: trackerTab === 'BAGGAGE' ? '0 4px 12px rgba(2, 132, 199, 0.2)' : 'none',
+              '&:hover': {
+                backgroundColor: trackerTab === 'BAGGAGE' ? '#0369A1' : '#F8FAFC',
+                borderColor: '#0284C7',
+              },
+            }}
+          >
+            Luggage &amp; Baggage Journey Tracker
+          </Button>
         </Box>
 
-        {/* AIRPORT ALERTS SECTION (Moved here below search results) */}
-        <Box id="alerts" sx={{ mt: 8 }}>
+        {trackerTab === 'FLIGHTS' ? (
+          <>
+            {/* Search & Filter Console */}
+            <Paper
+              id="search"
+              elevation={0}
+              sx={{
+                p: 3,
+                mb: 5,
+                background: '#FFFFFF',
+                border: '1px solid #E5E7EB',
+                boxShadow: '0 10px 30px rgba(30, 58, 95, 0.03)',
+                borderRadius: '16px',
+              }}
+            >
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.2fr 1fr' }, gap: 2.5, alignItems: 'center' }}>
+                <Box>
+                  <TextField
+                    fullWidth
+                    placeholder="Search by flight number (e.g. AI-203, SPH-102), city, or route..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Search size={18} color="#64748B" />
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        color: '#0F2942',
+                        backgroundColor: '#FAF9F6',
+                        borderRadius: '10px',
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: '0.9rem',
+                        '& fieldset': { borderColor: '#E5E7EB' },
+                        '&:hover fieldset': { borderColor: '#CBD5E1' },
+                        '&.Mui-focused fieldset': { borderColor: '#1E3A5F' },
+                      },
+                    }}
+                  />
+                </Box>
+
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+                  {['ALL', 'BOARDING', 'ON TIME', 'TAXING', 'DELAYED'].map((filter) => (
+                    <Button
+                      key={filter}
+                      onClick={() => setStatusFilter(filter)}
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        borderRadius: '8px',
+                        fontFamily: "'Plus Jakarta Sans', sans-serif",
+                        fontWeight: 600,
+                        fontSize: '0.78rem',
+                        textTransform: 'none',
+                        backgroundColor: statusFilter === filter ? '#1E3A5F' : '#FAF9F6',
+                        borderColor: statusFilter === filter ? '#1E3A5F' : '#E5E7EB',
+                        color: statusFilter === filter ? '#FFFFFF' : '#475569',
+                        boxShadow: statusFilter === filter ? '0 2px 8px rgba(30, 58, 95, 0.25)' : 'none',
+                        '&:hover': {
+                          backgroundColor: statusFilter === filter ? '#0F2942' : '#F1F5F9',
+                          borderColor: statusFilter === filter ? '#0F2942' : '#CBD5E1',
+                          color: statusFilter === filter ? '#FFFFFF' : '#0F2942',
+                        },
+                      }}
+                    >
+                      {filter}
+                    </Button>
+                  ))}
+                </Box>
+              </Box>
+            </Paper>
+
+            {/* Results & Selected Flight Detail Grid */}
+            <Box id="results" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.8fr 1fr' }, gap: 4 }}>
+              {/* Flight Table */}
+              <TableContainer
+                component={Paper}
+                elevation={0}
+                sx={{
+                  background: '#FFFFFF',
+                  border: '1px solid #E5E7EB',
+                  boxShadow: '0 10px 30px rgba(30, 58, 95, 0.03)',
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                }}
+              >
+                <Table>
+                  <TableHead sx={{ background: '#F8FAFC' }}>
+                    <TableRow>
+                      <TableCell sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600, letterSpacing: '0.08em' }}>FLIGHT</TableCell>
+                      <TableCell sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600, letterSpacing: '0.08em' }}>ROUTE</TableCell>
+                      <TableCell sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600, letterSpacing: '0.08em' }}>GATE / TML</TableCell>
+                      <TableCell sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600, letterSpacing: '0.08em' }}>TIME (UTC)</TableCell>
+                      <TableCell sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600, letterSpacing: '0.08em' }}>STATUS</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredFlights.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} align="center" sx={{ py: 4, color: '#64748B' }}>
+                          No commercial flights match your search query.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredFlights.map((flight) => (
+                        <TableRow
+                          key={flight.flightNo}
+                          hover
+                          onClick={() => setSelectedFlight(flight)}
+                          selected={selectedFlight?.flightNo === flight.flightNo}
+                          sx={{
+                            cursor: 'pointer',
+                            '&.Mui-selected': { backgroundColor: 'rgba(30, 58, 95, 0.05) !important' },
+                            '&:hover': { backgroundColor: '#FAF9F6' },
+                          }}
+                        >
+                          <TableCell sx={{ color: '#0F2942', fontFamily: "'Geist Mono', monospace", fontWeight: 700 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Plane size={14} color="#1E3A5F" />
+                              {flight.flightNo}
+                            </Box>
+                          </TableCell>
+                          <TableCell sx={{ color: '#0F2942', fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', fontWeight: 500 }}>{flight.route}</TableCell>
+                          <TableCell sx={{ color: '#0F2942', fontFamily: "'Geist Mono', monospace", fontSize: '0.82rem' }}>
+                            <span style={{ padding: '3px 8px', borderRadius: '4px', background: '#F1F5F9', border: '1px solid #E2E8F0', fontWeight: 600 }}>
+                              {flight.gate} ({flight.terminal})
+                            </span>
+                          </TableCell>
+                          <TableCell sx={{ color: '#1E3A5F', fontFamily: "'Geist Mono', monospace", fontSize: '0.82rem', fontWeight: 600 }}>{flight.scheduledTime}</TableCell>
+                          <TableCell>{getStatusBadge(flight.status)}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              {/* Selected Flight Telemetry Card */}
+              {selectedFlight ? (
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 4,
+                    background: '#FFFFFF',
+                    border: '1px solid #E5E7EB',
+                    boxShadow: '0 10px 30px rgba(30, 58, 95, 0.04)',
+                    borderRadius: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
+                    <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem', fontWeight: 700, color: '#1E3A5F', letterSpacing: '0.14em' }}>
+                      RADAR TELEMETRY
+                    </Typography>
+                    {getStatusBadge(selectedFlight.status)}
+                  </Box>
+
+                  <Typography variant="h4" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#0F2942', mb: 0.5, letterSpacing: '-0.02em' }}>
+                    {selectedFlight.flightNo}
+                  </Typography>
+                  <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.85rem', color: '#64748B', mb: 3 }}>
+                    {selectedFlight.airline} • {selectedFlight.aircraft}
+                  </Typography>
+
+                  {/* Waypoint Route Arc */}
+                  <Box sx={{ p: 2.5, background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', mb: 3 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Box>
+                        <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.68rem', color: '#64748B' }}>ORIGIN</Typography>
+                        <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#0F2942', fontSize: '1rem' }}>{selectedFlight.origin}</Typography>
+                      </Box>
+                      <Plane size={18} color="#1E3A5F" style={{ transform: 'rotate(90deg)' }} />
+                      <Box sx={{ textAlign: 'right' }}>
+                        <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.68rem', color: '#64748B' }}>DESTINATION</Typography>
+                        <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#0F2942', fontSize: '1rem' }}>{selectedFlight.destination}</Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 3 }}>
+                    <Box sx={{ p: 2, background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.7rem', color: '#64748B' }}>CONCOURSE GATE</Typography>
+                      <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontWeight: 700, fontSize: '1.2rem', color: '#0F2942' }}>{selectedFlight.gate}</Typography>
+                    </Box>
+                    <Box sx={{ p: 2, background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.7rem', color: '#64748B' }}>TERMINAL COMPLEX</Typography>
+                      <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontWeight: 700, fontSize: '1.2rem', color: '#0F2942' }}>{selectedFlight.terminal}</Typography>
+                    </Box>
+                  </Box>
+
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    startIcon={<RefreshCw size={15} />}
+                    onClick={() => {
+                      setFlights(aocsDataStore.getFlights().map(mapFlightToRecord));
+                    }}
+                    sx={{
+                      background: '#1E3A5F',
+                      color: '#FFFFFF',
+                      textTransform: 'none',
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      fontWeight: 600,
+                      fontSize: '0.86rem',
+                      borderRadius: '8px',
+                      py: 1.2,
+                      mt: 'auto',
+                      boxShadow: 'none',
+                      '&:hover': {
+                        background: '#0F2942',
+                        boxShadow: '0 4px 14px rgba(30, 58, 95, 0.25)',
+                      },
+                    }}
+                  >
+                    Refresh Radar Telemetry
+                  </Button>
+                </Paper>
+              ) : (
+                <Paper elevation={0} sx={{ p: 4, background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Typography sx={{ color: '#64748B' }}>Select a flight to view radar telemetry.</Typography>
+                </Paper>
+              )}
+            </Box>
+          </>
+        ) : (
+          /* ================================================================ */
+          /* BAGGAGE JOURNEY TRACKER TAB                                       */
+          /* ================================================================ */
+          <Box>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3.5,
+                mb: 4,
+                background: '#FFFFFF',
+                border: '1px solid #E5E7EB',
+                boxShadow: '0 10px 30px rgba(30, 58, 95, 0.03)',
+                borderRadius: '16px',
+              }}
+            >
+              <Typography variant="h6" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#0F2942', mb: 1 }}>
+                Real-Time Passenger Baggage Verification
+              </Typography>
+              <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#64748B', fontSize: '0.88rem', mb: 3 }}>
+                Enter the 10-digit barcode printed on your baggage claim tag or check-in receipt.
+              </Typography>
+
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 3 }}>
+                <TextField
+                  fullWidth
+                  placeholder="Enter Bag Tag Number (e.g. BAG-AI203-8821)..."
+                  value={bagQuery}
+                  onChange={(e) => setBagQuery(e.target.value)}
+                  size="small"
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <QrCode size={18} color="#0284C7" />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: '#FAF9F6',
+                      borderRadius: '8px',
+                      '& fieldset': { borderColor: '#E5E7EB' },
+                      '&.Mui-focused fieldset': { borderColor: '#0284C7' },
+                    },
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  onClick={() => handleSelectBag(bagQuery)}
+                  sx={{
+                    background: '#0284C7',
+                    color: '#FFFFFF',
+                    textTransform: 'none',
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    fontWeight: 600,
+                    px: 3,
+                    borderRadius: '8px',
+                    whiteSpace: 'nowrap',
+                    '&:hover': { background: '#0369A1' },
+                  }}
+                >
+                  Locate Luggage
+                </Button>
+              </Box>
+
+              {/* Sample Test Tags */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem', color: '#64748B', fontWeight: 600 }}>
+                  QUICK CARRIER SAMPLES:
+                </Typography>
+                {['BAG-AI203-8821', 'BAG-AI203-8822', 'BAG-6E521-1049', 'BAG-UK901-5541'].map((tag) => (
+                  <Chip
+                    key={tag}
+                    label={tag}
+                    size="small"
+                    onClick={() => handleSelectBag(tag)}
+                    sx={{
+                      cursor: 'pointer',
+                      fontFamily: "'Geist Mono', monospace",
+                      fontSize: '0.74rem',
+                      fontWeight: 600,
+                      backgroundColor: bagQuery === tag ? '#0284C7' : '#F1F5F9',
+                      color: bagQuery === tag ? '#FFFFFF' : '#1E3A5F',
+                      '&:hover': { backgroundColor: '#E2E8F0' },
+                    }}
+                  />
+                ))}
+              </Box>
+            </Paper>
+
+            {/* Tracked Bag Details & Stepper */}
+            {trackedBag ? (
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.4fr 1fr' }, gap: 4 }}>
+                {/* Left Card: 5-Stage Journey Stepper */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 4,
+                    background: '#FFFFFF',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '16px',
+                    boxShadow: '0 10px 30px rgba(30, 58, 95, 0.03)',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, flexWrap: 'wrap', gap: 1.5 }}>
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+                        <Typography variant="h5" sx={{ fontFamily: "'Geist Mono', monospace", fontWeight: 700, color: '#0F2942' }}>
+                          {trackedBag.tagNumber}
+                        </Typography>
+                        {trackedBag.isPriority && (
+                          <Chip label="Priority First/Business" size="small" sx={{ background: '#FEF3C7', color: '#92400E', fontWeight: 700, fontSize: '0.7rem' }} />
+                        )}
+                      </Box>
+                      <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', color: '#64748B' }}>
+                        Passenger: <strong>{trackedBag.passengerName}</strong> • Flight <strong>{trackedBag.flightNumber}</strong> • Weight: <strong>{trackedBag.weightKg} kg</strong>
+                      </Typography>
+                    </Box>
+
+                    <Chip
+                      label={trackedBag.status}
+                      sx={{
+                        fontFamily: "'Geist Mono', monospace",
+                        fontWeight: 700,
+                        fontSize: '0.76rem',
+                        backgroundColor:
+                          trackedBag.status === 'LOADED'
+                            ? '#ECFDF5'
+                            : trackedBag.status === 'ARRIVED'
+                            ? '#EFF6FF'
+                            : '#FEF3C7',
+                        color:
+                          trackedBag.status === 'LOADED'
+                            ? '#065F46'
+                            : trackedBag.status === 'ARRIVED'
+                            ? '#1E40AF'
+                            : '#92400E',
+                      }}
+                    />
+                  </Box>
+
+                  {/* 5-Step Visual Stepper */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, py: 2 }}>
+                    {[
+                      { step: 1, title: 'Check-In & Automated Bag Drop', desc: 'Inducted into Terminal 2 High-Speed Baggage Sorter System', icon: <Luggage size={18} /> },
+                      { step: 2, title: 'In-Line CTX Explosive Screening', desc: 'Level 1 Automated CT X-Ray clearance certified clean', icon: <ShieldCheck size={18} /> },
+                      { step: 3, title: 'Ramp Cart Transfer & ULD Containerization', desc: 'Loaded into airside container & verified by handler', icon: <ArrowRight size={18} /> },
+                      { step: 4, title: 'Aircraft Cargo Hold Stowed', desc: 'Locked securely inside aft cargo compartment', icon: <Plane size={18} /> },
+                      { step: 5, title: 'Destination Baggage Reclaim Belt', desc: 'Dispatched to arrival carousel for passenger pickup', icon: <CheckCircle2 size={18} /> },
+                    ].map((s) => {
+                      const currentLevel = getBaggageStageLevel(trackedBag.status);
+                      const isComplete = currentLevel >= s.step;
+                      const isCurrent = currentLevel === s.step;
+
+                      return (
+                        <Box key={s.step} sx={{ display: 'flex', gap: 2.5, alignItems: 'flex-start' }}>
+                          <Box
+                            sx={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              backgroundColor: isComplete ? '#0284C7' : '#F1F5F9',
+                              color: isComplete ? '#FFFFFF' : '#94A3B8',
+                              border: isCurrent ? '2px solid #38BDF8' : 'none',
+                              boxShadow: isCurrent ? '0 0 0 4px rgba(2, 132, 199, 0.15)' : 'none',
+                            }}
+                          >
+                            {isComplete ? <Check size={18} /> : s.icon}
+                          </Box>
+                          <Box sx={{ pt: 0.5 }}>
+                            <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: '0.95rem', color: isComplete ? '#0F2942' : '#94A3B8' }}>
+                              {s.title}
+                            </Typography>
+                            <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.82rem', color: '#64748B' }}>
+                              {s.desc}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </Paper>
+
+                {/* Right Card: Scan Event Audit Log */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 4,
+                    background: '#FFFFFF',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '16px',
+                    boxShadow: '0 10px 30px rgba(30, 58, 95, 0.03)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#0F2942', mb: 0.5 }}>
+                    Optical Scan Milestones
+                  </Typography>
+                  <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.82rem', color: '#64748B', mb: 3 }}>
+                    Cryptographically logged scans along the baggage handling system.
+                  </Typography>
+
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {bagScans.length === 0 ? (
+                      <Typography sx={{ color: '#94A3B8', fontSize: '0.84rem' }}>
+                        No physical scans logged yet for this tag.
+                      </Typography>
+                    ) : (
+                      bagScans.map((scan) => (
+                        <Box key={scan.eventId} sx={{ p: 2, background: '#FAF9F6', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                            <Chip label={scan.scanType} size="small" sx={{ background: '#EFF6FF', color: '#1E40AF', fontWeight: 700, fontSize: '0.68rem' }} />
+                            <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', color: '#64748B' }}>
+                              {scan.timestamp}
+                            </Typography>
+                          </Box>
+                          <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.86rem', color: '#0F2942', fontWeight: 600 }}>
+                            {scan.location}
+                          </Typography>
+                          <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem', color: '#94A3B8' }}>
+                            Reader: {scan.scannerId}
+                          </Typography>
+                        </Box>
+                      ))
+                    )}
+                  </Box>
+                </Paper>
+              </Box>
+            ) : (
+              <Paper elevation={0} sx={{ p: 4, textAlign: 'center', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px' }}>
+                <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, color: '#0F2942', mb: 1 }}>
+                  No Active Bag Tag Found
+                </Typography>
+                <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#64748B', fontSize: '0.88rem' }}>
+                  Please verify your 10-digit luggage tag or click one of the carrier sample tags above.
+                </Typography>
+              </Paper>
+            )}
+          </Box>
+        )}
+
+        {/* Operational Notices */}
+        <Box id="alerts" sx={{ mt: 10 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-            <ShieldAlert size={26} color="#F59E0B" />
-            <Typography variant="h5" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#FFFFFF' }}>
-              Airport Operational Notices & Alerts
+            <ShieldAlert size={22} color="#1E3A5F" />
+            <Typography variant="h5" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#0F2942' }}>
+              Airport Operational Notices & NOTAMs
             </Typography>
           </Box>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3 }}>
             {mockAlerts.map((alert) => (
-              <SpotlightCard key={alert.id} spotlightColor="rgba(245, 158, 11, 0.2)" style={{ padding: '24px', background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '14px', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                  <Chip label="OPERATIONAL ADVISORY" size="small" sx={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#FBBF24', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.7rem' }} />
-                  <Typography sx={{ fontSize: '0.78rem', color: '#94A3B8' }}>{alert.time}</Typography>
+              <SpotlightCard
+                key={alert.id}
+                className="apple-glass"
+                spotlightColor="rgba(2, 132, 199, 0.14)"
+                style={{
+                  padding: '28px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Box sx={{ px: 1.2, py: 0.3, borderRadius: '6px', background: 'rgba(30, 58, 95, 0.08)', border: '1px solid rgba(30, 58, 95, 0.16)', color: '#1E3A5F', fontFamily: "'Geist Mono', monospace", fontWeight: 700, fontSize: '0.68rem', letterSpacing: '0.08em' }}>
+                    OPERATIONAL ADVISORY
+                  </Box>
+                  <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', color: '#64748B' }}>{alert.time}</Typography>
                 </Box>
 
-                <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, color: '#FFFFFF', fontSize: '1.05rem', mb: 1 }}>
+                <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#0F2942', fontSize: '1.08rem', mb: 1, letterSpacing: '-0.01em' }}>
                   {alert.title}
                 </Typography>
-                <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.5, flexGrow: 1 }}>
+                <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', color: '#475569', lineHeight: 1.6, flexGrow: 1 }}>
                   {alert.message}
                 </Typography>
               </SpotlightCard>
@@ -257,8 +826,8 @@ export const FlightTracker: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Live Flight Matrix Section */}
-        <Box sx={{ mt: 8 }}>
+        {/* Live Flight Matrix Component */}
+        <Box sx={{ mt: 10 }}>
           <LiveFlightMatrix />
         </Box>
       </Container>
