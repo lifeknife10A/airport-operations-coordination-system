@@ -110,12 +110,11 @@ export const Services: React.FC = () => {
             gap: 4,
           }}
         >
-          {services.map((svc, idx) => {
+          {services.map((svc) => {
             const Icon = svc.icon;
             return (
               <SpotlightCard
                 key={svc.link}
-                variant={idx % 2 === 0 ? 'outlined' : 'contained'}
                 sx={{
                   height: '100%',
                   borderRadius: 16,
@@ -199,7 +198,7 @@ export const Services: React.FC = () => {
                     }}
                   >
                     <span>Explore Module</span>
-                    <ArrowRight size={16} sx={{ ml: 0.5 }} />
+                    <ArrowRight size={16} />
                   </Box>
                 </Box>
               </SpotlightCard>

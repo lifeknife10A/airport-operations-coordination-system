@@ -29,7 +29,7 @@ export const AccordionGallery: React.FC<AccordionGalleryProps> = ({
   items,
   orientation = 'horizontal',
   trigger = 'hover',
-  expandRatio = 3.5,
+  expandRatio = 2.8,
   grayscale = true,
   height = '480px',
   className = '',
@@ -50,8 +50,8 @@ export const AccordionGallery: React.FC<AccordionGalleryProps> = ({
       const isExpanded = idx === activeIndex;
       gsap.to(card, {
         flexGrow: isExpanded ? expandRatio : 1,
-        duration: 0.6,
-        ease: 'power3.out',
+        duration: 0.35,
+        ease: 'power2.out',
       });
 
       const contentEl = card.querySelector('.card-expanded-content');
@@ -59,16 +59,16 @@ export const AccordionGallery: React.FC<AccordionGalleryProps> = ({
       if (contentEl) {
         gsap.to(contentEl, {
           opacity: isExpanded ? 1 : 0,
-          y: isExpanded ? 0 : 20,
-          duration: 0.4,
-          delay: isExpanded ? 0.15 : 0,
+          y: isExpanded ? 0 : 12,
+          duration: 0.25,
+          delay: isExpanded ? 0.08 : 0,
           ease: 'power2.out',
         });
       }
       if (badgeEl) {
         gsap.to(badgeEl, {
-          scale: isExpanded ? 1 : 0.9,
-          duration: 0.3,
+          scale: isExpanded ? 1 : 0.95,
+          duration: 0.2,
         });
       }
     });
@@ -122,8 +122,8 @@ export const AccordionGallery: React.FC<AccordionGalleryProps> = ({
               
               {item.link && (
                 <a href={item.link} className="card-action-btn">
-                  <span>Explore Telemetry</span>
-                  <ArrowUpRight size={18} />
+                  <span>Explore Details</span>
+                  <ArrowUpRight size={15} />
                 </a>
               )}
             </div>

@@ -1,134 +1,229 @@
 import React from 'react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
-import { Box, Container, Typography, Paper } from '@mui/material';
+import { Box, Container, Typography } from '@mui/material';
 import { Package, Truck, FileText, Phone, ShieldCheck, Thermometer, CheckCircle2 } from 'lucide-react';
-import { SpotlightCard } from '../../components/reactbits';
 
 const cargoServices = [
-  { icon: <Thermometer size={24} color="#38BDF8" />, title: 'Cold-Chain & Pharma Logistics', desc: 'Temperature-controlled storage (-20°C to +25°C) compliant with GDP standards for life sciences and perishable goods.' },
-  { icon: <Package size={24} color="#38BDF8" />, title: 'High-Value Vault Cargo', desc: 'Reinforced vault storage monitored 24/7 by armored security escorts for gold, currency, and luxury items.' },
-  { icon: <ShieldCheck size={24} color="#38BDF8" />, title: 'Dangerous Goods (DGR)', desc: 'Certified hazardous material handling personnel trained in IATA DGR classification and safe containment.' },
-  { icon: <Truck size={24} color="#38BDF8" />, title: 'Express Freight & ULD Handling', desc: 'Rapid turnaround ULD container palletization and automated maindeck cargo freighter loading.' },
+  { icon: <Thermometer size={22} color="#0284C7" />, title: 'Cold-Chain & Pharma Logistics', desc: 'Temperature-controlled storage (-20°C to +25°C) compliant with WHO/GDP standards for life sciences and high-value perishables.' },
+  { icon: <Package size={22} color="#0284C7" />, title: 'High-Value Vault Cargo', desc: 'Reinforced vault compartments monitored 24/7 by armed security escorts for bullion, currency, and luxury haute couture.' },
+  { icon: <ShieldCheck size={22} color="#10B981" />, title: 'Dangerous Goods (DGR)', desc: 'Certified hazardous material logistics personnel trained in IATA DGR classification, containment, and dangerous goods transport.' },
+  { icon: <Truck size={22} color="#0284C7" />, title: 'Express Freight & ULD Pallets', desc: 'Rapid turnaround ULD container palletization and automated maindeck freighter loading for dedicated Boeing 777F freighters.' },
 ];
 
 const cargoProcessSteps = [
-  { step: '01', title: 'Cargo Acceptance & Inspection', desc: 'Weight verification, physical security screening (dual-view X-ray), and Air Waybill (AWB) logging at gate.' },
-  { step: '02', title: 'Customs & e-AWB Clearance', desc: 'Electronic customs manifest declaration, duty assessment, and automated regulatory clearance approval.' },
-  { step: '03', title: 'High-Bay Automated Warehousing', desc: 'Robotic retrieval and temperature-monitored pallet storage inside SAPHIRE Smart Cargo Terminal.' },
-  { step: '04', title: 'Ramp Dispatch & Aircraft Loading', desc: 'High-speed tractor convoy dispatch directly to widebody aircraft belly holds or dedicated freighters.' },
+  { step: '01', title: 'Consignment Acceptance & Inspection', desc: 'Certified weight verification, dual-view X-ray security screening, and automated Master Air Waybill (MAWB) ingestion.' },
+  { step: '02', title: 'Customs & Electronic e-AWB Clearance', desc: 'Paperless EDI customs declaration, digital tariff computation, and automated regulatory border agency authorization.' },
+  { step: '03', title: 'High-Bay Automated Storage & Retrieval', desc: 'Robotic high-bay stacker cranes and climate-monitored pallet holding bays inside SAPHIRE Air Cargo Terminal.' },
+  { step: '04', title: 'Apron Convoy Dispatch & Maindeck Loading', desc: 'Dedicated tug convoys dispatch pallets directly to widebody aircraft lower decks and freighter nose-loading gates.' },
 ];
 
 export const CargoInformation: React.FC = () => {
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#0B1020', color: '#F4F4F4' }}>
+    <Box sx={{ minHeight: '100vh', backgroundColor: '#FAF9F6', color: '#0F2942' }}>
       <Navbar />
 
-      {/* Hero Banner */}
-      <Box sx={{ pt: 14, pb: 6, background: 'linear-gradient(180deg, #1E1B4B 0%, #0B1020 100%)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+      {/* Hero Banner: 1. Air Cargo Logistics Freighter Image, 2. Apple Liquid Glass, 3. Content */}
+      <Box
+        sx={{
+          pt: { xs: 14, md: 17 },
+          pb: { xs: 5, md: 7 },
+          px: { xs: 2, md: 4 },
+          position: 'relative',
+          backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.48) 0%, rgba(15, 41, 66, 0.72) 100%), url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=2000&auto=format&fit=crop')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          overflow: 'hidden',
+        }}
+      >
         <Container maxWidth="xl">
-          <Typography component="span" sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.15em', color: '#38BDF8', textTransform: 'uppercase' }}>
-            GLOBAL FREIGHT & LOGISTICS HUB
-          </Typography>
-          <Typography variant="h3" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#FFFFFF', mt: 1, mb: 1 }}>
-            Cargo & Freight Information
-          </Typography>
-          <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#94A3B8', maxWidth: '650px' }}>
-            State-of-the-art air cargo terminal operations, pharmaceutical cold-chain handling, and e-AWB customs workflow.
-          </Typography>
+          <Box
+            className="apple-liquid-glass"
+            sx={{
+              p: { xs: 4, md: 5.5 },
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
+          >
+            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.4, py: 0.4, borderRadius: '100px', backgroundColor: 'rgba(30, 58, 95, 0.06)', border: '1px solid rgba(30, 58, 95, 0.12)', width: 'fit-content', mb: 2 }}>
+              <Package size={12} color="#1E3A5F" />
+              <Typography
+                sx={{
+                  fontFamily: "'Geist Mono', 'JetBrains Mono', monospace",
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.14em',
+                  color: '#1E3A5F',
+                  textTransform: 'uppercase',
+                }}
+              >
+                GLOBAL FREIGHT &amp; LOGISTICS CORRIDOR
+              </Typography>
+            </Box>
+            <Typography
+              variant="h3"
+              sx={{
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontWeight: 800,
+                color: '#0F2942',
+                mt: 0.5,
+                mb: 1.5,
+                fontSize: { xs: '2rem', md: '2.75rem' },
+                letterSpacing: '-0.025em',
+              }}
+            >
+              Cargo Operations &amp; Freight Terminal
+            </Typography>
+            <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#475569', maxWidth: '680px', lineHeight: 1.65, fontSize: '1rem' }}>
+              Automated air freight logistics, high-capacity cold-chain pharmaceutical facilities, e-AWB paperless clearance, and freighter apron dispatch.
+            </Typography>
+          </Box>
         </Container>
       </Box>
 
-      <Container maxWidth="xl" sx={{ py: 6 }}>
-        {/* Section 1: Cargo Services Overview */}
-        <Box id="services" sx={{ mb: 8 }}>
-          <Typography variant="h4" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#FFFFFF', mb: 3 }}>
-            Cargo Handling Capabilities
-          </Typography>
+      {/* Section 1: Cargo Services Overview */}
+      <Container maxWidth="xl" sx={{ py: 8 }}>
+        <Box id="services" sx={{ mb: 10 }}>
+          <Box sx={{ mb: 4 }}>
+            <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem', color: '#0284C7', letterSpacing: '0.14em', textTransform: 'uppercase', mb: 0.5, fontWeight: 600 }}>
+              SPECIALIZED LOGISTICS
+            </Typography>
+            <Typography variant="h4" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#0F2942', letterSpacing: '-0.02em' }}>
+              Freight Handling Capabilities
+            </Typography>
+          </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 3 }}>
             {cargoServices.map((srv, idx) => (
-              <SpotlightCard key={idx} spotlightColor="rgba(56, 189, 248, 0.2)" style={{ padding: '24px', background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '16px', height: '100%' }}>
-                <Box sx={{ p: 1.2, width: 'fit-content', borderRadius: '10px', background: 'rgba(56, 189, 248, 0.12)', mb: 2 }}>
+              <Box
+                key={idx}
+                sx={{
+                  p: 3.5,
+                  background: '#FFFFFF',
+                  border: '1px solid #E2E8F0',
+                  boxShadow: '0 4px 20px rgba(15, 41, 66, 0.04)',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    borderColor: '#0284C7',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 25px rgba(2, 132, 199, 0.08)',
+                  },
+                }}
+              >
+                <Box sx={{ p: 1.3, width: 'fit-content', borderRadius: '10px', background: 'rgba(2, 132, 199, 0.08)', mb: 2.5 }}>
                   {srv.icon}
                 </Box>
-                <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, color: '#FFFFFF', mb: 1, fontSize: '1.1rem' }}>
+                <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#0F2942', mb: 1, fontSize: '1.05rem' }}>
                   {srv.title}
                 </Typography>
-                <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.55 }}>
+                <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', color: '#475569', lineHeight: 1.6 }}>
                   {srv.desc}
                 </Typography>
-              </SpotlightCard>
+              </Box>
             ))}
           </Box>
         </Box>
+      </Container>
 
-        {/* Section 2: 4-Step Cargo Handling Workflow */}
-        <Box id="process" sx={{ mb: 8 }}>
-          <Typography variant="h4" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#FFFFFF', mb: 3 }}>
-            4-Step Cargo Handling Workflow
-          </Typography>
+      {/* Section 2: 4-Step Cargo Handling Workflow (Authoritative Deep Navy Command) */}
+      <Box id="process" sx={{ backgroundColor: '#0F2942', py: 10, borderTop: '1px solid rgba(255, 255, 255, 0.08)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <Container maxWidth="xl">
+          <Box sx={{ mb: 5 }}>
+            <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem', color: '#38BDF8', letterSpacing: '0.14em', textTransform: 'uppercase', mb: 0.5, fontWeight: 600 }}>
+              OPERATIONAL WORKFLOW
+            </Typography>
+            <Typography variant="h4" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
+              4-Step Air Freight Clearance Protocol
+            </Typography>
+          </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 3 }}>
             {cargoProcessSteps.map((step, idx) => (
-              <SpotlightCard key={idx} spotlightColor="rgba(56, 189, 248, 0.2)" style={{ padding: '24px', background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '16px', height: '100%', position: 'relative' }}>
-                <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '2rem', fontWeight: 900, color: 'rgba(56, 189, 248, 0.3)', mb: 1 }}>
+              <Box
+                key={idx}
+                sx={{
+                  p: 3.5,
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  position: 'relative',
+                  backdropFilter: 'blur(8px)',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    borderColor: '#38BDF8',
+                    background: 'rgba(255, 255, 255, 0.07)',
+                    transform: 'translateY(-2px)',
+                  },
+                }}
+              >
+                <Typography sx={{ fontFamily: "'Geist Mono', 'JetBrains Mono', monospace", fontSize: '2rem', fontWeight: 800, color: '#38BDF8', mb: 1.5 }}>
                   {step.step}
                 </Typography>
-                <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, color: '#FFFFFF', mb: 1, fontSize: '1.05rem' }}>
+                <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#FFFFFF', mb: 1, fontSize: '1.05rem' }}>
                   {step.title}
                 </Typography>
-                <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.5 }}>
+                <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.6 }}>
                   {step.desc}
                 </Typography>
-              </SpotlightCard>
+              </Box>
             ))}
           </Box>
-        </Box>
+        </Container>
+      </Box>
 
-        {/* Section 3: Cargo Documentation & Contact Info */}
-        <Box id="docs" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '7fr 5fr' }, gap: 4 }}>
-          <Paper elevation={0} sx={{ p: 4, background: 'rgba(15, 23, 42, 0.88)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '16px', height: '100%' }}>
+      {/* Section 3: Cargo Documentation & Contact Info */}
+      <Container maxWidth="xl" sx={{ py: 8 }}>
+        <Box id="docs" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.2fr 1fr' }, gap: 4 }}>
+          <Box sx={{ p: 4.5, background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(15, 41, 66, 0.04)', borderRadius: '16px' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <FileText size={24} color="#38BDF8" />
-              <Typography variant="h5" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#FFFFFF' }}>
-                Cargo Documentation & Compliance
+              <Box sx={{ p: 1, borderRadius: '8px', background: 'rgba(30, 58, 95, 0.06)' }}>
+                <FileText size={22} color="#1E3A5F" />
+              </Box>
+              <Typography variant="h5" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#0F2942' }}>
+                Regulatory Compliance &amp; e-AWB Standards
               </Typography>
             </Box>
-            <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#94A3B8', mb: 3, lineHeight: 1.6 }}>
-              All freight shipments passing through SAPHIRE Cargo Terminal must strictly comply with IATA e-AWB standard formats and Indian Customs EDI declarations.
+            <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#475569', mb: 3, lineHeight: 1.65, fontSize: '0.95rem' }}>
+              All international consignments transiting SAPHIRE Cargo Hub are processed under IATA multilateral e-AWB resolutions and direct customs EDI electronic filing.
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: '#CBD5E1', fontSize: '0.9rem' }}>
-                <CheckCircle2 size={18} color="#38BDF8" /> 11-Digit Master Air Waybill (MAWB) & House Air Waybill (HAWB)
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.8 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: '#0F2942', fontSize: '0.9rem', fontFamily: "'Inter', sans-serif", fontWeight: 500 }}>
+                <CheckCircle2 size={18} color="#10B981" /> 11-Digit Master Air Waybill (MAWB) &amp; Consolidator HAWB Ingestion
               </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: '#CBD5E1', fontSize: '0.9rem' }}>
-                <CheckCircle2 size={18} color="#38BDF8" /> Customs Shipping Bill / Bill of Entry with QR Code
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: '#0F2942', fontSize: '0.9rem', fontFamily: "'Inter', sans-serif", fontWeight: 500 }}>
+                <CheckCircle2 size={18} color="#10B981" /> Customs Automated Bill of Entry with Instant QR Clearance
               </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: '#CBD5E1', fontSize: '0.9rem' }}>
-                <CheckCircle2 size={18} color="#38BDF8" /> Shipper's Declaration for Dangerous Goods (SDDG)
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: '#0F2942', fontSize: '0.9rem', fontFamily: "'Inter', sans-serif", fontWeight: 500 }}>
+                <CheckCircle2 size={18} color="#10B981" /> IATA Certified Dangerous Goods Declaration (DGD) Validation
               </Box>
             </Box>
-          </Paper>
+          </Box>
 
-          <Paper id="contact" elevation={0} sx={{ p: 4, background: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '16px', height: '100%' }}>
+          <Box id="contact" sx={{ p: 4.5, background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(15, 41, 66, 0.04)', borderRadius: '16px' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Phone size={24} color="#38BDF8" />
-              <Typography variant="h5" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#FFFFFF' }}>
-                Cargo Enquiries Hotline
+              <Box sx={{ p: 1, borderRadius: '8px', background: 'rgba(2, 132, 199, 0.08)' }}>
+                <Phone size={22} color="#0284C7" />
+              </Box>
+              <Typography variant="h5" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#0F2942' }}>
+                24/7 Freight Operations Desk
               </Typography>
             </Box>
-            <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#94A3B8', mb: 3 }}>
-              Get in touch directly with our 24/7 Cargo Operational Command Desk for slot booking or shipment queries.
+            <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#475569', mb: 3, lineHeight: 1.65, fontSize: '0.95rem' }}>
+              Contact our air cargo duty controller for priority pallet reservations, charter apron slots, or consignment status telemetry.
             </Typography>
-            <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, color: '#38BDF8', fontSize: '1.1rem', mb: 1 }}>
-              Direct Hotline: +91 (022) 8900-5500
+            <Box sx={{ p: 2.5, borderRadius: '10px', background: '#F8FAFC', border: '1px solid #E2E8F0', mb: 1.5 }}>
+              <Typography sx={{ fontFamily: "'Geist Mono', 'JetBrains Mono', monospace", fontSize: '0.9rem', color: '#0F2942', fontWeight: 700 }}>
+                Toll-Free Dispatch: +91 (022) 8900-4400
+              </Typography>
+            </Box>
+            <Typography sx={{ fontFamily: "'Geist Mono', 'JetBrains Mono', monospace", fontSize: '0.84rem', color: '#0284C7', fontWeight: 600 }}>
+              EDI Desk: cargo-ops@saphire.in
             </Typography>
-            <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, color: '#F8FAFC', mb: 1 }}>
-              Customs Helpdesk: +91 (022) 8900-5511
-            </Typography>
-            <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#94A3B8', fontSize: '0.9rem' }}>
-              Email: cargo-ops@saphire-airport.com
-            </Typography>
-          </Paper>
+          </Box>
         </Box>
       </Container>
 

@@ -9,3 +9,9 @@ target/
 *.bkp
 .$*.drawio.bkp
 .*.drawio.bkp
+
+# Agent workspace files
+.agents/
+.claude/
+.codex/
+skills-lock.json

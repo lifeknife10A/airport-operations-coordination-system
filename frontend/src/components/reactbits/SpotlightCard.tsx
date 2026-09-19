@@ -5,6 +5,8 @@ interface SpotlightCardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   spotlightColor?: string;
   className?: string;
+  sx?: any;
+  variant?: string;
 }
 
 export const SpotlightCard: React.FC<SpotlightCardProps> = ({
@@ -61,7 +63,9 @@ export const SpotlightCard: React.FC<SpotlightCardProps> = ({
           background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, ${spotlightColor}, transparent 40%)`,
         }}
       />
-      {children}
+      <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        {children}
+      </div>
     </div>
   );
 };

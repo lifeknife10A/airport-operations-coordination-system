@@ -2,6 +2,7 @@ export interface User {
   userId: number;
   username: string;
   name: string;
+  fullName?: string;
   roleId: number;
   roleName: string;
   departmentId: number;
@@ -146,4 +147,168 @@ export interface AuditLog {
   timestamp: string;
   ipAddress: string;
   changePayload: string;
+}
+
+// BAGGAGE & LOGISTICS
+export interface BagTag {
+  tagId: number;
+  tagNumber: string;
+  flightId: number;
+  flightNumber: string;
+  passengerId: number;
+  passengerName: string;
+  weightKg: number;
+  isPriority: boolean;
+  status: 'CHECKED_IN' | 'SCREENED' | 'LOADED' | 'TRANSIT' | 'ARRIVED' | 'CLAIMED';
+}
+
+export interface BaggageScanEvent {
+  eventId: number;
+  tagNumber: string;
+  location: string;
+  scannerId: string;
+  timestamp: string;
+  scanType: 'SECURITY_SCREEN' | 'RAMP_LOAD' | 'TRANSFER' | 'CAROUSEL_UNLOAD';
+}
+
+export interface MishandledBaggage {
+  reportId: number;
+  claimNumber: string;
+  incidentType: 'LOST' | 'DAMAGED' | 'DELAYED' | 'PILFERED';
+  tagNumber: string;
+  passengerId: number;
+  passengerName: string;
+  status: 'REPORTED' | 'INVESTIGATING' | 'LOCATED' | 'DELIVERED' | 'COMPENSATED';
+  reportedAt: string;
+  lastKnownLocation: string;
+}
+
+// BILLING & INVOICES
+export interface AirlineBillingInvoice {
+  invoiceId: number;
+  invoiceNumber: string;
+  airlineId: number;
+  airlineName: string;
+  startDate: string;
+  endDate: string;
+  totalAmountUsd: number;
+  status: 'DRAFT' | 'ISSUED' | 'PAID' | 'DISPUTED';
+  generatedAt: string;
+}
+
+export interface InvoiceLineItem {
+  itemId: number;
+  invoiceId: number;
+  flightNumber: string;
+  chargeType: 'LANDING_FEE' | 'PARKING_STAND' | 'JETBRIDGE' | 'BAGGAGE_HANDLING' | 'FUEL_HYDRANT';
+  amountUsd: number;
+  units: number;
+  ratePerUnit: number;
+}
+
+// BORDER CONTROL & TRAVELERS
+export interface Traveler {
+  travelerId: number;
+  passportNumber: string;
+  nationality: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  watchlistStatus: 'CLEAR' | 'FLAGGED' | 'WATCHLIST_HIT';
+}
+
+export interface PassengerClearanceLog {
+  clearanceId: number;
+  passengerId: number;
+  clearanceStatus: 'CLEARED' | 'FLAGGED' | 'DENIED' | 'BOARDED';
+  denialReason?: string;
+  verificationMethod: 'BIOMETRIC_EGATE' | 'BARCODE_SCAN' | 'OFFICER_MANUAL';
+  boardingPassId: number;
+  checkpointId: number;
+  timestamp: string;
+}
+
+export interface ImmigrationRecord {
+  immigrationId: number;
+  passengerId: number;
+  visaType: string;
+  stampNumber: string;
+  biometricFacialMatched: boolean;
+  clearanceType: 'ENTRY' | 'EXIT' | 'TRANSIT';
+  processedAt: string;
+}
+
+// FEATURE MODULES & UTILITIES
+export interface GpuTelemetryLog {
+  logId: number;
+  flightNumber: string;
+  standCode: string;
+  gpuUnitCode: string;
+  kwhDelivered: number;
+  durationMinutes: number;
+  loggedAt: string;
+}
+
+export interface IncidentTicket {
+  ticketId: string;
+  title: string;
+  location: string;
+  flightNumber?: string;
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  status: 'OPEN' | 'INVESTIGATING' | 'ESCALATED' | 'RESOLVED';
+  reportedAt: string;
+  assignedOfficer?: string;
+  description: string;
+}
+
+export interface CheckinCounterAllocation {
+  allocationId: number;
+  counterNumber: string;
+  terminal: string;
+  airlineCode: string;
+  flightNumber: string;
+  classCategory: 'ALL_PASSENGERS' | 'BUSINESS_FIRST' | 'BAGGAGE_DROP';
+  startTime: string;
+  endTime: string;
+  allocatedAt: string;
+}
+
+export interface HandoverNote {
+  noteId: number;
+  department: string;
+  author: string;
+  priority: 'ROUTINE' | 'URGENT' | 'SAFETY_CRITICAL';
+  title: string;
+  content: string;
+  postedAt: string;
+}
+
+// PUBLIC BRIDGE & LOUNGES
+export interface LostFoundRecord {
+  id: string;
+  title: string;
+  itemName?: string;
+  category: 'ELECTRONICS' | 'BAGGAGE' | 'DOCUMENTS' | 'VALUABLES' | 'CLOTHING';
+  locationFound: string;
+  reportedBy: string;
+  contactName?: string;
+  contactNumber: string;
+  contactEmail?: string;
+  linkedPnr?: string;
+  flightNumber?: string;
+  status: 'NEW_REPORT' | 'SEARCHING' | 'MATCHED' | 'READY_FOR_COLLECTION' | 'RETURNED';
+  reportedDate: string;
+  description: string;
+  color: string;
+  storageLocker: string;
+}
+
+export interface LoungeFacility {
+  id: string;
+  name: string;
+  terminal: string;
+  capacity: number;
+  currentGuests: number;
+  status: 'NORMAL' | 'BUSY' | 'NEAR_CAPACITY';
+  eligibleClasses: string[];
 }
