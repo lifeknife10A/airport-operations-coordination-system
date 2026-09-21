@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import {
@@ -35,6 +36,7 @@ import LiveFlightMatrix from '../../components/home/LiveFlightMatrix';
 import { SpotlightCard } from '../../components/reactbits';
 import { aocsDataStore } from '../../services/aocsDataStore';
 import { Flight, BagTag, BaggageScanEvent } from '../../types';
+import bannerTracker from '../../assets/banners/banner-tracker.jpg';
 
 interface FlightRecord {
   flightNo: string;
@@ -79,15 +81,23 @@ const mockAlerts = [
 ];
 
 export const FlightTracker: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const flightParam = searchParams.get('flight') || '';
+
   const [trackerTab, setTrackerTab] = useState<'FLIGHTS' | 'BAGGAGE'>('FLIGHTS');
   const [flights, setFlights] = useState<FlightRecord[]>(() =>
     aocsDataStore.getFlights().map(mapFlightToRecord)
   );
-  const [searchQuery, setSearchQuery] = useState(() => {
-    return new URLSearchParams(window.location.search).get('flight') || '';
-  });
+  const [searchQuery, setSearchQuery] = useState(flightParam);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [selectedFlight, setSelectedFlight] = useState<FlightRecord | null>(null);
+
+  // Sync flightParam with searchQuery whenever URL changes
+  useEffect(() => {
+    if (flightParam) {
+      setSearchQuery(flightParam);
+    }
+  }, [flightParam]);
 
   // Baggage Tracker State
   const [bagQuery, setBagQuery] = useState('BAG-AI203-8821');
@@ -99,6 +109,17 @@ export const FlightTracker: React.FC = () => {
       const allFlights = aocsDataStore.getFlights().map(mapFlightToRecord);
       setFlights(allFlights);
       setSelectedFlight((prev) => {
+        const query = flightParam || searchQuery;
+        if (query.trim()) {
+          const match = allFlights.find((f) =>
+            f.flightNo.toLowerCase().includes(query.toLowerCase()) ||
+            f.airline.toLowerCase().includes(query.toLowerCase()) ||
+            f.route.toLowerCase().includes(query.toLowerCase()) ||
+            f.destination.toLowerCase().includes(query.toLowerCase()) ||
+            f.gate.toLowerCase().includes(query.toLowerCase())
+          );
+          if (match) return match;
+        }
         if (!prev && allFlights.length > 0) return allFlights[0];
         if (prev) {
           const updated = allFlights.find((f) => f.flightNo === prev.flightNo);
@@ -127,7 +148,7 @@ export const FlightTracker: React.FC = () => {
     });
 
     return () => unsub();
-  }, [bagQuery]);
+  }, [bagQuery, flightParam, searchQuery]);
 
   const handleSelectBag = (tag: string) => {
     setBagQuery(tag);
@@ -137,10 +158,15 @@ export const FlightTracker: React.FC = () => {
   };
 
   const filteredFlights = flights.filter((f) => {
+    const q = searchQuery.toLowerCase().trim();
     const matchesQuery =
-      f.flightNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.route.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.destination.toLowerCase().includes(searchQuery.toLowerCase());
+      !q ||
+      f.flightNo.toLowerCase().includes(q) ||
+      f.airline.toLowerCase().includes(q) ||
+      f.route.toLowerCase().includes(q) ||
+      f.origin.toLowerCase().includes(q) ||
+      f.destination.toLowerCase().includes(q) ||
+      f.gate.toLowerCase().includes(q);
     const matchesStatus = statusFilter === 'ALL' || f.status === statusFilter;
     return matchesQuery && matchesStatus;
   });
@@ -202,7 +228,7 @@ export const FlightTracker: React.FC = () => {
           pb: { xs: 5, md: 7 },
           px: { xs: 2, md: 4 },
           position: 'relative',
-          backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.48) 0%, rgba(15, 41, 66, 0.72) 100%), url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2000&auto=format&fit=crop')`,
+          backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.48) 0%, rgba(15, 41, 66, 0.72) 100%), url(${bannerTracker})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           overflow: 'hidden',
@@ -218,21 +244,6 @@ export const FlightTracker: React.FC = () => {
               justifyContent: 'center',
             }}
           >
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.4, py: 0.4, borderRadius: '100px', backgroundColor: 'rgba(30, 58, 95, 0.06)', border: '1px solid rgba(30, 58, 95, 0.12)', width: 'fit-content', mb: 2 }}>
-              <Typography
-                component="span"
-                sx={{
-                  fontFamily: "'Geist Mono', monospace",
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.14em',
-                  color: '#1E3A5F',
-                  textTransform: 'uppercase',
-                }}
-              >
-                AIR TRAFFIC RADAR &amp; HUB SCHEDULES
-              </Typography>
-            </Box>
             <Typography
               variant="h3"
               sx={{

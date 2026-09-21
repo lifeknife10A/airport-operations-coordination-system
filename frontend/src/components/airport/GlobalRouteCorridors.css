@@ -1,0 +1,318 @@
+.grc-container {
+  width: 100%;
+  background: rgba(12, 24, 37, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 16px 40px -10px rgba(2, 6, 23, 0.4);
+}
+
+.grc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 10px;
+}
+
+.grc-radar-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38BDF8;
+  box-shadow: 0 0 10px #38BDF8;
+  animation: grcPulse 2s infinite ease-in-out;
+}
+
+@keyframes grcPulse {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 14px #38BDF8; }
+  100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+.grc-title-mono {
+  font-family: 'Geist Mono', monospace !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  color: #38BDF8 !important;
+}
+
+.grc-active-badge {
+  font-family: 'Geist Mono', monospace !important;
+  font-size: 9.5px !important;
+  color: #94A3B8 !important;
+  letter-spacing: 0.06em !important;
+}
+
+/* Radar Canvas */
+.grc-radar-canvas {
+  position: relative;
+  width: 100%;
+  height: 190px;
+  background: radial-gradient(circle at 52% 48%, rgba(2, 132, 199, 0.12) 0%, rgba(6, 15, 26, 0.95) 75%);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.grc-grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 52% 48%, transparent 40px, rgba(56, 189, 248, 0.05) 41px, transparent 42px),
+    radial-gradient(circle at 52% 48%, transparent 80px, rgba(56, 189, 248, 0.04) 81px, transparent 82px),
+    radial-gradient(circle at 52% 48%, transparent 120px, rgba(56, 189, 248, 0.03) 121px, transparent 122px);
+  pointer-events: none;
+}
+
+.grc-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.grc-active-path {
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.8));
+}
+
+.grc-cruising-plane {
+  filter: drop-shadow(0 0 8px #ffffff);
+}
+
+/* Hub Pin SPH */
+.grc-hub-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.grc-hub-center {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #38BDF8;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 0 12px #38BDF8;
+}
+
+.grc-hub-ring {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px dashed rgba(56, 189, 248, 0.6);
+  animation: grcRotate 10s linear infinite;
+}
+
+@keyframes grcRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.grc-hub-tag {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.grc-hub-iata {
+  font-family: 'Geist Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #FFFFFF;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.grc-hub-label {
+  font-family: 'Geist Mono', monospace;
+  font-size: 7.5px;
+  color: #38BDF8;
+  letter-spacing: 0.08em;
+}
+
+/* Destination Pins */
+.grc-dest-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 6;
+  padding: 4px;
+  transition: transform 0.2s ease;
+}
+
+.grc-dest-pin:hover {
+  transform: translate(-50%, -50%) scale(1.15);
+}
+
+.grc-dest-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #64748B;
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  transition: all 0.2s ease;
+}
+
+.grc-dest-pin.selected .grc-dest-dot {
+  background: #10B981;
+  border-color: #FFFFFF;
+  box-shadow: 0 0 10px #10B981;
+}
+
+.grc-dest-iata {
+  font-family: 'Geist Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: #94A3B8;
+  margin-top: 2px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  transition: color 0.2s ease;
+}
+
+.grc-dest-pin.selected .grc-dest-iata {
+  color: #FFFFFF;
+  font-weight: 800;
+}
+
+/* Pills Row */
+.grc-pills-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.grc-pills-row::-webkit-scrollbar {
+  display: none;
+}
+
+.grc-pill-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #94A3B8;
+  font-family: 'Geist Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.grc-pill-btn:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.grc-pill-btn.active {
+  background: #0284C7;
+  color: #FFFFFF;
+  border-color: #38BDF8;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+}
+
+.grc-pill-icon {
+  opacity: 0.8;
+}
+
+/* Telemetry Readout Box */
+.grc-telemetry-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.grc-tel-dest {
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  color: #FFFFFF !important;
+  line-height: 1.2 !important;
+}
+
+.grc-tel-country {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.76rem !important;
+  color: #94A3B8 !important;
+}
+
+.grc-tel-time-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+.grc-tel-time {
+  font-family: 'Geist Mono', monospace !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #10B981 !important;
+}
+
+.grc-tel-stats-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.grc-tel-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.grc-tel-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.grc-tel-value {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: #E2E8F0;
+}
+
+.grc-tel-value.status-clear {
+  color: #38BDF8;
+}
+
+.grc-tel-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.08);
+}

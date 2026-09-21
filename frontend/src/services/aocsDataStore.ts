@@ -118,6 +118,24 @@ const SEED_FLIGHTS: Flight[] = [
     gateCode: 'A02',
     standCode: 'G01',
   },
+  {
+    flightId: 105,
+    flightNumber: 'SPH-240',
+    airlineCode: 'SPH',
+    airlineName: 'Saphire Airways',
+    flightType: 'DEPARTURE',
+    originAirportCode: 'SPH',
+    originAirportName: 'Saphire International Airport',
+    destinationAirportCode: 'DXB',
+    destinationAirportName: 'Dubai International Airport',
+    aircraftRegistration: 'A6-SPH',
+    aircraftType: 'Airbus A350-900',
+    scheduledTime: '17:30 UTC',
+    estimatedTime: '17:30 UTC',
+    status: 'BOARDING',
+    gateCode: 'A04',
+    standCode: 'G02',
+  },
 ];
 
 const SEED_GATES: Gate[] = [

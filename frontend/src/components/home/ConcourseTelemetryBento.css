@@ -1,0 +1,407 @@
+.ctb-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 20px;
+  width: 100%;
+}
+
+.ctb-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 20px -4px rgba(15, 41, 66, 0.05);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.ctb-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -6px rgba(15, 41, 66, 0.09);
+  border-color: #CBD5E1;
+}
+
+.ctb-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ctb-card-mono-title {
+  font-family: 'Geist Mono', monospace !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #0F2942 !important;
+  letter-spacing: 0.1em !important;
+}
+
+.ctb-pill-tag {
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.ctb-pill-tag.tranquil {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.ctb-pill-tag.active {
+  background: rgba(245, 158, 11, 0.1);
+  color: #D97706;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.ctb-pill-tag.autoland {
+  background: rgba(2, 132, 199, 0.1);
+  color: #0284C7;
+  border: 1px solid rgba(2, 132, 199, 0.25);
+}
+
+.ctb-pill-tag.tag-speed {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.ctb-pill-tag.tag-purple {
+  background: rgba(99, 102, 241, 0.1);
+  color: #4F46E5;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.ctb-card-heading {
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 1.22rem !important;
+  color: #0F2942 !important;
+  letter-spacing: -0.015em !important;
+  margin-bottom: 6px !important;
+}
+
+.ctb-card-desc {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.88rem !important;
+  color: #64748B !important;
+  line-height: 1.55 !important;
+  margin-bottom: 14px !important;
+}
+
+/* Sound Wave Box */
+.ctb-wave-box {
+  position: relative;
+  width: 100%;
+  height: 70px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.ctb-wave-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ctb-soundwave-path {
+  transition: d 0.25s ease, stroke 0.25s ease;
+}
+
+.ctb-wave-metric {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px 12px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(15, 41, 66, 0.06);
+  border: 1px solid #E2E8F0;
+}
+
+.ctb-wave-number {
+  font-family: 'Geist Mono', monospace;
+  font-size: 20px;
+  font-weight: 800;
+  transition: color 0.2s ease;
+}
+
+.ctb-wave-unit {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748B;
+}
+
+/* Range Slider */
+.ctb-range-slider {
+  width: 100%;
+  accent-color: #0284C7;
+  cursor: pointer;
+  height: 6px;
+  border-radius: 4px;
+}
+
+.ctb-preset-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ctb-preset-btn {
+  flex: 1;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.ctb-preset-btn:hover {
+  background: #E2E8F0;
+  color: #0F2942;
+}
+
+.ctb-preset-btn.active {
+  background: #0F2942;
+  color: #FFFFFF;
+  border-color: #0F2942;
+  box-shadow: 0 2px 8px rgba(15, 41, 66, 0.2);
+}
+
+/* Simulated Runway Lights */
+.ctb-runway-schematic {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0 16px;
+}
+
+.ctb-runway-strip {
+  position: relative;
+  height: 38px;
+  background: #1E293B;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  overflow: hidden;
+}
+
+.ctb-runway-strip.secondary {
+  opacity: 0.75;
+}
+
+.ctb-threshold-green {
+  width: 6px;
+  height: 22px;
+  background: #10B981;
+  border-radius: 2px;
+  box-shadow: 0 0 10px #10B981;
+}
+
+.ctb-centerline-lights {
+  flex: 1;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, #F8FAFC 0, #F8FAFC 16px, transparent 16px, transparent 26px);
+  margin: 0 12px;
+  opacity: 0.85;
+}
+
+.ctb-runway-designator {
+  font-family: 'Geist Mono', monospace;
+  font-size: 12px;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: 0.08em;
+}
+
+.ctb-plane-marker {
+  position: absolute;
+  left: 65%;
+  font-size: 16px;
+  color: #38BDF8;
+  animation: ctbPlaneLand 4s infinite linear;
+}
+
+@keyframes ctbPlaneLand {
+  0% { transform: translateX(-40px); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateX(80px); opacity: 0; }
+}
+
+/* METAR Grid */
+.ctb-metar-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.ctb-metar-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.ctb-metar-lbl {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ctb-metar-val {
+  font-family: 'Geist Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0F2942;
+}
+
+/* Baggage Steps */
+.ctb-bag-steps {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.ctb-bag-step-btn {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.ctb-bag-step-btn:hover {
+  background: #F1F5F9;
+  border-color: #CBD5E1;
+}
+
+.ctb-bag-step-btn.completed {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.04);
+}
+
+.ctb-bag-step-btn.active {
+  background: #0F2942;
+  border-color: #0F2942;
+  box-shadow: 0 2px 8px rgba(15, 41, 66, 0.15);
+}
+
+.ctb-bag-step-num {
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #94A3B8;
+}
+
+.ctb-bag-step-btn.active .ctb-bag-step-num {
+  color: #38BDF8;
+}
+
+.ctb-bag-step-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: #0F2942;
+  text-align: center;
+  margin: 3px 0;
+  line-height: 1.1;
+}
+
+.ctb-bag-step-btn.active .ctb-bag-step-title {
+  color: #FFFFFF;
+}
+
+.ctb-bag-step-time {
+  font-family: 'Geist Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  color: #10B981;
+}
+
+.ctb-bag-detail-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(16, 185, 129, 0.07);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.ctb-bag-detail-text {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.8rem !important;
+  color: #0F2942 !important;
+}
+
+/* Concourse Flow Metrics */
+.ctb-flow-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.ctb-flow-box {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ctb-flow-stat {
+  font-family: 'Geist Mono', monospace;
+  font-size: 20px;
+  font-weight: 800;
+  color: #0F2942;
+  letter-spacing: -0.02em;
+}
+
+.ctb-flow-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: #64748B;
+  font-weight: 500;
+  margin-top: 3px;
+}
+
+@media (max-width: 900px) {
+  .ctb-grid {
+    grid-template-columns: 1fr;
+  }
+}
