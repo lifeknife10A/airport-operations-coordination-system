@@ -3,6 +3,7 @@ import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { Box, Container, Typography, Paper, ToggleButtonGroup, ToggleButton, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import { PlaneLanding, PlaneTakeoff, Calendar, CheckCircle2, Clock, AlertTriangle, Plane } from 'lucide-react';
+import bannerSchedule from '../../assets/banners/airport-digital-board.png';
 
 interface ScheduleFlight {
   id: string;
@@ -78,7 +79,7 @@ export const FlightSchedule: React.FC = () => {
           pb: { xs: 5, md: 7 },
           px: { xs: 2, md: 4 },
           position: 'relative',
-          backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.42) 0%, rgba(15, 41, 66, 0.65) 100%), url('/images/airport-digital-board.png')`,
+          backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.42) 0%, rgba(15, 41, 66, 0.65) 100%), url(${bannerSchedule})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center 40%',
           overflow: 'hidden',
@@ -94,21 +95,6 @@ export const FlightSchedule: React.FC = () => {
               justifyContent: 'center',
             }}
           >
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.4, py: 0.4, borderRadius: '100px', backgroundColor: 'rgba(30, 58, 95, 0.06)', border: '1px solid rgba(30, 58, 95, 0.12)', width: 'fit-content', mb: 2 }}>
-              <Clock size={12} color="#1E3A5F" />
-              <Typography
-                sx={{
-                  fontFamily: "'Geist Mono', 'JetBrains Mono', monospace",
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.14em',
-                  color: '#1E3A5F',
-                  textTransform: 'uppercase',
-                }}
-              >
-                MASTER TERMINAL TIMETABLE
-              </Typography>
-            </Box>
             <Typography
               variant="h3"
               sx={{

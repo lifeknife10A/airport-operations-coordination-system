@@ -4,6 +4,8 @@ import Footer from '../../components/layout/Footer';
 import { Box, Container, Typography, Paper, Table, TableBody, TableCell, TableHead, TableRow, TableContainer } from '@mui/material';
 import { Building2, Car, Train, Compass, MapPin, Radio, ArrowUpRight, Shield } from 'lucide-react';
 import { SpotlightCard } from '../../components/reactbits';
+import bannerAirport from '../../assets/banners/banner-airport.jpg';
+import GlobalRouteCorridors from '../../components/airport/GlobalRouteCorridors';
 
 const parkingRates = [
   { type: 'P1 Terminal Express', rate: '₹150 / hr', maxDaily: '₹1,200 / day', notes: 'Direct climate-controlled skywalk to T1 & T2 departures.' },
@@ -24,7 +26,7 @@ export const AirportInformation: React.FC = () => {
           pb: { xs: 5, md: 7 },
           px: { xs: 2, md: 4 },
           position: 'relative',
-          backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.48) 0%, rgba(15, 41, 66, 0.72) 100%), url('https://images.unsplash.com/photo-1529074963764-98f45c47344b?q=80&w=2000&auto=format&fit=crop')`,
+          backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.48) 0%, rgba(15, 41, 66, 0.72) 100%), url(${bannerAirport})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           overflow: 'hidden',
@@ -40,12 +42,6 @@ export const AirportInformation: React.FC = () => {
               justifyContent: 'center',
             }}
           >
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.4, py: 0.4, borderRadius: '100px', backgroundColor: 'rgba(30, 58, 95, 0.06)', border: '1px solid rgba(30, 58, 95, 0.12)', width: 'fit-content', mb: 2 }}>
-              <Building2 size={12} color="#1E3A5F" />
-              <Typography sx={{ fontFamily: "'Geist Mono', 'JetBrains Mono', monospace", fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.14em', color: '#1E3A5F', textTransform: 'uppercase' }}>
-                Aerodrome Specifications &amp; Ground Infrastructure
-              </Typography>
-            </Box>
             <Typography variant="h2" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, letterSpacing: '-0.025em', color: '#0F2942', mb: 2, fontSize: { xs: '2.2rem', md: '3.2rem' } }}>
               About SAPHIRE Airport
             </Typography>
@@ -406,25 +402,8 @@ export const AirportInformation: React.FC = () => {
                 </Box>
               </Box>
 
-              <Box
-                sx={{
-                  p: 4,
-                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                  borderRadius: '14px',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  textAlign: 'center',
-                }}
-              >
-                <Compass size={40} color="#38BDF8" style={{ marginBottom: '16px' }} />
-                <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: '#FFFFFF', mb: 1 }}>
-                  Precinct Airside Telemetry
-                </Typography>
-                <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.85rem', color: '#94A3B8', mb: 2 }}>
-                  Live gate occupancy, surface radar movement, and taxiway holding points are coordinated 24/7 through the AOCC Master Control Console.
-                </Typography>
-                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, color: '#38BDF8', fontSize: '0.84rem', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600 }}>
-                  Live FIDS &amp; Radar Synced <ArrowUpRight size={14} />
-                </Box>
+              <Box>
+                <GlobalRouteCorridors />
               </Box>
             </Box>
           </Paper>

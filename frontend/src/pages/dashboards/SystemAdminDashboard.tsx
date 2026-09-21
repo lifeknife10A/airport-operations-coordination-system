@@ -220,7 +220,6 @@ export const SystemAdminDashboard: React.FC = () => {
   };
 
   const [activeTab, setActiveTab] = useState<string>(() => getTabFromHash(location.hash));
-  const [concourseFilter, setConcourseFilter] = useState<'ALL' | 'T1' | 'T2'>('ALL');
 
   useEffect(() => {
     setActiveTab(getTabFromHash(location.hash));
@@ -495,35 +494,8 @@ export const SystemAdminDashboard: React.FC = () => {
               </Typography>
             </Box>
 
-            {/* Controls: Concourse Selector Pills + Primary Action */}
+            {/* Controls: Primary Action Buttons */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box sx={{ display: 'flex', backgroundColor: '#FFFFFF', p: 0.5, borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                {(['ALL', 'T1', 'T2'] as const).map((filter) => (
-                  <Button
-                    key={filter}
-                    size="small"
-                    onClick={() => setConcourseFilter(filter)}
-                    sx={{
-                      fontFamily: "'Outfit', sans-serif",
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      px: 1.5,
-                      py: 0.4,
-                      minWidth: 'auto',
-                      borderRadius: '7px',
-                      textTransform: 'none',
-                      backgroundColor: concourseFilter === filter ? '#0F2942' : 'transparent',
-                      color: concourseFilter === filter ? '#FFFFFF' : '#64748B',
-                      '&:hover': {
-                        backgroundColor: concourseFilter === filter ? '#1E3A5F' : '#F1F5F9',
-                      },
-                    }}
-                  >
-                    {filter === 'ALL' ? 'All Terminals' : filter === 'T1' ? 'Terminal 1' : 'Terminal 2'}
-                  </Button>
-                ))}
-              </Box>
-
               <Button
                 variant="outlined"
                 startIcon={<ShieldAlert size={16} color="#0284C7" />}
