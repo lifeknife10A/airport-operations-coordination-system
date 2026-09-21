@@ -3,6 +3,7 @@ import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { Box, Container, Typography } from '@mui/material';
 import { Package, Truck, FileText, Phone, ShieldCheck, Thermometer, CheckCircle2 } from 'lucide-react';
+import bannerCargo from '../../assets/banners/banner-cargo.jpg';
 
 const cargoServices = [
   { icon: <Thermometer size={22} color="#0284C7" />, title: 'Cold-Chain & Pharma Logistics', desc: 'Temperature-controlled storage (-20°C to +25°C) compliant with WHO/GDP standards for life sciences and high-value perishables.' },
@@ -30,7 +31,7 @@ export const CargoInformation: React.FC = () => {
           pb: { xs: 5, md: 7 },
           px: { xs: 2, md: 4 },
           position: 'relative',
-          backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.48) 0%, rgba(15, 41, 66, 0.72) 100%), url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=2000&auto=format&fit=crop')`,
+          backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.48) 0%, rgba(15, 41, 66, 0.72) 100%), url(${bannerCargo})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           overflow: 'hidden',
@@ -46,21 +47,6 @@ export const CargoInformation: React.FC = () => {
               justifyContent: 'center',
             }}
           >
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.4, py: 0.4, borderRadius: '100px', backgroundColor: 'rgba(30, 58, 95, 0.06)', border: '1px solid rgba(30, 58, 95, 0.12)', width: 'fit-content', mb: 2 }}>
-              <Package size={12} color="#1E3A5F" />
-              <Typography
-                sx={{
-                  fontFamily: "'Geist Mono', 'JetBrains Mono', monospace",
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.14em',
-                  color: '#1E3A5F',
-                  textTransform: 'uppercase',
-                }}
-              >
-                GLOBAL FREIGHT &amp; LOGISTICS CORRIDOR
-              </Typography>
-            </Box>
             <Typography
               variant="h3"
               sx={{

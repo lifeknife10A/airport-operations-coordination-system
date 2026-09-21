@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, ArrowUpRight } from 'lucide-react';
 import { AircraftCanvas } from './AircraftCanvas';
 import './Hero.css';
 
 export const Hero: React.FC = () => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,7 +24,7 @@ export const Hero: React.FC = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/tracker?flight=${encodeURIComponent(searchQuery.trim())}`;
+      navigate(`/tracker?flight=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -32,61 +35,63 @@ export const Hero: React.FC = () => {
         <AircraftCanvas
           scrollProgress={scrollProgress}
           tintMode="warm-day"
-          cropShape="framed"
+          cropShape="full"
         />
       </div>
 
-      {/* Hero Foreground Content - Clean Floating Typography Without Background Box */}
-      <div className="ve-hero-container">
-        <div className="ve-hero-content-left">
-          <h1 className="ve-headline-italic">
-            Saphire, mon doux refuge.
-          </h1>
-
-          <p className="ve-subheading-italic">
-            Where calm luxury meets aviation precision. Effortless departures, real-time concourse guidance, and serene comfort across every terminal.
-          </p>
-        </div>
+      {/* Top-Left Corner: Primary Luxury Brand Headline (Hardcoded, Un-selectable) */}
+      <div className="ve-hero-top-left">
+        <h1 className="ve-headline-italic">
+          Saphire, mon doux refuge.
+        </h1>
       </div>
 
-      {/* Floating Seam Bridge positioned directly across the bottom border of the hero */}
+      {/* Bottom-Right Corner: Editorial Manifesto (Hardcoded, Un-selectable) */}
+      <div className="ve-hero-bottom-right">
+        <p className="ve-subheading-italic">
+          Where calm luxury meets aviation precision. Effortless departures, real-time concourse guidance, and serene comfort across every terminal.
+        </p>
+      </div>
+
+      {/* Floating Seam Bridge: Minimalist Apple macOS Style Bottom Dock */}
       <div className="ve-seam-bridge">
-        <div className="ve-seam-card">
-          {/* Passenger Flight & Gate Finder */}
-          <form className="ve-finder-card" onSubmit={handleSearch}>
-            <div className="ve-finder-input-box">
-              <span className="ve-search-icon">🔍</span>
-              <input
-                type="text"
-                placeholder="Search flight number, carrier, or gate (e.g. SPH-240 or Gate A4)"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="ve-finder-input"
-              />
-            </div>
-            <button type="submit" className="ve-btn-search">View Live Status</button>
+        <div className="ve-macos-dock apple-liquid-glass">
+          {/* 1. Live Telemetry Beacon */}
+          <div className="ve-dock-live">
+            <span className="ve-pulse-dot" />
+            <span className="ve-dock-live-text">LIVE</span>
+          </div>
+
+          <div className="ve-dock-divider" />
+
+          {/* 2. Unified Search Field */}
+          <form className="ve-dock-search" onSubmit={handleSearch}>
+            <Search className="ve-dock-search-icon" size={15} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="ve-dock-input"
+              aria-label="Search flight or gate"
+            />
+            <button type="submit" className="ve-dock-btn" aria-label="Track Flight">
+              <span>Track</span>
+              <ArrowUpRight size={14} />
+            </button>
           </form>
 
-          {/* Passenger-First Stats Row (Stats that matter to travelers) */}
-          <div className="ve-stats-row">
-            <div className="ve-stat-box">
-              <span className="ve-stat-number">98.8%</span>
-              <span className="ve-stat-label">On-Time Flight Departures</span>
+          <div className="ve-dock-divider ve-dock-desktop-only" />
+
+          {/* 3. Live Quick Telemetry Glance (macOS Status Item) */}
+          <div className="ve-dock-metrics ve-dock-desktop-only">
+            <div className="ve-dock-metric">
+              <span className="ve-metric-val">98.8%</span>
+              <span className="ve-metric-lbl">On-Time</span>
             </div>
-            <div className="ve-stat-divider" />
-            <div className="ve-stat-box">
-              <span className="ve-stat-number">&lt; 12 min</span>
-              <span className="ve-stat-label">Avg. Bag to Carousel</span>
-            </div>
-            <div className="ve-stat-divider" />
-            <div className="ve-stat-box">
-              <span className="ve-stat-number">&lt; 8 min</span>
-              <span className="ve-stat-label">FastTrack Security Line</span>
-            </div>
-            <div className="ve-stat-divider" />
-            <div className="ve-stat-box">
-              <span className="ve-stat-number">200+</span>
-              <span className="ve-stat-label">Worldwide Direct Destinations</span>
+            <span className="ve-metric-dot">•</span>
+            <div className="ve-dock-metric">
+              <span className="ve-metric-val">&lt; 12m</span>
+              <span className="ve-metric-lbl">Carousel</span>
             </div>
           </div>
         </div>

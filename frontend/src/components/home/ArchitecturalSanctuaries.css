@@ -1,0 +1,257 @@
+.arch-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Tabs Bar */
+.arch-nav-bar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid #E2E8F0;
+  padding-bottom: 12px;
+}
+
+.arch-nav-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.arch-nav-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 8px 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.arch-nav-tab:hover {
+  background: #F1F5F9;
+}
+
+.arch-nav-tab.active {
+  background: #0F2942;
+  border-color: #0F2942;
+  box-shadow: 0 4px 14px rgba(15, 41, 66, 0.15);
+}
+
+.arch-tab-index {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94A3B8;
+}
+
+.arch-nav-tab.active .arch-tab-index {
+  color: #38BDF8;
+}
+
+.arch-tab-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.arch-nav-tab.active .arch-tab-title {
+  color: #FFFFFF;
+}
+
+/* Main Stage */
+.arch-stage {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 28px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 16px 40px -10px rgba(15, 41, 66, 0.06);
+  align-items: center;
+}
+
+/* Visual Left Pane */
+.arch-visual-pane {
+  position: relative;
+  width: 100%;
+  height: 440px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #0C1825;
+}
+
+.arch-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: archFadeIn 0.4s ease forwards;
+}
+
+@keyframes archFadeIn {
+  from { opacity: 0.6; transform: scale(1.02); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.arch-img-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 41, 66, 0.35) 0%,
+    transparent 35%,
+    rgba(15, 41, 66, 0.65) 100%
+  );
+  pointer-events: none;
+}
+
+.arch-img-tag-top {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 41, 66, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 5px 12px;
+}
+
+.arch-tag-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
+}
+
+.arch-tag-text {
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 0.08em;
+}
+
+.arch-img-footer {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+}
+
+.arch-img-caption {
+  font-family: 'Geist Mono', monospace !important;
+  font-size: 11px !important;
+  color: #E2E8F0 !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8) !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* Content Right Pane */
+.arch-content-pane {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+}
+
+.arch-sub-mono {
+  font-family: 'Geist Mono', monospace !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  color: #0284C7 !important;
+  letter-spacing: 0.12em !important;
+  margin-bottom: 8px !important;
+  text-transform: uppercase !important;
+}
+
+.arch-headline {
+  font-family: 'Playfair Display', Georgia, serif !important;
+  font-weight: 700 !important;
+  font-size: 2rem !important;
+  line-height: 1.2 !important;
+  color: #0F2942 !important;
+  letter-spacing: -0.02em !important;
+  margin-bottom: 14px !important;
+}
+
+.arch-description {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.96rem !important;
+  line-height: 1.68 !important;
+  color: #64748B !important;
+  margin-bottom: 24px !important;
+}
+
+.arch-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 26px;
+}
+
+.arch-spec-card {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.arch-spec-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  color: #64748B;
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+
+.arch-spec-val {
+  font-family: 'Geist Mono', monospace;
+  font-size: 13px;
+  font-weight: 800;
+  color: #0F2942;
+  letter-spacing: -0.01em;
+}
+
+.arch-cta-row {
+  display: flex;
+  align-items: center;
+}
+
+.arch-cta-btn {
+  background: #0F2942 !important;
+  color: #FFFFFF !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 13.5px !important;
+  text-transform: none !important;
+  border-radius: 10px !important;
+  padding: 10px 22px !important;
+  box-shadow: 0 4px 14px rgba(15, 41, 66, 0.15) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.arch-cta-btn:hover {
+  background: #0284C7 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.3) !important;
+}
+
+@media (max-width: 960px) {
+  .arch-stage {
+    grid-template-columns: 1fr;
+  }
+  .arch-visual-pane {
+    height: 320px;
+  }
+}

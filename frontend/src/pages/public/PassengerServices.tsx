@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { aocsDataStore } from '../../services/aocsDataStore';
 import { LostFoundRecord } from '../../types';
+import bannerLounge from '../../assets/banners/vip-dining-lounge.jpg';
 
 const facilitiesList = [
   { icon: <Wifi size={20} color="#0284C7" />, title: 'High-Speed 5G Wi-Fi', desc: 'Unlimited complimentary high-speed internet throughout both Terminal 1 and Terminal 2 concourses.' },
@@ -178,7 +179,7 @@ export const PassengerServices: React.FC = () => {
           pb: { xs: 5, md: 7 },
           px: { xs: 2, md: 4 },
           position: 'relative',
-          backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.42) 0%, rgba(15, 41, 66, 0.65) 100%), url('/images/vip-dining-lounge.jpg')`,
+          backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.42) 0%, rgba(15, 41, 66, 0.65) 100%), url(${bannerLounge})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center 45%',
           overflow: 'hidden',
@@ -194,21 +195,6 @@ export const PassengerServices: React.FC = () => {
               justifyContent: 'center',
             }}
           >
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.4, py: 0.4, borderRadius: '100px', backgroundColor: 'rgba(30, 58, 95, 0.06)', border: '1px solid rgba(30, 58, 95, 0.12)', width: 'fit-content', mb: 2 }}>
-              <Sparkles size={12} color="#1E3A5F" />
-              <Typography
-                sx={{
-                  fontFamily: "'Geist Mono', 'JetBrains Mono', monospace",
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.14em',
-                  color: '#1E3A5F',
-                  textTransform: 'uppercase',
-                }}
-              >
-                AERODROME CONCIERGE &amp; HOSPITALITY
-              </Typography>
-            </Box>
             <Typography
               variant="h3"
               sx={{

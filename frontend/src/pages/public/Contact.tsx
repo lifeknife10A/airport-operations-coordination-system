@@ -3,6 +3,7 @@ import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { Box, Container, Typography, Paper, TextField, Button, Alert, MenuItem } from '@mui/material';
 import { Phone, Mail, MapPin, ShieldAlert, Send, Clock, CheckCircle2, Building, Radio } from 'lucide-react';
+import bannerContact from '../../assets/banners/banner-contact.jpg';
 
 const emergencyContacts = [
   { dept: 'Airport Security Command Center', number: '+91 (022) 8900-9111', sub: 'Airside & landside perimeter security' },
@@ -36,7 +37,7 @@ export const Contact: React.FC = () => {
           pb: { xs: 5, md: 7 },
           px: { xs: 2, md: 4 },
           position: 'relative',
-          backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.48) 0%, rgba(15, 41, 66, 0.72) 100%), url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2000&auto=format&fit=crop')`,
+          backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.48) 0%, rgba(15, 41, 66, 0.72) 100%), url(${bannerContact})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           overflow: 'hidden',
@@ -52,12 +53,6 @@ export const Contact: React.FC = () => {
               justifyContent: 'center',
             }}
           >
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.4, py: 0.4, borderRadius: '100px', backgroundColor: 'rgba(30, 58, 95, 0.06)', border: '1px solid rgba(30, 58, 95, 0.12)', width: 'fit-content', mb: 2 }}>
-              <Phone size={12} color="#1E3A5F" />
-              <Typography sx={{ fontFamily: "'Geist Mono', 'JetBrains Mono', monospace", fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.14em', color: '#1E3A5F', textTransform: 'uppercase' }}>
-                Operations &amp; Passenger Assistance Desks
-              </Typography>
-            </Box>
             <Typography variant="h2" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, letterSpacing: '-0.025em', color: '#0F2942', mb: 2, fontSize: { xs: '2.2rem', md: '3.2rem' } }}>
               Contact &amp; Operations Desk
             </Typography>

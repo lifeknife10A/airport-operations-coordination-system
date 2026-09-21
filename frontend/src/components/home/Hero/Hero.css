@@ -1,228 +1,399 @@
 .ve-hero {
   position: relative;
-  min-height: 108vh;
+  width: 100vw;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
+  max-height: 100dvh;
   display: flex;
   flex-direction: column;
   justifyContent: space-between;
-  padding: 110px 32px 90px;
-  overflow: visible;
-  background-color: #faf9f6;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  background-color: #0c1825;
 }
 
 .ve-aircraft-stage {
   position: absolute;
-  top: 12%;
-  left: 4%;
-  right: 4%;
-  bottom: 8%;
-  z-index: 0;
-  max-width: 1480px;
-  margin: 0 auto;
-  border-radius: 28px;
-  overflow: hidden;
-  box-shadow: 0 32px 70px -15px rgba(15, 41, 66, 0.15);
-  border: 1px solid rgba(229, 231, 235, 0.9);
-}
-
-.ve-hero-container {
-  position: relative;
-  z-index: 3;
-  max-width: 1440px;
+  inset: 0;
   width: 100%;
-  margin: 0 auto;
-  padding: 50px clamp(48px, 6vw, 100px);
-  display: flex;
-  justify-content: flex-start;
-  align-items: flex-start;
+  height: 100%;
+  z-index: 0;
+  max-width: none;
+  margin: 0;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: none;
+  border: none;
 }
 
-.ve-hero-content-left {
-  max-width: 640px;
+/* AERIA-Inspired Staggered Entrance Keyframes */
+@keyframes aeriaSlideInDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aeriaSlideInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aeriaPulseRadar {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* Top-Left Corner: Hardcoded Saphire Mon Doux Refuge (Un-selectable) */
+.ve-hero-top-left {
+  position: absolute;
+  top: clamp(86px, 12vh, 128px);
+  left: clamp(24px, 4.5vw, 64px);
+  z-index: 5;
+  max-width: clamp(340px, 48vw, 680px);
   text-align: left;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 10px 0;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  pointer-events: none;
+  animation: aeriaSlideInDown 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .ve-headline-italic {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Playfair Display', Georgia, serif;
   font-style: italic;
   font-weight: 700;
-  font-size: clamp(60px, 7.2vw, 106px);
-  line-height: 1.15;
-  color: #0F2942;
-  letter-spacing: -0.02em;
-  margin: 0 0 16px 0;
-  padding-bottom: 0.12em;
-  overflow: visible;
-  text-shadow: 0 1px 2px rgba(15, 41, 66, 0.2), 0 0 24px rgba(2, 132, 199, 0.35), 0 0 48px rgba(14, 165, 233, 0.2);
+  font-size: clamp(40px, 5.6vw, 84px);
+  line-height: 1.06;
+  color: #0F2942; /* Deep Saphire Navy Blue */
+  letter-spacing: -0.025em;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+  text-shadow: none; /* No highlights / shadows */
+}
+
+/* Bottom-Right Corner: Hardcoded Editorial Manifesto (Un-selectable) */
+.ve-hero-bottom-right {
+  position: absolute;
+  bottom: clamp(24px, 4vh, 48px);
+  right: clamp(24px, 4.5vw, 64px);
+  z-index: 5;
+  max-width: clamp(280px, 32vw, 440px);
+  text-align: right;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  pointer-events: none;
+  text-shadow: none;
+  animation: aeriaSlideInUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
 }
 
 .ve-subheading-italic {
-  font-family: 'Times New Roman', Times, serif;
-  font-size: clamp(17px, 1.3vw, 21px);
-  line-height: 1.6;
-  color: #F7EFE5;
-  max-width: 540px;
+  font-family: 'Times New Roman', Georgia, serif;
+  font-style: italic;
+  font-size: clamp(15px, 1.12vw, 18.5px);
+  line-height: 1.55;
+  color: #000000; /* Pure Black */
   margin: 0;
-  font-weight: 400;
+  font-weight: 500;
   letter-spacing: 0.01em;
-  text-shadow: none;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+  text-shadow: none; /* No highlights / shadows */
 }
 
-/* Floating Seam Bridge */
+/* Floating Seam Bridge tucked into the bottom-left corner across all devices */
 .ve-seam-bridge {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  transform: translateY(50%);
+  bottom: 24px;
+  left: clamp(20px, 4.5vw, 64px);
+  right: auto;
+  transform: none;
   z-index: 10;
   display: flex;
-  justify-content: center;
-  padding: 0 24px;
+  justify-content: flex-start;
+  padding: 0;
+  margin: 0;
+  width: auto;
+  max-width: 490px;
+  animation: aeriaSlideInUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
 }
 
-.ve-seam-card {
-  width: 100%;
-  max-width: 960px;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  border-radius: 24px;
-  box-shadow: 0 24px 60px -10px rgba(15, 41, 66, 0.12), 0 6px 20px rgba(15, 41, 66, 0.04);
-  padding: 16px 20px;
+/* Minimalist Apple macOS Style Bottom Dock */
+.ve-seam-bridge {
+  position: absolute;
+  bottom: clamp(18px, 3vh, 32px);
+  left: clamp(16px, 4vw, 64px);
+  right: auto;
+  transform: none;
+  z-index: 10;
   display: flex;
-  flex-direction: column;
-  gap: 14px;
+  justify-content: flex-start;
+  padding: 0;
+  margin: 0;
+  width: auto;
+  max-width: calc(100vw - 32px);
+  animation: aeriaSlideInUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
 }
 
-/* Finder Card */
-.ve-finder-card {
-  width: 100%;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 6px 8px 6px 18px;
-  display: flex;
+.ve-macos-dock {
+  display: inline-flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 2px 8px rgba(15, 41, 66, 0.04);
+  height: 54px;
+  padding: 4px 6px 4px 16px;
+  border-radius: 999px !important;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(242, 247, 252, 0.82) 100%
+  ) !important;
+  backdrop-filter: blur(30px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 2px 0 rgba(15, 41, 66, 0.04),
+    inset 0 0 20px rgba(255, 255, 255, 0.35),
+    0 24px 60px -10px rgba(15, 41, 66, 0.18),
+    0 8px 24px -4px rgba(15, 41, 66, 0.08) !important;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.ve-finder-input-box {
+.ve-macos-dock:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.94) 0%,
+    rgba(245, 249, 254, 0.90) 100%
+  ) !important;
+  box-shadow: 
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 2px 0 rgba(15, 41, 66, 0.04),
+    inset 0 0 24px rgba(255, 255, 255, 0.45),
+    0 28px 65px -10px rgba(15, 41, 66, 0.22),
+    0 10px 28px -4px rgba(15, 41, 66, 0.1) !important;
+}
+
+/* 1. Live Telemetry Beacon */
+.ve-dock-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.ve-dock-live-text {
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #0F2942;
+}
+
+/* Hairline Divider */
+.ve-dock-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(15, 41, 66, 0.12);
+  flex-shrink: 0;
+}
+
+/* 2. Unified Search Field */
+.ve-dock-search {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex: 1;
+  min-width: 240px;
 }
 
-.ve-search-icon {
-  font-size: 15px;
-  opacity: 0.6;
+.ve-dock-search-icon {
+  color: #64748B;
+  flex-shrink: 0;
 }
 
-.ve-finder-input {
+.ve-dock-input {
   width: 100%;
+  min-width: 180px;
   border: none;
   outline: none;
-  font-size: 14.5px;
-  color: #0f2942;
-  font-family: 'Inter', sans-serif;
   background: transparent;
-}
-
-.ve-finder-input::placeholder {
-  color: #94a3b8;
-}
-
-.ve-btn-search {
-  background: #1e3a5f;
-  color: #ffffff;
-  border: none;
-  padding: 11px 24px;
-  border-radius: 10px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 13.5px;
+  font-weight: 500;
+  color: #0F2942;
+}
+
+.ve-dock-input::placeholder {
+  color: #94A3B8;
+  font-size: 13px;
+}
+
+.ve-dock-btn {
+  background: #0F2942;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(30, 58, 95, 0.2);
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(15, 41, 66, 0.15);
 }
 
-.ve-btn-search:hover {
-  background: #0f2942;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(30, 58, 95, 0.3);
+.ve-dock-btn:hover {
+  background: #0284C7;
+  transform: scale(1.03);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
 }
 
-/* Stats Row */
-.ve-stats-row {
-  display: flex;
+/* 3. Live Quick Telemetry Glance (macOS Status Item) */
+.ve-dock-metrics {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 6px 14px;
+  gap: 10px;
+  padding-right: 8px;
+  user-select: none;
 }
 
-.ve-stat-box {
+.ve-dock-metric {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  text-align: left;
+  line-height: 1.05;
 }
 
-.ve-stat-number {
+.ve-metric-val {
   font-family: 'Geist Mono', monospace;
-  font-size: 20px;
+  font-size: 12.5px;
   font-weight: 800;
-  color: #0f2942;
+  color: #0F2942;
   letter-spacing: -0.02em;
 }
 
-.ve-stat-label {
+.ve-metric-lbl {
   font-family: 'Inter', sans-serif;
-  font-size: 11.5px;
-  color: #64748b;
-  font-weight: 500;
+  font-size: 9px;
+  font-weight: 600;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.ve-stat-divider {
-  width: 1px;
-  height: 30px;
-  background: #e2e8f0;
+.ve-metric-dot {
+  color: rgba(15, 41, 66, 0.25);
+  font-size: 10px;
+}
+
+@media (max-width: 768px) {
+  .ve-dock-desktop-only {
+    display: none;
+  }
+  .ve-dock-search {
+    min-width: 180px;
+  }
+  .ve-dock-input {
+    min-width: 120px;
+  }
 }
 
 @media (max-width: 1024px) {
   .ve-hero {
-    min-height: auto;
-    padding: 100px 20px 140px;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100dvh;
+    padding: 0;
   }
-  .ve-hero-content-left {
+  .ve-hero-top-left {
+    top: 90px;
+    left: 20px;
+    max-width: 70vw;
+  }
+  .ve-hero-bottom-right {
+    bottom: clamp(20px, 3vh, 32px);
+    right: 20px;
+    max-width: 45vw;
+  }
+  .ve-seam-bridge {
+    bottom: 16px;
+    left: 20px;
+    right: auto;
+    padding: 0;
+  }
+  .ve-seam-card {
+    width: clamp(280px, 48vw, 420px);
+  }
+  .ve-finder-card {
+    flex-direction: row;
+    align-items: center;
+    padding: 6px 8px 6px 14px;
+  }
+}
+
+@media (max-width: 680px) {
+  .ve-hero-top-left {
+    top: 76px;
+    left: 16px;
+    right: 16px;
     max-width: 100%;
-    padding: 24px;
   }
-  .ve-stats-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    padding: 8px 4px;
+  .ve-headline-italic {
+    font-size: clamp(32px, 8.5vw, 44px);
   }
-  .ve-stat-divider {
+  .ve-hero-bottom-right {
     display: none;
+  }
+  .ve-seam-bridge {
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    max-width: 100%;
+  }
+  .ve-seam-card {
+    width: 100%;
+    max-width: 100%;
   }
   .ve-finder-card {
     flex-direction: column;
     align-items: stretch;
-    padding: 12px;
+    padding: 10px;
   }
   .ve-btn-search {
     width: 100%;

@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import bannerLogin from '../../assets/banners/banner-login.jpg';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -163,7 +164,7 @@ export const Login: React.FC = () => {
               flexDirection: 'column',
               justifyContent: 'space-between',
               minHeight: { xs: '360px', md: '640px' },
-              backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.72) 0%, rgba(15, 41, 66, 0.94) 100%), url('https://images.unsplash.com/photo-1542296332-2e4473faf563?auto=format&fit=crop&w=1400&q=85')`,
+              backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.72) 0%, rgba(15, 41, 66, 0.94) 100%), url(${bannerLogin})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               color: '#FFFFFF',
@@ -195,26 +196,6 @@ export const Login: React.FC = () => {
                     OPERATIONS DISPATCH
                   </Typography>
                 </Box>
-              </Box>
-
-              <Box
-                sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  px: 1.6,
-                  py: 0.6,
-                  borderRadius: '100px',
-                  backgroundColor: 'rgba(15, 41, 66, 0.6)',
-                  backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  mb: 3,
-                }}
-              >
-                <Radio size={12} color="#10B981" />
-                <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem', fontWeight: 600, color: '#10B981', letterSpacing: '0.05em' }}>
-                  CAT-III B ALL-WEATHER OPS ACTIVE
-                </Typography>
               </Box>
 
               <Typography variant="h3" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, color: '#FFFFFF', fontSize: { xs: '1.8rem', md: '2.2rem' }, lineHeight: 1.25, mb: 2 }}>
@@ -273,9 +254,6 @@ export const Login: React.FC = () => {
             }}
           >
             <Box sx={{ mb: 4 }}>
-              <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.4, py: 0.4, borderRadius: '100px', backgroundColor: 'rgba(30, 58, 95, 0.06)', border: '1px solid rgba(30, 58, 95, 0.12)', color: '#1E3A5F', fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '0.75rem', fontWeight: 700, mb: 1.5 }}>
-                <ShieldCheck size={14} color="#1E3A5F" /> AIRPORT STAFF AUTHENTICATION
-              </Box>
               <Typography variant="h4" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, color: '#0F2942', fontSize: '1.8rem', mb: 1, letterSpacing: '-0.02em' }}>
                 Operator Authorization
               </Typography>
