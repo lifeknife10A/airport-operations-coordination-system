@@ -35,7 +35,18 @@ export type AocsEventType =
   | 'LOST_ITEM_REPORTED'
   | 'ADMIN_OVERRIDE'
   | 'INITIALIZED'
-  | 'REFRESH';
+  | 'REFRESH'
+  | 'NOTIFICATION_UPDATED'
+  | 'STAFF_USERS_UPDATED';
+
+export interface OperationalNotification {
+  id: string;
+  title: string;
+  detail: string;
+  category: 'CRITICAL' | 'AIRSIDE' | 'SECURITY' | 'OPERATIONS' | 'WARNING' | 'INFO';
+  time: string;
+  read: boolean;
+}
 
 export interface AocsEvent {
   type: AocsEventType;
@@ -139,14 +150,59 @@ const SEED_FLIGHTS: Flight[] = [
 ];
 
 const SEED_GATES: Gate[] = [
-  { gateId: 1, gateCode: 'A12', terminalName: 'Terminal 2', hasJetbridge: true, status: 'OCCUPIED', assignedFlightId: 101, assignedFlightNumber: 'AI-203' },
-  { gateId: 2, gateCode: 'B04', terminalName: 'Terminal 1', hasJetbridge: true, status: 'OCCUPIED', assignedFlightId: 102, assignedFlightNumber: '6E-521' },
-  { gateId: 3, gateCode: 'C08', terminalName: 'Terminal 2', hasJetbridge: true, status: 'OCCUPIED', assignedFlightId: 103, assignedFlightNumber: 'UK-901' },
-  { gateId: 4, gateCode: 'A02', terminalName: 'Terminal 2', hasJetbridge: true, status: 'OCCUPIED', assignedFlightId: 104, assignedFlightNumber: 'SPH-102' },
-  { gateId: 5, gateCode: 'A04', terminalName: 'Terminal 1', hasJetbridge: true, status: 'AVAILABLE' },
-  { gateId: 6, gateCode: 'B12', terminalName: 'Terminal 2', hasJetbridge: true, status: 'AVAILABLE' },
-  { gateId: 7, gateCode: 'C22', terminalName: 'Terminal 2', hasJetbridge: true, status: 'AVAILABLE' },
-  { gateId: 8, gateCode: 'A15', terminalName: 'Terminal 1', hasJetbridge: false, status: 'MAINTENANCE' },
+  // Concourse A: Domestic Pier (A01 - A14)
+  { gateId: 1, gateCode: 'A01', terminalName: 'Central Terminal', concourse: 'Concourse A', concourseName: 'Concourse A (Domestic)', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'OCCUPIED', assignedFlightId: 101, assignedFlightNumber: 'AI-203' },
+  { gateId: 2, gateCode: 'A02', terminalName: 'Central Terminal', concourse: 'Concourse A', concourseName: 'Concourse A (Domestic)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightId: 104, assignedFlightNumber: 'SPH-102' },
+  { gateId: 3, gateCode: 'A03', terminalName: 'Central Terminal', concourse: 'Concourse A', concourseName: 'Concourse A (Domestic)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { gateId: 4, gateCode: 'A04', terminalName: 'Central Terminal', concourse: 'Concourse A', concourseName: 'Concourse A (Domestic)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightId: 103, assignedFlightNumber: 'UK-901' },
+  { gateId: 5, gateCode: 'A05', terminalName: 'Central Terminal', concourse: 'Concourse A', concourseName: 'Concourse A (Domestic)', hasJetbridge: false, maxWingspanMeters: 38.0, status: 'AVAILABLE' },
+  { gateId: 6, gateCode: 'A06', terminalName: 'Central Terminal', concourse: 'Concourse A', concourseName: 'Concourse A (Domestic)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { gateId: 7, gateCode: 'A07', terminalName: 'Central Terminal', concourse: 'Concourse A', concourseName: 'Concourse A (Domestic)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightId: 102, assignedFlightNumber: '6E-521' },
+  { gateId: 8, gateCode: 'A08', terminalName: 'Central Terminal', concourse: 'Concourse A', concourseName: 'Concourse A (Domestic)', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'AVAILABLE' },
+  { gateId: 9, gateCode: 'A09', terminalName: 'Central Terminal', concourse: 'Concourse A', concourseName: 'Concourse A (Domestic)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { gateId: 10, gateCode: 'A10', terminalName: 'Central Terminal', concourse: 'Concourse A', concourseName: 'Concourse A (Domestic)', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+  { gateId: 11, gateCode: 'A11', terminalName: 'Central Terminal', concourse: 'Concourse A', concourseName: 'Concourse A (Domestic)', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'MAINTENANCE' },
+  { gateId: 12, gateCode: 'A12', terminalName: 'Central Terminal', concourse: 'Concourse A', concourseName: 'Concourse A (Domestic)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { gateId: 13, gateCode: 'A13', terminalName: 'Central Terminal', concourse: 'Concourse A', concourseName: 'Concourse A (Domestic)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { gateId: 14, gateCode: 'A14', terminalName: 'Central Terminal', concourse: 'Concourse A', concourseName: 'Concourse A (Domestic)', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+
+  // Concourse B: Transcontinental Pier (B01 - B16)
+  { gateId: 15, gateCode: 'B01', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'OCCUPIED', assignedFlightNumber: 'EK-506' },
+  { gateId: 16, gateCode: 'B02', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { gateId: 17, gateCode: 'B03', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'LH-760' },
+  { gateId: 18, gateCode: 'B04', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: false, maxWingspanMeters: 38.0, status: 'OCCUPIED', assignedFlightNumber: 'QR-557' },
+  { gateId: 19, gateCode: 'B05', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { gateId: 20, gateCode: 'B06', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'SQ-402' },
+  { gateId: 21, gateCode: 'B07', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'OCCUPIED', assignedFlightNumber: 'KL-871' },
+  { gateId: 22, gateCode: 'B08', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'AVAILABLE' },
+  { gateId: 23, gateCode: 'B09', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'TG-317' },
+  { gateId: 24, gateCode: 'B10', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { gateId: 25, gateCode: 'B11', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'AVAILABLE' },
+  { gateId: 26, gateCode: 'B12', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+  { gateId: 27, gateCode: 'B13', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { gateId: 28, gateCode: 'B14', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { gateId: 29, gateCode: 'B15', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+  { gateId: 30, gateCode: 'B16', terminalName: 'Central Terminal', concourse: 'Concourse B', concourseName: 'Concourse B (Transcontinental)', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+
+  // Concourse C: Widebody Flagship Pier (C01 - C18)
+  { gateId: 31, gateCode: 'C01', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'OCCUPIED', assignedFlightNumber: 'AF-225' },
+  { gateId: 32, gateCode: 'C02', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'AVAILABLE' },
+  { gateId: 33, gateCode: 'C03', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 68.0, status: 'AVAILABLE' },
+  { gateId: 34, gateCode: 'C04', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 68.0, status: 'AVAILABLE' },
+  { gateId: 35, gateCode: 'C05', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'OCCUPIED', assignedFlightNumber: 'BA-142' },
+  { gateId: 36, gateCode: 'C06', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 68.0, status: 'AVAILABLE' },
+  { gateId: 37, gateCode: 'C07', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'AVAILABLE' },
+  { gateId: 38, gateCode: 'C08', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 68.0, status: 'OCCUPIED', assignedFlightNumber: 'MH-194' },
+  { gateId: 39, gateCode: 'C09', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+  { gateId: 40, gateCode: 'C10', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+  { gateId: 41, gateCode: 'C11', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'OCCUPIED', assignedFlightNumber: 'SPH-204' },
+  { gateId: 42, gateCode: 'C12', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'AVAILABLE' },
+  { gateId: 43, gateCode: 'C13', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 68.0, status: 'AVAILABLE' },
+  { gateId: 44, gateCode: 'C14', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 68.0, status: 'AVAILABLE' },
+  { gateId: 45, gateCode: 'C15', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'MAINTENANCE' },
+  { gateId: 46, gateCode: 'C16', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'AVAILABLE' },
+  { gateId: 47, gateCode: 'C17', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+  { gateId: 48, gateCode: 'C18', terminalName: 'Central Terminal', concourse: 'Concourse C', concourseName: 'Concourse C (Widebody Flagship)', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'AVAILABLE' },
 ];
 
 const SEED_TASKS: TurnaroundTask[] = [
@@ -170,25 +226,25 @@ const SEED_BAGS: BagTag[] = [
 ];
 
 const SEED_SCANS: BaggageScanEvent[] = [
-  { eventId: 1, tagNumber: 'BAG-AI203-8821', location: 'Terminal 2 Induction Sorter 4', scannerId: 'SCN-T2-04', timestamp: '13:20 UTC', scanType: 'SECURITY_SCREEN' },
+  { eventId: 1, tagNumber: 'BAG-AI203-8821', location: 'Central Terminal Induction Sorter 4', scannerId: 'SCN-CT-04', timestamp: '13:20 UTC', scanType: 'SECURITY_SCREEN' },
   { eventId: 2, tagNumber: 'BAG-AI203-8821', location: 'Ramp Stand G12 ULD Loader 2', scannerId: 'SCN-RMP-12', timestamp: '13:58 UTC', scanType: 'RAMP_LOAD' },
   { eventId: 3, tagNumber: 'BAG-AI203-8822', location: 'Ramp Stand G12 ULD Loader 2', scannerId: 'SCN-RMP-12', timestamp: '14:02 UTC', scanType: 'RAMP_LOAD' },
 ];
 
 const SEED_MISHANDLED: MishandledBaggage[] = [
-  { reportId: 1, claimNumber: 'CLM-2024-0012', incidentType: 'DELAYED', tagNumber: 'BAG-UK901-5541', passengerId: 4, passengerName: 'Pooja Sundaram', status: 'INVESTIGATING', reportedAt: '12:30 UTC', lastKnownLocation: 'Terminal 2 Transfer Conveyor Belt 3' },
+  { reportId: 1, claimNumber: 'CLM-2024-0012', incidentType: 'DELAYED', tagNumber: 'BAG-UK901-5541', passengerId: 4, passengerName: 'Pooja Sundaram', status: 'INVESTIGATING', reportedAt: '12:30 UTC', lastKnownLocation: 'Central Terminal Transfer Conveyor Belt 3' },
 ];
 
 const SEED_INCIDENTS: IncidentTicket[] = [
   { ticketId: 'INC-881', title: 'Unattended Cabin Bag Detected', location: 'Gate A14 Concourse Seats', flightNumber: 'AI-203', severity: 'HIGH', status: 'INVESTIGATING', reportedAt: '12 mins ago', assignedOfficer: 'Officer Aarav Li', description: 'K9 bomb disposal team sweeping perimeter. Standby cordon established.' },
   { ticketId: 'INC-882', title: 'Transit Visa Documentation Discrepancy', location: 'Gate B04 Boarding Turnstile', flightNumber: '6E-521', severity: 'MEDIUM', status: 'RESOLVED', reportedAt: '25 mins ago', assignedOfficer: 'Immigration Desk 3', description: 'Passenger PNR-6420 re-routed to consular desk for visa verification.' },
-  { ticketId: 'INC-883', title: 'Biometric E-Gate Reader #4 Optical Timeout', location: 'Terminal 2 Concourse Central E-Gates', severity: 'LOW', status: 'INVESTIGATING', reportedAt: '42 mins ago', assignedOfficer: 'Tech Support Team B', description: 'Sensor recalibration in progress. 5 adjacent lanes operational.' },
+  { ticketId: 'INC-883', title: 'Biometric E-Gate Reader #4 Optical Timeout', location: 'Central Terminal Concourse Central E-Gates', severity: 'LOW', status: 'INVESTIGATING', reportedAt: '42 mins ago', assignedOfficer: 'Tech Support Team B', description: 'Sensor recalibration in progress. 5 adjacent lanes operational.' },
 ];
 
 const SEED_LOST_FOUND: LostFoundRecord[] = [
-  { id: 'LF-2024-089', title: 'Apple iPad Pro 11" Space Grey', category: 'ELECTRONICS', locationFound: 'Terminal 2 Security Checkpoint B', reportedBy: 'Public Portal - Priya Sharma', contactNumber: '+91 98765 43210', linkedPnr: 'PNR-AI203-03', flightNumber: 'AI-203', status: 'MATCHED', reportedDate: 'Today, 11:20 AM', description: 'Black magnetic folio cover, sticker of NASA on back casing.', color: 'Space Grey', storageLocker: 'Locker B-14' },
+  { id: 'LF-2024-089', title: 'Apple iPad Pro 11" Space Grey', category: 'ELECTRONICS', locationFound: 'Concourse B Security Checkpoint', reportedBy: 'Public Portal - Priya Sharma', contactNumber: '+91 98765 43210', linkedPnr: 'PNR-AI203-03', flightNumber: 'AI-203', status: 'MATCHED', reportedDate: 'Today, 11:20 AM', description: 'Black magnetic folio cover, sticker of NASA on back casing.', color: 'Space Grey', storageLocker: 'Locker B-14' },
   { id: 'LF-2024-090', title: 'Samsonite Hard-Shell Carry-On (Navy)', category: 'BAGGAGE', locationFound: 'Gate A12 Seating Area Stand 4', reportedBy: 'Gate Agent Aarav', contactNumber: 'Airside Staff Extension 402', flightNumber: 'AI-203', status: 'READY_FOR_COLLECTION', reportedDate: 'Today, 12:45 PM', description: 'Left near charging kiosk. Luggage tag reads Harrison Sterling.', color: 'Navy Blue', storageLocker: 'Secure Vault A' },
-  { id: 'LF-2024-091', title: 'Leather Passport Holder with Visa Documents', category: 'DOCUMENTS', locationFound: 'Terminal 1 Concourse Duty Free', reportedBy: 'Public Portal - Kenji Takahashi', contactNumber: '+81 90 1234 5678', linkedPnr: 'PNR-6E521-01', flightNumber: '6E-521', status: 'NEW_REPORT', reportedDate: 'Today, 13:10 PM', description: 'Tan leather passport case holding Japanese passport & boarding stub.', color: 'Tan Brown', storageLocker: 'Intake Desk Shelf 2' },
+  { id: 'LF-2024-091', title: 'Leather Passport Holder with Visa Documents', category: 'DOCUMENTS', locationFound: 'Concourse A Duty Free Central', reportedBy: 'Public Portal - Kenji Takahashi', contactNumber: '+81 90 1234 5678', linkedPnr: 'PNR-6E521-01', flightNumber: '6E-521', status: 'NEW_REPORT', reportedDate: 'Today, 13:10 PM', description: 'Tan leather passport case holding Japanese passport & boarding stub.', color: 'Tan Brown', storageLocker: 'Intake Desk Shelf 2' },
 ];
 
 const SEED_AUDIT_LOGS: AuditLog[] = [
@@ -205,16 +261,76 @@ export interface StaffUserSummary {
   department: string;
   email: string;
   status: 'ACTIVE' | 'OFF_DUTY' | 'ON_SHIFT';
+  password: string;
 }
 
 const SEED_STAFF_USERS: StaffUserSummary[] = [
-  { userId: 10, fullName: 'Aarav Li', roleName: 'System Administrator', department: 'Terminal Management', email: 'admin@saphire.in', status: 'ACTIVE' },
-  { userId: 11, fullName: 'Sai Sharma', roleName: 'AOCC Operations Manager', department: 'Flight Operations', email: 'aocc@saphire.in', status: 'ACTIVE' },
-  { userId: 12, fullName: 'Riya Johnson', roleName: 'Ground Ops Supervisor', department: 'Ground Handling', email: 'ground@saphire.in', status: 'ACTIVE' },
-  { userId: 13, fullName: 'Elena Tanaka', roleName: 'Airline Billing Clerk', department: 'Finance & Billing', email: 'billing@saphire.in', status: 'ACTIVE' },
-  { userId: 14, fullName: 'Marcus Vance', roleName: 'Gate Agent / Airside Lead', department: 'Airside Operations', email: 'airside@saphire.in', status: 'ACTIVE' },
-  { userId: 15, fullName: 'Tariq Al-Mansoor', roleName: 'Baggage / Cargo Supervisor', department: 'Logistics', email: 'logistics@saphire.in', status: 'ACTIVE' },
-  { userId: 16, fullName: 'Aarav Patel', roleName: 'Security Officer', department: 'Terminal Security', email: 'security@saphire.in', status: 'ACTIVE' },
+  { userId: 10, fullName: 'Aarav Li', roleName: 'System Administrator', department: 'Terminal Management', email: 'admin@saphire.in', status: 'ACTIVE', password: 'pass' },
+  { userId: 11, fullName: 'Sai Sharma', roleName: 'AOCC Operations Manager', department: 'Flight Operations', email: 'aocc@saphire.in', status: 'ACTIVE', password: 'pass' },
+  { userId: 12, fullName: 'Riya Johnson', roleName: 'Ground Ops Supervisor', department: 'Ground Handling', email: 'ground@saphire.in', status: 'ACTIVE', password: 'pass' },
+  { userId: 13, fullName: 'Elena Tanaka', roleName: 'Airline Billing Clerk', department: 'Finance & Billing', email: 'billing@saphire.in', status: 'ACTIVE', password: 'pass' },
+  { userId: 14, fullName: 'Marcus Vance', roleName: 'Gate Agent / Airside Lead', department: 'Airside Operations', email: 'airside@saphire.in', status: 'ACTIVE', password: 'pass' },
+  { userId: 15, fullName: 'Tariq Al-Mansoor', roleName: 'Baggage / Cargo Supervisor', department: 'Logistics', email: 'logistics@saphire.in', status: 'ACTIVE', password: 'pass' },
+  { userId: 16, fullName: 'Aarav Patel', roleName: 'Security Officer', department: 'Terminal Security', email: 'security@saphire.in', status: 'ACTIVE', password: 'pass' },
+];
+
+const SEED_NOTIFICATIONS: OperationalNotification[] = [
+  {
+    id: 'NOTIF-01',
+    title: 'Gate Stand Dual-Allocation Conflict',
+    detail: 'Flight SPH-102 & SPH-204 scheduled simultaneously at Gate Stand B12.',
+    category: 'CRITICAL',
+    time: '3 mins ago',
+    read: false,
+  },
+  {
+    id: 'NOTIF-02',
+    title: 'Fuel Bowser Density Calibration Alert',
+    detail: 'Hydrant Dispenser Bowser FT-04 requires re-verification at Concourse C hydrant.',
+    category: 'AIRSIDE',
+    time: '18 mins ago',
+    read: false,
+  },
+  {
+    id: 'NOTIF-03',
+    title: 'Runway 09L Touchdown Zone Sensor Inspection',
+    detail: 'Aeronautical engineering certified CAT III B localizer and RVR transmissometer.',
+    category: 'AIRSIDE',
+    time: '42 mins ago',
+    read: false,
+  },
+  {
+    id: 'NOTIF-04',
+    title: 'VIP Flagship Boarding Clearance: SPH-102',
+    detail: 'Executive handling berthed widebody A350-1000 at Gate C04 for direct VIP lounge transfer.',
+    category: 'OPERATIONS',
+    time: '1 hour ago',
+    read: false,
+  },
+  {
+    id: 'NOTIF-05',
+    title: 'Security Biometric Gateway Sync Completed',
+    detail: 'Automated e-Gates synchronized 1,240 passenger biometric records with border control.',
+    category: 'SECURITY',
+    time: '2 hours ago',
+    read: false,
+  },
+  {
+    id: 'NOTIF-06',
+    title: 'Ground Handling Crew Shift Handover',
+    detail: 'Shift Bravo signed off 32 completed aircraft turnaround operations on apron stands.',
+    category: 'OPERATIONS',
+    time: '3 hours ago',
+    read: false,
+  },
+  {
+    id: 'NOTIF-07',
+    title: 'Crosswind Vector Advisory: Runway 09R',
+    detail: 'Crosswind sheer detected exceeding 28 knots. Approach vector adjustments active.',
+    category: 'CRITICAL',
+    time: '4 hours ago',
+    read: false,
+  },
 ];
 
 // ============================================================================
@@ -231,11 +347,13 @@ class AocsDataStore {
   private incidents: IncidentTicket[] = [];
   private lostFound: LostFoundRecord[] = [];
   private auditLogs: AuditLog[] = [];
+  private notifications: OperationalNotification[] = [];
   private listeners: Set<(event: AocsEvent) => void> = new Set();
   private initialized = false;
 
   constructor() {
     this.loadInitialState();
+    this.initRemoteSync();
   }
 
   private loadInitialState() {
@@ -248,6 +366,7 @@ class AocsDataStore {
       const savedIncidents = localStorage.getItem('saphire_incidents');
       const savedLostFound = localStorage.getItem('saphire_lost_found');
       const savedAudit = localStorage.getItem('saphire_audit_logs');
+      const savedNotifs = localStorage.getItem('saphire_notifications');
 
       this.flights = savedFlights ? JSON.parse(savedFlights) : SEED_FLIGHTS;
       this.gates = savedGates ? JSON.parse(savedGates) : SEED_GATES;
@@ -258,6 +377,18 @@ class AocsDataStore {
       this.incidents = savedIncidents ? JSON.parse(savedIncidents) : SEED_INCIDENTS;
       this.lostFound = savedLostFound ? JSON.parse(savedLostFound) : SEED_LOST_FOUND;
       this.auditLogs = savedAudit ? JSON.parse(savedAudit) : SEED_AUDIT_LOGS;
+
+      if (savedNotifs) {
+        try {
+          const parsed = JSON.parse(savedNotifs);
+          this.notifications = Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_NOTIFICATIONS;
+        } catch {
+          this.notifications = SEED_NOTIFICATIONS;
+        }
+      } else {
+        this.notifications = SEED_NOTIFICATIONS;
+      }
+
       this.initialized = true;
     } catch (e) {
       console.warn('LocalStorage parse failed, using memory seeds', e);
@@ -270,10 +401,34 @@ class AocsDataStore {
       this.incidents = SEED_INCIDENTS;
       this.lostFound = SEED_LOST_FOUND;
       this.auditLogs = SEED_AUDIT_LOGS;
+      this.notifications = SEED_NOTIFICATIONS;
     }
   }
 
-  private persist(key: string, data: any) {
+  // Initialize remote sync on startup
+private async initRemoteSync() {
+  try {
+    const [remoteFlights, remoteGates, remoteTasks] = await Promise.all([
+      flightApi.getSaphireHubFlights(),
+      gateApi.getAllGates(),
+      (taskApi as any).getAllTasks ? (taskApi as any).getAllTasks() : Promise.resolve([]),
+    ]);
+    if (remoteFlights?.length) this.flights = remoteFlights;
+    if (remoteGates?.length) this.gates = remoteGates;
+    if (remoteTasks?.length) this.tasks = remoteTasks;
+
+    // Persist fetched data locally
+    this.persist('saphire_flights', this.flights);
+    this.persist('saphire_gates', this.gates);
+    this.persist('saphire_tasks', this.tasks);
+
+    this.emit('INITIALIZED', { source: 'RemoteSync' }, 'AocsDataStore');
+  } catch (e) {
+    console.warn('Remote sync failed – falling back to seed/local data', e);
+  }
+}
+
+private persist(key: string, data: any) {
     try {
       localStorage.setItem(key, JSON.stringify(data));
     } catch (e) {
@@ -351,56 +506,69 @@ class AocsDataStore {
   // ==========================================================================
 
   // 1. Assign Gate to Flight (Airside Ops ↔ AOCC ↔ Public Tracker ↔ Boarding)
-  public assignGate(flightNumber: string, gateCode: string, source: string = 'Airside Ops'): boolean {
-    const flight = this.flights.find((f) => f.flightNumber === flightNumber);
-    const targetGate = this.gates.find((g) => g.gateCode === gateCode);
-    if (!flight) return false;
+/** 1️⃣ Assign Gate to Flight (Airside Ops ↔ AOCC ↔ Public Tracker ↔ Boarding) */
+public async assignGate(flightNumber: string, gateCode: string, source: string = 'Airside Ops'): Promise<boolean> {
+  const flight = this.flights.find((f) => f.flightNumber === flightNumber);
+  const targetGate = this.gates.find((g) => g.gateCode === gateCode);
+  if (!flight) return false;
 
-    // Free previous gate if any
-    this.gates = this.gates.map((g) => {
-      if (g.assignedFlightNumber === flightNumber && g.gateCode !== gateCode) {
-        return { ...g, status: 'AVAILABLE', assignedFlightId: undefined, assignedFlightNumber: undefined };
-      }
-      if (g.gateCode === gateCode) {
-        return { ...g, status: 'OCCUPIED', assignedFlightId: flight.flightId, assignedFlightNumber: flight.flightNumber };
-      }
-      return g;
-    });
+  // Free previous gate (if any) and occupy new one
+  this.gates = this.gates.map((g) => {
+    if (g.assignedFlightNumber === flightNumber && g.gateCode !== gateCode) {
+      return { ...g, status: 'AVAILABLE', assignedFlightId: undefined, assignedFlightNumber: undefined };
+    }
+    if (g.gateCode === gateCode) {
+      return { ...g, status: 'OCCUPIED', assignedFlightId: flight.flightId, assignedFlightNumber: flight.flightNumber };
+    }
+    return g;
+  });
 
-    // Update flight
-    this.flights = this.flights.map((f) => (f.flightNumber === flightNumber ? { ...f, gateCode } : f));
+  // Update flight locally
+  this.flights = this.flights.map((f) => (f.flightNumber === flightNumber ? { ...f, gateCode } : f));
 
-    this.persist('saphire_flights', this.flights);
-    this.persist('saphire_gates', this.gates);
+  // Optimistic local persist
+  this.persist('saphire_flights', this.flights);
+  this.persist('saphire_gates', this.gates);
 
-    this.logAuditEvent(
-      'GATE_ASSIGNMENT',
-      `Gate ${gateCode} assigned to Flight ${flightNumber}`,
-      source
-    );
-
-    this.emit('GATE_ASSIGNED', { flightNumber, gateCode }, source);
-    this.emit('FLIGHT_UPDATED', { flightNumber, gateCode }, source);
-    return true;
+  try {
+    const flightObj = this.flights.find((f) => f.flightNumber === flightNumber);
+    const gateObj = this.gates.find((g) => g.gateCode === gateCode);
+    if (flightObj && gateObj) {
+      await gateApi.assignGateToFlight({ flightId: flightObj.flightId, gateId: gateObj.gateId });
+    }
+  } catch (e) {
+    console.error('Backend gate assignment failed', e);
+    // Optional: roll back local state here
   }
+
+  this.logAuditEvent('GATE_ASSIGNMENT', `Gate ${gateCode} assigned to Flight ${flightNumber}`, source);
+  this.emit('GATE_ASSIGNED', { flightNumber, gateCode }, source);
+  this.emit('FLIGHT_UPDATED', { flightNumber, gateCode }, source);
+  return true;
+}
 
   // 2. Update Flight Status (AOCC / Ground Ops / Admin)
-  public updateFlightStatus(flightNumber: string, status: Flight['status'], source: string = 'AOCC'): boolean {
-    const flight = this.flights.find((f) => f.flightNumber === flightNumber);
-    if (!flight) return false;
+/** 2️⃣ Update Flight Status (AOCC / Ground Ops / Admin) */
+public async updateFlightStatus(flightNumber: string, status: Flight['status'], source: string = 'AOCC'): Promise<boolean> {
+  const flight = this.flights.find((f) => f.flightNumber === flightNumber);
+  if (!flight) return false;
 
-    this.flights = this.flights.map((f) => (f.flightNumber === flightNumber ? { ...f, status } : f));
-    this.persist('saphire_flights', this.flights);
+  // Optimistic local update
+  this.flights = this.flights.map((f) => (f.flightNumber === flightNumber ? { ...f, status } : f));
+  this.persist('saphire_flights', this.flights);
 
-    this.logAuditEvent(
-      'FLIGHT_STATUS_UPDATE',
-      `Flight ${flightNumber} status transitioned to ${status}`,
-      source
-    );
-
-    this.emit('FLIGHT_UPDATED', { flightNumber, status }, source);
-    return true;
+  // Remote sync – fire and ignore errors
+  try {
+    await flightApi.updateFlightStatus(flight.flightId, status);
+  } catch (e) {
+    console.error('Backend flight status update failed', e);
+    // Optional: roll back local state here
   }
+
+  this.logAuditEvent('FLIGHT_STATUS_UPDATE', `Flight ${flightNumber} status transitioned to ${status}`, source);
+  this.emit('FLIGHT_UPDATED', { flightNumber, status }, source);
+  return true;
+}
 
   // 3. Update Turnaround Task Status (Ground Ops ↔ Department ↔ Passenger Clearance)
   public updateTaskStatus(taskId: number, status: TurnaroundTask['status'], source: string = 'Ground Ops'): boolean {
@@ -607,6 +775,32 @@ class AocsDataStore {
     return { bagTag, scanEvents };
   }
 
+  public registerBagTag(bagData: Omit<BagTag, 'tagId'> & { tagId?: number }): BagTag {
+    const newBag: BagTag = {
+      tagId: bagData.tagId || this.bags.length + 100,
+      tagNumber: bagData.tagNumber,
+      flightId: bagData.flightId,
+      flightNumber: bagData.flightNumber,
+      passengerId: bagData.passengerId,
+      passengerName: bagData.passengerName,
+      weightKg: bagData.weightKg,
+      isPriority: bagData.isPriority,
+      status: bagData.status || 'CHECKED_IN',
+    };
+
+    this.bags = [newBag, ...this.bags.filter((b) => b.tagNumber !== newBag.tagNumber)];
+    this.persist('saphire_bags', this.bags);
+
+    this.recordBaggageScan(newBag.tagNumber, 'Check-In Induction Sorter Belt #1', 'SECURITY_SCREEN');
+    this.logAuditEvent(
+      'BAGGAGE_INDUCTION',
+      `New baggage inducted: ${newBag.tagNumber} (${newBag.weightKg} kg) for ${newBag.passengerName} (Flight ${newBag.flightNumber})`,
+      'Passenger Check-In Desk'
+    );
+    this.emit('BAGGAGE_SCANNED', { tagNumber: newBag.tagNumber, status: newBag.status }, 'Passenger Check-In Desk');
+    return newBag;
+  }
+
   // 7. Security & Incident Management
   public logIncident(incident: Partial<IncidentTicket> & { title: string; location: string }): IncidentTicket {
     const newInc: IncidentTicket = {
@@ -699,6 +893,58 @@ class AocsDataStore {
     );
     this.emit('ADMIN_OVERRIDE', { action: 'LOCKDOWN', terminal, locked }, 'System Administrator');
     return true;
+  }
+
+  // ==========================================================================
+  // OPERATIONAL NOTIFICATIONS & TELEMETRY ALERTS SYSTEM
+  // ==========================================================================
+
+  public getNotifications(): OperationalNotification[] {
+    return [...this.notifications];
+  }
+
+  public getUnreadNotificationCount(): number {
+    return this.notifications.filter((n) => !n.read).length;
+  }
+
+  public markNotificationRead(id: string, read: boolean = true) {
+    this.notifications = this.notifications.map((n) =>
+      n.id === id ? { ...n, read } : n
+    );
+    this.persist('saphire_notifications', this.notifications);
+    this.emit('NOTIFICATION_UPDATED', { id, read }, 'AOCS_NOTIFICATIONS');
+  }
+
+  public toggleNotificationRead(id: string) {
+    this.notifications = this.notifications.map((n) =>
+      n.id === id ? { ...n, read: !n.read } : n
+    );
+    this.persist('saphire_notifications', this.notifications);
+    this.emit('NOTIFICATION_UPDATED', { id }, 'AOCS_NOTIFICATIONS');
+  }
+
+  public markAllNotificationsRead() {
+    this.notifications = this.notifications.map((n) => ({ ...n, read: true }));
+    this.persist('saphire_notifications', this.notifications);
+    this.emit('NOTIFICATION_UPDATED', { allRead: true }, 'AOCS_NOTIFICATIONS');
+  }
+
+  public resolveNotification(id: string) {
+    this.notifications = this.notifications.filter((n) => n.id !== id);
+    this.persist('saphire_notifications', this.notifications);
+    this.emit('NOTIFICATION_UPDATED', { resolvedId: id }, 'AOCS_NOTIFICATIONS');
+  }
+
+  public addNotification(notif: Omit<OperationalNotification, 'id' | 'time'> & { time?: string }): OperationalNotification {
+    const newNotif: OperationalNotification = {
+      id: `NOTIF-${Date.now().toString().slice(-4)}`,
+      time: notif.time || 'Just now',
+      ...notif,
+    };
+    this.notifications = [newNotif, ...this.notifications];
+    this.persist('saphire_notifications', this.notifications);
+    this.emit('NOTIFICATION_UPDATED', { newNotif }, 'AOCS_NOTIFICATIONS');
+    return newNotif;
   }
 
   // ==========================================================================

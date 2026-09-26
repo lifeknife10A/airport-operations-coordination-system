@@ -50,6 +50,101 @@ html {
   100% { box-shadow: 0 0 8px rgba(16, 185, 129, 0.3); }
 }
 
+/* HCI Fluid Slide Motion Keyframes */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInSmooth {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes subtleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Motion utility classes - neutralized per user preference */
+.motion-slide-up,
+.motion-slide-down,
+.motion-slide-left,
+.motion-slide-right,
+.motion-fade-in {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+.motion-delay-100,
+.motion-delay-150,
+.motion-delay-200,
+.motion-delay-300,
+.motion-delay-400,
+.motion-delay-500 {
+  animation-delay: 0s !important;
+}
+
+/* Interactive elevated card hover dynamics */
+.motion-elevate-card {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.28s ease;
+}
+
+.motion-elevate-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px -8px rgba(15, 41, 66, 0.12), 0 4px 12px rgba(15, 41, 66, 0.05);
+}
+
+/* Smooth table row interactive highlight */
+.motion-row {
+  transition: background-color 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.motion-row:hover {
+  background-color: rgba(2, 132, 199, 0.04) !important;
+  transform: translateX(3px);
+}
+
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: 'Geist Variable', sans-serif;

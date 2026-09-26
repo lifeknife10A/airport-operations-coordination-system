@@ -91,12 +91,6 @@ export const CargoInformation: React.FC = () => {
                   borderRadius: '16px',
                   display: 'flex',
                   flexDirection: 'column',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    borderColor: '#0284C7',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 25px rgba(2, 132, 199, 0.08)',
-                  },
                 }}
               >
                 <Box sx={{ p: 1.3, width: 'fit-content', borderRadius: '10px', background: 'rgba(2, 132, 199, 0.08)', mb: 2.5 }}>
@@ -138,11 +132,9 @@ export const CargoInformation: React.FC = () => {
                   flexDirection: 'column',
                   position: 'relative',
                   backdropFilter: 'blur(8px)',
-                  transition: 'all 0.2s ease',
                   '&:hover': {
                     borderColor: '#38BDF8',
                     background: 'rgba(255, 255, 255, 0.07)',
-                    transform: 'translateY(-2px)',
                   },
                 }}
               >
@@ -164,7 +156,9 @@ export const CargoInformation: React.FC = () => {
       {/* Section 3: Cargo Documentation & Contact Info */}
       <Container maxWidth="xl" sx={{ py: 8 }}>
         <Box id="docs" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.2fr 1fr' }, gap: 4 }}>
-          <Box sx={{ p: 4.5, background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(15, 41, 66, 0.04)', borderRadius: '16px' }}>
+          <Box
+            sx={{ p: 4.5, background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(15, 41, 66, 0.04)', borderRadius: '16px' }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
               <Box sx={{ p: 1, borderRadius: '8px', background: 'rgba(30, 58, 95, 0.06)' }}>
                 <FileText size={22} color="#1E3A5F" />
@@ -189,7 +183,10 @@ export const CargoInformation: React.FC = () => {
             </Box>
           </Box>
 
-          <Box id="contact" sx={{ p: 4.5, background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(15, 41, 66, 0.04)', borderRadius: '16px' }}>
+          <Box
+            id="contact"
+            sx={{ p: 4.5, background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(15, 41, 66, 0.04)', borderRadius: '16px' }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
               <Box sx={{ p: 1, borderRadius: '8px', background: 'rgba(2, 132, 199, 0.08)' }}>
                 <Phone size={22} color="#0284C7" />

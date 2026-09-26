@@ -7,11 +7,13 @@ interface SpotlightCardProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
   sx?: any;
   variant?: string;
+  multicolor?: boolean;
 }
 
 export const SpotlightCard: React.FC<SpotlightCardProps> = ({
   children,
-  spotlightColor = 'rgba(255, 255, 255, 0.15)',
+  spotlightColor = 'rgba(2, 132, 199, 0.15)',
+  multicolor = false,
   className = '',
   ...props
 }) => {
@@ -45,6 +47,10 @@ export const SpotlightCard: React.FC<SpotlightCardProps> = ({
     setOpacity(0);
   };
 
+  const backgroundGradient = multicolor
+    ? `radial-gradient(450px circle at ${position.x}px ${position.y}px, rgba(2, 132, 199, 0.16) 0%, rgba(16, 185, 129, 0.14) 30%, rgba(217, 119, 6, 0.12) 60%, rgba(124, 58, 237, 0.10) 80%, transparent 95%)`
+    : `radial-gradient(400px circle at ${position.x}px ${position.y}px, ${spotlightColor}, transparent 70%)`;
+
   return (
     <div
       ref={divRef}
@@ -60,7 +66,7 @@ export const SpotlightCard: React.FC<SpotlightCardProps> = ({
         className="spotlight-overlay"
         style={{
           opacity,
-          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, ${spotlightColor}, transparent 40%)`,
+          background: backgroundGradient,
         }}
       />
       <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>

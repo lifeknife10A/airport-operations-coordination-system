@@ -3,6 +3,10 @@
   max-width: 1440px;
   margin: 0 auto;
   padding: 48px 24px 64px 24px;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .matrix-card {
@@ -11,6 +15,10 @@
   padding: 32px !important;
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(30, 58, 95, 0.03) !important;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .matrix-top {
@@ -78,6 +86,10 @@
   border-collapse: collapse;
   text-align: left;
   font-family: 'Inter', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .flight-table th {

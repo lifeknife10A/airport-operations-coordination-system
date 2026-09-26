@@ -7,7 +7,7 @@ import bannerContact from '../../assets/banners/banner-contact.jpg';
 
 const emergencyContacts = [
   { dept: 'Airport Security Command Center', number: '+91 (022) 8900-9111', sub: 'Airside & landside perimeter security' },
-  { dept: '24/7 Medical & Trauma Unit', number: '+91 (022) 8900-9108', sub: 'Terminal 1 & Terminal 2 First Aid stations' },
+  { dept: '24/7 Medical & Trauma Unit', number: '+91 (022) 8900-9108', sub: 'Central Terminal & Airside Concourse First Aid stations' },
   { dept: 'Airport Rescue & Fire Fighting (ARFF)', number: '+91 (022) 8900-9999', sub: 'Category 10 emergency crash rescue' },
   { dept: 'Passenger Concierge & Baggage Assistance', number: '+91 (022) 8900-1000', sub: 'Toll-free 24-hour bilingual hotline' },
 ];
@@ -94,7 +94,7 @@ export const Contact: React.FC = () => {
                     Physical Address
                   </Typography>
                   <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', color: '#475569', mt: 0.5, lineHeight: 1.6 }}>
-                    AOCS Operations Complex, Terminal 2 Ring Road, Vile Parle East, Mumbai, Maharashtra 400099
+                    AOCS Operations Complex, Airport Central Access Ring Road, Vile Parle East, Mumbai, Maharashtra 400099
                   </Typography>
                 </Box>
               </Box>

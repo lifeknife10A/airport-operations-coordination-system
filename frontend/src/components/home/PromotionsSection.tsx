@@ -25,7 +25,7 @@ const promoCards: PromoItem[] = [
     id: 'asolo',
     title: 'ASOLO Fashion Hub',
     category: 'MULTI-BRAND APPAREL',
-    description: 'Discover high-street fashion, travel couture, and Italian craftsmanship footwear across Terminal 1 & 2 flagship stores.',
+    description: 'Discover high-street fashion, travel couture, and Italian craftsmanship footwear across Central Terminal airside flagship stores.',
     image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=800&auto=format&fit=crop',
     icon: <Shirt size={20} />,
   },

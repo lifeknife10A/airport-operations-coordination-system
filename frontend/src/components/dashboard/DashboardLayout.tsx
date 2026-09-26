@@ -45,10 +45,14 @@ import {
   PanelLeft,
   Wind,
   Package,
+  CreditCard,
+  Luggage,
 } from 'lucide-react';
+import { SaphireLogo } from '../common/SaphireLogo';
 import { useAuth } from '../../context/AuthContext';
+import { getUserInitials } from '../../utils/userUtils';
 import toast from 'react-hot-toast';
-import { aocsDataStore } from '../../services/aocsDataStore';
+import { aocsDataStore, OperationalNotification } from '../../services/aocsDataStore';
 
 interface SidebarItem {
   label: string;
@@ -167,13 +171,28 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
     tag: 'SECURITY',
     items: [
       { label: 'Overview', path: '/dashboard/passenger-security', icon: <Sliders size={18} />, section: 'MAIN' },
-      { label: 'Boarding Control', path: '/dashboard/passenger-security#boarding', icon: <Plane size={18} />, badge: 'Gate A12', section: 'OPERATIONS' },
+      { label: 'Security Screening', path: '/dashboard/passenger-security#security-screening', icon: <ShieldCheck size={18} />, badge: 'Gate A12', section: 'OPERATIONS' },
       { label: 'Passenger Clearance', path: '/dashboard/passenger-security#clearance', icon: <ShieldCheck size={18} />, badge: '3 Flagged', section: 'OPERATIONS' },
       { label: 'Lost & Found', path: '/dashboard/passenger-security#lost-found', icon: <Package size={18} />, badge: '4 New', section: 'OPERATIONS' },
       { label: 'Incidents', path: '/dashboard/passenger-security#incidents', icon: <AlertTriangle size={18} />, badge: '2 Active', section: 'OPERATIONS' },
       { label: 'Lounge Activity', path: '/dashboard/passenger-security#lounges', icon: <Layers size={18} />, section: 'OPERATIONS' },
       { label: 'Notifications', path: '/dashboard/passenger-security#notifications', icon: <Bell size={18} />, badge: '4', section: 'MONITORING' },
       { label: 'Profile', path: '/dashboard/passenger-security#profile', icon: <UserCheck size={18} />, section: 'ACCOUNT' },
+    ],
+  },
+  'check-in': {
+    name: 'Check-In & Boarding Services',
+    roleKey: 'check-in',
+    accent: '#0284C7',
+    tag: 'CHECK-IN',
+    items: [
+      { label: 'Counters Overview', path: '/dashboard/check-in', icon: <Sliders size={18} />, section: 'MAIN' },
+      { label: 'Passenger Manifest', path: '/dashboard/check-in#manifest', icon: <Users size={18} />, badge: 'Live', section: 'OPERATIONS' },
+      { label: 'PNR Lookup & Check-In', path: '/dashboard/check-in#pnr-lookup', icon: <UserCheck size={18} />, section: 'OPERATIONS' },
+      { label: 'Boarding Pass Desk', path: '/dashboard/check-in#boarding-desk', icon: <CreditCard size={18} />, badge: 'Ready', section: 'OPERATIONS' },
+      { label: 'Baggage Induction', path: '/dashboard/check-in#baggage-tag', icon: <Luggage size={18} />, section: 'OPERATIONS' },
+      { label: 'Notifications', path: '/dashboard/check-in#notifications', icon: <Bell size={18} />, badge: '2', section: 'MONITORING' },
+      { label: 'Staff Profile', path: '/dashboard/check-in#profile', icon: <UserCheck size={18} />, section: 'ACCOUNT' },
     ],
   },
 };
@@ -188,27 +207,22 @@ const ROLE_TO_DASHBOARD: Record<string, string> = {
   'BAGGAGE_HANDLER': 'logistics',
   'SECURITY_OFFICER': 'passenger-security',
   'IMMIGRATION_OFFICER': 'passenger-security',
+  'CHECKIN_AGENT': 'check-in',
 };
 
 const SEARCHABLE_ITEMS = [
-  { type: 'FLIGHT', title: 'SPH-102 · London Heathrow (LHR)', sub: 'Boarding · Gate B12 · Terminal 2', link: '/dashboard/system-admin#flights' },
-  { type: 'FLIGHT', title: 'SPH-204 · Dubai International (DXB)', sub: 'Scheduled · Gate A04 · Terminal 1', link: '/dashboard/system-admin#flights' },
-  { type: 'FLIGHT', title: 'SPH-308 · Los Angeles (LAX)', sub: 'Airborne · Gate C22 · Terminal 2', link: '/dashboard/system-admin#flights' },
-  { type: 'FLIGHT', title: 'SPH-809 · New York (JFK)', sub: 'Delayed (+20m) · Gate A10 · Terminal 1', link: '/dashboard/system-admin#flights' },
+  { type: 'FLIGHT', title: 'SPH-102 · London Heathrow (LHR)', sub: 'Boarding · Gate B12 · Concourse B', link: '/dashboard/system-admin#flights' },
+  { type: 'FLIGHT', title: 'SPH-204 · Dubai International (DXB)', sub: 'Scheduled · Gate A04 · Concourse A', link: '/dashboard/system-admin#flights' },
+  { type: 'FLIGHT', title: 'SPH-308 · Los Angeles (LAX)', sub: 'Airborne · Gate C14 · Concourse C', link: '/dashboard/system-admin#flights' },
+  { type: 'FLIGHT', title: 'SPH-809 · New York (JFK)', sub: 'Delayed (+20m) · Gate A10 · Concourse A', link: '/dashboard/system-admin#flights' },
   { type: 'STAFF', title: 'Aarav Li', sub: 'System Administrator · Terminal Management', link: '/dashboard/system-admin#users' },
   { type: 'STAFF', title: 'Sai Sharma', sub: 'AOCC Operations Manager · Flight Operations', link: '/dashboard/system-admin#users' },
   { type: 'STAFF', title: 'Riya Johnson', sub: 'Ground Ops Supervisor · Ground Handling', link: '/dashboard/system-admin#users' },
   { type: 'STAFF', title: 'Elena Tanaka', sub: 'Airline Billing Clerk · Finance & Billing', link: '/dashboard/system-admin#users' },
-  { type: 'GATE', title: 'Gate B12', sub: 'Code F Dual-Deck Aerobridge · Terminal 2 Concourse B', link: '/dashboard/system-admin#flights' },
-  { type: 'GATE', title: 'Gate A04', sub: 'Widebody Stand · Terminal 1 Concourse A', link: '/dashboard/system-admin#flights' },
+  { type: 'GATE', title: 'Gate B12', sub: 'Code F Dual-Deck Aerobridge · Central Concourse B', link: '/dashboard/system-admin#flights' },
+  { type: 'GATE', title: 'Gate A04', sub: 'Widebody Stand · Central Concourse A', link: '/dashboard/system-admin#flights' },
   { type: 'AUDIT', title: 'ROLE_UPDATE Event #8821', sub: 'Admin updated RBAC permissions for Ground Ops', link: '/dashboard/system-admin#audit' },
   { type: 'AUDIT', title: 'GATE_ASSIGNMENT Event #8820', sub: 'Gate B12 synchronized for flight SPH-102', link: '/dashboard/system-admin#audit' },
-];
-
-const NOTIFICATIONS = [
-  { id: 1, level: 'CRITICAL', title: 'Gate B12 Dual-Allocation Conflict', detail: 'SPH-102 & SPH-204 scheduled simultaneously on Aerobridge B12.', time: '2 mins ago' },
-  { id: 2, level: 'WARNING', title: 'Turbulence Advisory Runway 09R', detail: 'Crosswind sheer detected exceeding 28 knots. Vector adjustments active.', time: '14 mins ago' },
-  { id: 3, level: 'INFO', title: 'Shift Handover Complete', detail: 'Ground Handling Evening Roster synchronized across 42 apron crews.', time: '38 mins ago' },
 ];
 
 interface DashboardLayoutProps {
@@ -242,6 +256,24 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
   // Global search modal state
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Live Reactive Notifications synchronized with centralized store
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState<number>(() =>
+    aocsDataStore.getUnreadNotificationCount()
+  );
+  const [notificationsList, setNotificationsList] = useState<OperationalNotification[]>(() =>
+    aocsDataStore.getNotifications()
+  );
+
+  // Subscribe to real-time notification changes
+  useEffect(() => {
+    const syncNotifications = () => {
+      setUnreadNotificationCount(aocsDataStore.getUnreadNotificationCount());
+      setNotificationsList(aocsDataStore.getNotifications());
+    };
+    const unsub = aocsDataStore.subscribe(syncNotifications);
+    return unsub;
+  }, []);
 
   // Priority Alerts Popover
   const [alertAnchor, setAlertAnchor] = useState<null | HTMLElement>(null);
@@ -385,29 +417,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
             onClick={() => navigate('/')}
             sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer', userSelect: 'none' }}
           >
-            <Box
-              sx={{
-                width: 38,
-                height: 38,
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(15, 41, 66, 0.2)',
-                flexShrink: 0,
-              }}
-            >
-              <Plane size={20} color="#FFFFFF" />
-            </Box>
-            <Box sx={{ display: { xs: 'none', sm: 'block' }, whiteSpace: 'nowrap' }}>
-              <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.12rem', color: '#0F2942', lineHeight: 1.1 }}>
-                SAPHIRE AOCS
-              </Typography>
-              <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.62rem', color: '#0284C7', fontWeight: 800, letterSpacing: '0.14em' }}>
-                OPERATIONS HUB
-              </Typography>
-            </Box>
+            <SaphireLogo size={38} variant="full" title="SAPHIRE AOCS" subtitle="OPERATIONS HUB" />
           </Box>
 
           {/* Sleek Collapse Toggle Button right next to Logo */}
@@ -494,16 +504,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
           </Box>
 
           {/* Notifications Bell */}
-          <Tooltip title="Airside Priority Alerts">
+          <Tooltip title={unreadNotificationCount > 0 ? `${unreadNotificationCount} Unacknowledged Alerts` : 'Notifications'}>
             <IconButton
               onClick={(e) => setAlertAnchor(e.currentTarget)}
               sx={{
-                color: '#475569',
+                color: Boolean(alertAnchor) ? '#0284C7' : '#475569',
                 backgroundColor: Boolean(alertAnchor) ? '#F1F5F9' : 'transparent',
                 '&:hover': { color: '#0284C7', backgroundColor: '#F8FAFC' },
               }}
             >
-              <Badge badgeContent={3} color="error">
+              <Badge badgeContent={unreadNotificationCount} color="error" invisible={unreadNotificationCount === 0}>
                 <Bell size={20} />
               </Badge>
             </IconButton>
@@ -519,11 +529,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
             slotProps={{
               paper: {
                 sx: {
-                  width: 360,
-                  p: 2,
+                  width: 380,
+                  p: 2.2,
                   mt: 1.5,
-                  borderRadius: '14px',
-                  boxShadow: '0 16px 40px rgba(15, 41, 66, 0.12)',
+                  borderRadius: '16px',
+                  boxShadow: '0 16px 40px rgba(15, 41, 66, 0.16)',
                   border: '1px solid #E2E8F0',
                 },
               },
@@ -533,34 +543,132 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <AlertTriangle size={18} color="#0284C7" />
                 <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.92rem', color: '#0F2942' }}>
-                  Priority Airside Alerts
+                  Operational Alerts
                 </Typography>
               </Box>
-              <Chip label="3 NEW" size="small" sx={{ bgcolor: '#FEF2F2', color: '#DC2626', fontWeight: 800, fontSize: '0.65rem', height: '20px' }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                <Chip
+                  label={unreadNotificationCount > 0 ? `${unreadNotificationCount} NEW` : 'ALL CLEAR'}
+                  size="small"
+                  sx={{
+                    bgcolor: unreadNotificationCount > 0 ? '#FEF2F2' : '#F0FDF4',
+                    color: unreadNotificationCount > 0 ? '#DC2626' : '#16A34A',
+                    fontWeight: 800,
+                    fontSize: '0.65rem',
+                    height: '20px',
+                  }}
+                />
+                {unreadNotificationCount > 0 && (
+                  <Typography
+                    onClick={() => {
+                      aocsDataStore.markAllNotificationsRead();
+                      toast.success('All notifications marked as read.');
+                    }}
+                    sx={{
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      color: '#0284C7',
+                      cursor: 'pointer',
+                      '&:hover': { textDecoration: 'underline' },
+                    }}
+                  >
+                    Mark all read
+                  </Typography>
+                )}
+              </Box>
             </Box>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-              {NOTIFICATIONS.map((n) => (
-                <Box
-                  key={n.id}
-                  sx={{
-                    p: 1.5,
-                    borderRadius: '8px',
-                    bgcolor: n.level === 'CRITICAL' ? '#FEF2F2' : n.level === 'WARNING' ? '#FFFBEB' : '#F0F9FF',
-                    border: `1px solid ${n.level === 'CRITICAL' ? '#FCA5A5' : n.level === 'WARNING' ? '#FDE68A' : '#BAE6FD'}`,
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.4 }}>
-                    <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: n.level === 'CRITICAL' ? '#991B1B' : n.level === 'WARNING' ? '#92400E' : '#0369A1' }}>
-                      {n.title}
-                    </Typography>
-                    <Typography sx={{ fontSize: '0.68rem', color: '#64748B' }}>{n.time}</Typography>
-                  </Box>
-                  <Typography sx={{ fontSize: '0.74rem', color: '#475569', lineHeight: 1.3 }}>
-                    {n.detail}
-                  </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2, maxHeight: '360px', overflowY: 'auto' }}>
+              {notificationsList.length === 0 ? (
+                <Box sx={{ py: 3, textAlign: 'center', color: '#94A3B8' }}>
+                  <Typography sx={{ fontSize: '0.82rem' }}>No alerts in stream.</Typography>
                 </Box>
-              ))}
+              ) : (
+                notificationsList.slice(0, 5).map((n) => {
+                  const isCritical = n.category === 'CRITICAL';
+                  const isAirside = n.category === 'AIRSIDE';
+                  const isSecurity = n.category === 'SECURITY';
+
+                  return (
+                    <Box
+                      key={n.id}
+                      onClick={() => {
+                        aocsDataStore.toggleNotificationRead(n.id);
+                        toast.success(n.read ? 'Marked as unacknowledged' : 'Alert acknowledged');
+                      }}
+                      sx={{
+                        p: 1.5,
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        bgcolor: !n.read
+                          ? (isCritical ? '#FEF2F2' : isAirside ? '#E0F2FE' : isSecurity ? '#EDE9FE' : '#FFFBEB')
+                          : '#FFFFFF',
+                        border: '1px solid',
+                        borderColor: !n.read
+                          ? (isCritical ? '#FCA5A5' : isAirside ? '#BAE6FD' : isSecurity ? '#DDD6FE' : '#FDE68A')
+                          : '#E2E8F0',
+                        transition: 'all 0.15s ease',
+                        '&:hover': {
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 4px 12px rgba(15, 41, 66, 0.06)',
+                        },
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: isCritical ? '#991B1B' : isAirside ? '#0284C7' : isSecurity ? '#7C3AED' : '#92400E' }}>
+                            {n.title}
+                          </Typography>
+                          {!n.read && (
+                            <Box sx={{ width: '6px', height: '6px', borderRadius: '50%', bgcolor: '#DC2626', flexShrink: 0 }} />
+                          )}
+                        </Box>
+                        <Typography sx={{ fontSize: '0.68rem', color: '#64748B' }}>{n.time}</Typography>
+                      </Box>
+                      <Typography sx={{ fontSize: '0.74rem', color: '#475569', lineHeight: 1.35 }}>
+                        {n.detail}
+                      </Typography>
+                      <Box sx={{ mt: 0.8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography sx={{ fontSize: '0.66rem', color: '#94A3B8', fontWeight: 600 }}>
+                          Click to {n.read ? 'mark unread' : 'acknowledge'}
+                        </Typography>
+                        <Chip
+                          label={n.read ? 'ACKNOWLEDGED' : 'PENDING'}
+                          size="small"
+                          sx={{
+                            height: 18,
+                            fontSize: '0.6rem',
+                            fontWeight: 700,
+                            bgcolor: n.read ? '#F1F5F9' : '#FEF2F2',
+                            color: n.read ? '#64748B' : '#DC2626',
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  );
+                })
+              )}
+            </Box>
+
+            <Box sx={{ mt: 1.5, pt: 1.2, borderTop: '1px solid #E2E8F0', textAlign: 'center' }}>
+              <Button
+                fullWidth
+                size="small"
+                onClick={() => {
+                  setAlertAnchor(null);
+                  const notifPath = currentConfig.items.find((i) => i.label === 'Notifications')?.path || `/dashboard/${activeRole}#notifications`;
+                  navigate(notifPath);
+                }}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  color: '#0284C7',
+                  '&:hover': { bgcolor: 'rgba(2, 132, 199, 0.08)' },
+                }}
+              >
+                View All in Notification Center →
+              </Button>
             </Box>
           </Popover>
 
@@ -587,7 +695,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
                 fontSize: '0.75rem',
               }}
             >
-              {user?.name ? user.name.slice(0, 2).toUpperCase() : 'AD'}
+              {getUserInitials(user?.name)}
             </Avatar>
             <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
               <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.84rem', fontWeight: 700, color: '#0F2942', lineHeight: 1.1 }}>
@@ -679,66 +787,74 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
                         : !location.hash && location.pathname === item.path);
 
                     return (
-                      <Tooltip
-                        key={item.label}
-                        title={!sidebarOpen ? (item.badge ? `${item.label} (${item.badge})` : item.label) : ''}
-                        placement="right"
-                        arrow
-                        disableHoverListener={sidebarOpen}
-                      >
-                        <Box
-                          onClick={() => {
-                            if (item.path.startsWith('/dashboard')) navigate(item.path);
-                          }}
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: sidebarOpen ? 'space-between' : 'center',
-                            px: sidebarOpen ? 1.5 : 0,
-                            py: 1.05,
-                            mb: 0.5,
-                            borderRadius: '10px',
-                            cursor: 'pointer',
-                            backgroundColor: isMatch ? 'rgba(2, 132, 199, 0.08)' : 'transparent',
-                            color: isMatch ? '#0284C7' : '#475569',
-                            transition: 'all 0.15s ease',
-                            gap: 1.25,
-                            minWidth: 0,
-                            '&:hover': {
-                              backgroundColor: isMatch ? 'rgba(2, 132, 199, 0.12)' : '#F8FAFC',
-                              color: '#0F2942',
-                              transform: sidebarOpen ? 'translateX(2px)' : 'none',
-                            },
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, justifyContent: sidebarOpen ? 'flex-start' : 'center', minWidth: 0, flex: 1, overflow: 'hidden' }}>
-                            <Box sx={{ color: isMatch ? '#0284C7' : '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                              {item.icon}
-                            </Box>
-                            {sidebarOpen && (
-                              <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.83rem', fontWeight: isMatch ? 700 : 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {item.label}
-                              </Typography>
-                            )}
-                          </Box>
-                          {sidebarOpen && item.badge && (
-                            <Chip
-                              label={item.badge}
-                              size="small"
-                              sx={{
-                                height: '20px',
-                                fontSize: '0.64rem',
-                                flexShrink: 0,
-                                ml: 'auto',
-                                backgroundColor: isMatch ? '#0284C7' : '#E2E8F0',
-                                color: isMatch ? '#FFFFFF' : '#475569',
-                                fontWeight: 700,
-                                px: 0.4,
+                      (() => {
+                        const dynamicBadge = item.label === 'Notifications'
+                          ? (unreadNotificationCount > 0 ? String(unreadNotificationCount) : undefined)
+                          : item.badge;
+
+                        return (
+                          <Tooltip
+                            key={item.label}
+                            title={!sidebarOpen ? (dynamicBadge ? `${item.label} (${dynamicBadge})` : item.label) : ''}
+                            placement="right"
+                            arrow
+                            disableHoverListener={sidebarOpen}
+                          >
+                            <Box
+                              onClick={() => {
+                                if (item.path.startsWith('/dashboard')) navigate(item.path);
                               }}
-                            />
-                          )}
-                        </Box>
-                      </Tooltip>
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: sidebarOpen ? 'space-between' : 'center',
+                                px: sidebarOpen ? 1.5 : 0,
+                                py: 1.05,
+                                mb: 0.5,
+                                borderRadius: '10px',
+                                cursor: 'pointer',
+                                backgroundColor: isMatch ? 'rgba(2, 132, 199, 0.08)' : 'transparent',
+                                color: isMatch ? '#0284C7' : '#475569',
+                                transition: 'all 0.15s ease',
+                                gap: 1.25,
+                                minWidth: 0,
+                                '&:hover': {
+                                  backgroundColor: isMatch ? 'rgba(2, 132, 199, 0.12)' : '#F8FAFC',
+                                  color: '#0F2942',
+                                  transform: sidebarOpen ? 'translateX(2px)' : 'none',
+                                },
+                              }}
+                            >
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, justifyContent: sidebarOpen ? 'flex-start' : 'center', minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                                <Box sx={{ color: isMatch ? '#0284C7' : '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                  {item.icon}
+                                </Box>
+                                {sidebarOpen && (
+                                  <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.83rem', fontWeight: isMatch ? 700 : 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {item.label}
+                                  </Typography>
+                                )}
+                              </Box>
+                              {sidebarOpen && dynamicBadge && (
+                                <Chip
+                                  label={dynamicBadge}
+                                  size="small"
+                                  sx={{
+                                    height: '20px',
+                                    fontSize: '0.64rem',
+                                    flexShrink: 0,
+                                    ml: 'auto',
+                                    backgroundColor: isMatch ? '#0284C7' : '#E2E8F0',
+                                    color: isMatch ? '#FFFFFF' : '#475569',
+                                    fontWeight: 700,
+                                    px: 0.4,
+                                  }}
+                                />
+                              )}
+                            </Box>
+                          </Tooltip>
+                        );
+                      })()
                     );
                   })}
                 </Box>

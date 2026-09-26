@@ -776,7 +776,7 @@ export const DepartmentDashboard: React.FC = () => {
                               ) : f.cleaningStatus === 'IN_PROGRESS' ? (
                                 <Chip label="● IN PROGRESS" size="small" sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontWeight: 800, fontSize: '0.68rem', whiteSpace: 'nowrap' }} />
                               ) : (
-                                <Chip label="○ PENDING" size="small" sx={{ bgcolor: '#F1F5F9', color: '#64748B', fontWeight: 700, fontSize: '0.68rem', whiteSpace: 'nowrap' }} />
+                                <Chip label="○ PENDING" size="small" sx={{ bgcolor: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', fontWeight: 800, fontSize: '0.68rem', whiteSpace: 'nowrap' }} />
                               )}
                             </TableCell>
 
@@ -846,14 +846,14 @@ export const DepartmentDashboard: React.FC = () => {
                           p: 1.5,
                           borderRadius: '10px',
                           border: '1px solid',
-                          borderColor: item.checked ? '#CBD5E1' : '#E2E8F0',
-                          backgroundColor: item.checked ? '#F8FAFC' : '#FFFFFF',
+                          borderColor: item.checked ? '#BBF7D0' : '#E2E8F0',
+                          backgroundColor: item.checked ? '#F0FDF4' : '#FFFFFF',
                           display: 'flex',
                           alignItems: 'center',
                           gap: 1.5,
                           cursor: 'pointer',
                           transition: 'all 0.15s ease',
-                          '&:hover': { bgcolor: '#F1F5F9' },
+                          '&:hover': { bgcolor: item.checked ? '#DCFCE7' : '#F8FAFC' },
                         }}
                       >
                         <Checkbox
@@ -861,7 +861,7 @@ export const DepartmentDashboard: React.FC = () => {
                           size="small"
                           sx={{ p: 0, color: '#94A3B8', '&.Mui-checked': { color: '#10B981' } }}
                         />
-                        <Typography sx={{ fontSize: '0.84rem', fontWeight: 600, color: item.checked ? '#1E293B' : '#64748B', textDecoration: item.checked ? 'line-through' : 'none' }}>
+                        <Typography sx={{ fontSize: '0.84rem', fontWeight: 600, color: item.checked ? '#0F2942' : '#64748B' }}>
                           {item.label}
                         </Typography>
                       </Box>
@@ -1469,10 +1469,10 @@ export const DepartmentDashboard: React.FC = () => {
                     <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                       <TableRow>
                         <TableCell sx={{ width: '24%', pl: 2.5, fontWeight: 800, color: '#64748B', fontSize: '0.72rem', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>FLIGHT / STAND</TableCell>
-                        <TableCell sx={{ width: '28%', fontWeight: 800, color: '#64748B', fontSize: '0.72rem', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>AIRCRAFT</TableCell>
+                        <TableCell sx={{ width: '24%', fontWeight: 800, color: '#64748B', fontSize: '0.72rem', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>AIRCRAFT</TableCell>
                         <TableCell align="center" sx={{ width: '14%', fontWeight: 800, color: '#64748B', fontSize: '0.72rem', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>CHECKLIST</TableCell>
                         <TableCell sx={{ width: '22%', fontWeight: 800, color: '#64748B', fontSize: '0.72rem', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>STATUS</TableCell>
-                        <TableCell align="right" sx={{ width: '12%', pr: 2.5, fontWeight: 800, color: '#64748B', fontSize: '0.72rem', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>ACTION</TableCell>
+                        <TableCell align="right" sx={{ width: '16%', pr: 2.5, fontWeight: 800, color: '#64748B', fontSize: '0.72rem', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>ACTION</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>

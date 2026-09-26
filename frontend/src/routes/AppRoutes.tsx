@@ -16,6 +16,7 @@ import DepartmentDashboard from '../pages/dashboards/DepartmentDashboard';
 import AirsideOpsDashboard from '../pages/dashboards/AirsideOpsDashboard';
 import LogisticsDashboard from '../pages/dashboards/LogisticsDashboard';
 import PassengerSecurityOpsDashboard from '../pages/dashboards/PassengerSecurityOpsDashboard';
+import PassengerCheckInDashboard from '../pages/dashboards/PassengerCheckInDashboard';
 
 const AppRoutes: React.FC = () => {
     return (
@@ -30,7 +31,7 @@ const AppRoutes: React.FC = () => {
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/login" element={<Login />} />
 
-                {/* 7 Top-Level Role Dashboard Routes */}
+                {/* 8 Top-Level Role Dashboard Routes */}
                 <Route path="/dashboard/system-admin" element={<SystemAdminDashboard />} />
                 <Route path="/dashboard/aocc" element={<AOCCControllerDashboard />} />
                 <Route path="/dashboard/ground-ops" element={<GroundOpsSupervisorDashboard />} />
@@ -38,6 +39,7 @@ const AppRoutes: React.FC = () => {
                 <Route path="/dashboard/airside-ops" element={<AirsideOpsDashboard />} />
                 <Route path="/dashboard/logistics" element={<LogisticsDashboard />} />
                 <Route path="/dashboard/passenger-security" element={<PassengerSecurityOpsDashboard />} />
+                <Route path="/dashboard/check-in" element={<PassengerCheckInDashboard />} />
             </Routes>
         </BrowserRouter>
     );

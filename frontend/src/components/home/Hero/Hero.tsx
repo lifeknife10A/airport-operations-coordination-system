@@ -46,10 +46,10 @@ export const Hero: React.FC = () => {
         </h1>
       </div>
 
-      {/* Bottom-Right Corner: Editorial Manifesto (Hardcoded, Un-selectable) */}
+      {/* Bottom-Right Corner: Editorial Manifesto with Emotional Poise */}
       <div className="ve-hero-bottom-right">
-        <p className="ve-subheading-italic">
-          Where calm luxury meets aviation precision. Effortless departures, real-time concourse guidance, and serene comfort across every terminal.
+        <p className="ve-manifesto-text">
+          Where calm luxury meets aviation precision — effortless departures, concourse stillness, and serene comfort across every terminal.
         </p>
       </div>
 
@@ -64,16 +64,19 @@ export const Hero: React.FC = () => {
 
           <div className="ve-dock-divider" />
 
-          {/* 2. Unified Search Field */}
+          {/* 2. Unified Search Field (Greyed-out with explicit placeholder guidance) */}
           <form className="ve-dock-search" onSubmit={handleSearch}>
-            <Search className="ve-dock-search-icon" size={15} />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="ve-dock-input"
-              aria-label="Search flight or gate"
-            />
+            <div className="ve-dock-input-wrapper">
+              <Search className="ve-dock-search-icon" size={14} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="ve-dock-input"
+                placeholder="Flight number, airline, or destination (e.g. SPH-102, AI-203)..."
+                aria-label="Search flight number, airline, or destination"
+              />
+            </div>
             <button type="submit" className="ve-dock-btn" aria-label="Track Flight">
               <span>Track</span>
               <ArrowUpRight size={14} />

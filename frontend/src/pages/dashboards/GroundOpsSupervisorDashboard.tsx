@@ -58,6 +58,7 @@ import toast from 'react-hot-toast';
 import { DashboardLayout } from '../../components/dashboard/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
 import { aocsDataStore } from '../../services/aocsDataStore';
+import { PriorityBadge } from '../../components/common/PriorityBadge';
 
 // Types
 export type TaskStage = 'CLEANING' | 'FUELING' | 'MAINTENANCE' | 'SECURITY';
@@ -70,7 +71,7 @@ export interface GroundTurnaroundFlight {
   airline: string;
   aircraft: string;
   stand: string;
-  concourse: 'T1' | 'T2';
+  concourse: 'Concourse A' | 'Concourse B' | 'Concourse C';
   route: string;
   etaEtd: string;
   cleaningStatus: TaskStatus;
@@ -127,8 +128,8 @@ const INITIAL_GROUND_FLIGHTS: GroundTurnaroundFlight[] = [
     flightNumber: 'AI-203',
     airline: 'Air India',
     aircraft: 'Boeing 787-8 Dreamliner',
-    stand: 'Stand G12',
-    concourse: 'T1',
+    stand: 'Stand G01',
+    concourse: 'Concourse A',
     route: 'DEL → BOM',
     etaEtd: 'ETD 23:42 UTC',
     cleaningStatus: 'COMPLETED',
@@ -136,7 +137,7 @@ const INITIAL_GROUND_FLIGHTS: GroundTurnaroundFlight[] = [
     maintenanceStatus: 'IN_PROGRESS',
     securityStatus: 'PENDING',
     overallProgress: 75,
-    supervisorNotes: 'Hydraulic sensor check on Stand G12 currently ongoing by Avionics Team.',
+    supervisorNotes: 'Hydraulic sensor check on Stand G01 currently ongoing by Avionics Team.',
     delayReason: 'Line maintenance hydraulic fluid check (+12m)',
   },
   {
@@ -144,8 +145,8 @@ const INITIAL_GROUND_FLIGHTS: GroundTurnaroundFlight[] = [
     flightNumber: '6E-521',
     airline: 'IndiGo',
     aircraft: 'Airbus A321neo',
-    stand: 'Stand G08',
-    concourse: 'T1',
+    stand: 'Stand G07',
+    concourse: 'Concourse A',
     route: 'BOM → BLR',
     etaEtd: 'ETD 23:33 UTC',
     cleaningStatus: 'COMPLETED',
@@ -162,7 +163,7 @@ const INITIAL_GROUND_FLIGHTS: GroundTurnaroundFlight[] = [
     airline: 'Vistara',
     aircraft: 'Airbus A320neo',
     stand: 'Stand G04',
-    concourse: 'T1',
+    concourse: 'Concourse A',
     route: 'BOM → DEL',
     etaEtd: 'ETD 23:05 UTC',
     cleaningStatus: 'COMPLETED',
@@ -177,8 +178,8 @@ const INITIAL_GROUND_FLIGHTS: GroundTurnaroundFlight[] = [
     flightNumber: 'SPH-102',
     airline: 'Saphire Airways',
     aircraft: 'Airbus A350-900',
-    stand: 'Stand G10',
-    concourse: 'T1',
+    stand: 'Stand G17',
+    concourse: 'Concourse B',
     route: 'SPH → LHR',
     etaEtd: 'ETD 23:45 UTC',
     cleaningStatus: 'COMPLETED',
@@ -193,8 +194,8 @@ const INITIAL_GROUND_FLIGHTS: GroundTurnaroundFlight[] = [
     flightNumber: 'SPH-204',
     airline: 'Saphire Airways',
     aircraft: 'Boeing 777-300ER',
-    stand: 'Stand G01',
-    concourse: 'T2',
+    stand: 'Stand G15',
+    concourse: 'Concourse B',
     route: 'SPH → DXB',
     etaEtd: 'ETD 00:15 UTC',
     cleaningStatus: 'IN_PROGRESS',
@@ -209,8 +210,8 @@ const INITIAL_GROUND_FLIGHTS: GroundTurnaroundFlight[] = [
     flightNumber: 'SPH-809',
     airline: 'Saphire Airways',
     aircraft: 'Boeing 787-9',
-    stand: 'Stand G14',
-    concourse: 'T2',
+    stand: 'Stand G24',
+    concourse: 'Concourse B',
     route: 'SPH → JFK',
     etaEtd: 'ETD 00:40 UTC',
     cleaningStatus: 'PENDING',
@@ -220,6 +221,38 @@ const INITIAL_GROUND_FLIGHTS: GroundTurnaroundFlight[] = [
     overallProgress: 20,
     supervisorNotes: 'Catering high-loader vehicle being swapped out on apron.',
     delayReason: 'Ground equipment mechanical interlock replacement',
+  },
+  {
+    id: 'GF-201',
+    flightNumber: 'EK-201',
+    airline: 'Emirates',
+    aircraft: 'Airbus A380-800',
+    stand: 'Stand G31',
+    concourse: 'Concourse C',
+    route: 'SPH → DXB',
+    etaEtd: 'ETD 00:50 UTC',
+    cleaningStatus: 'IN_PROGRESS',
+    fuelingStatus: 'IN_PROGRESS',
+    maintenanceStatus: 'COMPLETED',
+    securityStatus: 'PENDING',
+    overallProgress: 45,
+    supervisorNotes: 'Dual upper-deck catering loading in progress at Stand G31.',
+  },
+  {
+    id: 'GF-117',
+    flightNumber: 'BA-117',
+    airline: 'British Airways',
+    aircraft: 'Boeing 777-300ER',
+    stand: 'Stand G34',
+    concourse: 'Concourse C',
+    route: 'SPH → LHR',
+    etaEtd: 'ETD 01:05 UTC',
+    cleaningStatus: 'COMPLETED',
+    fuelingStatus: 'PENDING',
+    maintenanceStatus: 'COMPLETED',
+    securityStatus: 'PENDING',
+    overallProgress: 60,
+    supervisorNotes: 'Hydrant fuel bowser dispatched to Stand G34.',
   },
 ];
 
@@ -377,7 +410,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
 
   // Filters
   const [taskFilter, setTaskFilter] = useState<'ALL' | 'ATTENTION' | 'IN_PROGRESS' | 'COMPLETED'>('ALL');
-  const [flightFilter, setFlightFilter] = useState<'ALL' | 'T1' | 'T2'>('ALL');
+  const [flightFilter, setFlightFilter] = useState<'ALL' | 'Concourse A' | 'Concourse B' | 'Concourse C'>('ALL');
   const [flightSearch, setFlightSearch] = useState('');
   const [taskSearch, setTaskSearch] = useState('');
 
@@ -573,52 +606,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
   };
 
   const getPriorityBadge = (priority: TaskPriority) => {
-    if (priority === 'HIGH') {
-      return (
-        <Chip
-          label="🔴 HIGH PRIORITY"
-          size="small"
-          sx={{
-            bgcolor: '#FEE2E2',
-            color: '#DC2626',
-            fontFamily: "'Outfit', sans-serif",
-            fontWeight: 800,
-            fontSize: '0.68rem',
-            height: '22px',
-          }}
-        />
-      );
-    }
-    if (priority === 'MEDIUM') {
-      return (
-        <Chip
-          label="🟠 MEDIUM"
-          size="small"
-          sx={{
-            bgcolor: '#FEF3C7',
-            color: '#D97706',
-            fontFamily: "'Outfit', sans-serif",
-            fontWeight: 800,
-            fontSize: '0.68rem',
-            height: '22px',
-          }}
-        />
-      );
-    }
-    return (
-      <Chip
-        label="🟡 ROUTINE"
-        size="small"
-        sx={{
-          bgcolor: '#F1F5F9',
-          color: '#64748B',
-          fontFamily: "'Outfit', sans-serif",
-          fontWeight: 700,
-          fontSize: '0.68rem',
-          height: '22px',
-        }}
-      />
-    );
+    return <PriorityBadge priority={priority} />;
   };
 
   // Filtered lists
@@ -999,7 +987,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                 {/* Filters */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Box sx={{ display: 'flex', backgroundColor: '#FFFFFF', p: 0.4, borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                    {(['ALL', 'T1', 'T2'] as const).map((cc) => (
+                    {(['ALL', 'Concourse A', 'Concourse B', 'Concourse C'] as const).map((cc) => (
                       <Button
                         key={cc}
                         size="small"
@@ -1018,7 +1006,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                           '&:hover': { backgroundColor: flightFilter === cc ? '#1E3A5F' : '#F1F5F9' },
                         }}
                       >
-                        {cc === 'ALL' ? 'All Stands' : cc === 'T1' ? 'Concourse A (T1)' : 'Concourse B (T2)'}
+                        {cc === 'ALL' ? 'All Stands' : cc}
                       </Button>
                     ))}
                   </Box>
@@ -1217,7 +1205,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                     {(
                       [
                         { id: 'ALL', label: 'All Tasks' },
-                        { id: 'ATTENTION', label: '🔴 Attention (4)' },
+                        { id: 'ATTENTION', label: 'Attention (4)' },
                         { id: 'IN_PROGRESS', label: 'In Progress' },
                         { id: 'COMPLETED', label: 'Done' },
                       ] as const
@@ -1275,7 +1263,8 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                               fontFamily: "'Outfit', sans-serif",
                               fontWeight: 800,
                               fontSize: '0.68rem',
-                              height: '22px',
+                              height: '20px',
+                              borderRadius: '4px',
                             }}
                           />
                           <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284C7' }}>
@@ -1638,7 +1627,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                   Active Ground Servicing Flights
                 </Typography>
                 <Typography sx={{ fontSize: '0.86rem', color: '#64748B' }}>
-                  Complete telemetry for 18 flights currently berthed at Terminal 1 & 2 stands.
+                  Complete telemetry for 18 flights currently berthed at Central Terminal apron stands.
                 </Typography>
               </Box>
               <Button
@@ -1820,7 +1809,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                           ) : task.status === 'IN_PROGRESS' ? (
                             <Chip label="IN PROGRESS" size="small" sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontWeight: 800, fontSize: '0.68rem' }} />
                           ) : (
-                            <Chip label="PENDING" size="small" sx={{ bgcolor: '#F1F5F9', color: '#64748B', fontWeight: 700, fontSize: '0.68rem' }} />
+                            <Chip label="PENDING" size="small" sx={{ bgcolor: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', fontWeight: 800, fontSize: '0.68rem' }} />
                           )}
                         </TableCell>
                         <TableCell align="right">
@@ -1865,7 +1854,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                   Apron Crew Dispatch & Assignment
                 </Typography>
                 <Typography sx={{ fontSize: '0.86rem', color: '#64748B' }}>
-                  Deploy specialized ground handling crews across Terminal 1 & Terminal 2 apron stands.
+                  Deploy specialized ground handling crews across Central Terminal apron stands.
                 </Typography>
               </Box>
             </Box>
@@ -2282,9 +2271,9 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                   label="Priority Level"
                   onChange={(e) => setNewTaskPriority(e.target.value as TaskPriority)}
                 >
-                  <MenuItem value="HIGH">🔴 High (Blocking Turnaround)</MenuItem>
-                  <MenuItem value="MEDIUM">🟠 Medium (Standard)</MenuItem>
-                  <MenuItem value="LOW">🟡 Routine / Low</MenuItem>
+                  <MenuItem value="HIGH">High (Blocking Turnaround)</MenuItem>
+                  <MenuItem value="MEDIUM">Medium (Standard)</MenuItem>
+                  <MenuItem value="LOW">Routine / Low</MenuItem>
                 </Select>
               </FormControl>
             </Box>

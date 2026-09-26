@@ -199,20 +199,20 @@ export const CombinedServicesSection: React.FC = () => {
                 </Typography>
               </Box>
               <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', lineHeight: 1.6, color: '#52524E', mb: 3 }}>
-                Navigate Terminal 1 (Domestic) and Terminal 2 (International) with inter-terminal automated transit.
+                Navigate Unified Central Terminal with direct skywalks connecting Concourses A, B, and C.
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 4, flexGrow: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, color: '#2E2E2C', fontSize: '0.84rem' }}>
                   <Box sx={{ width: 6, height: 6, borderRadius: '50%', background: '#C43E3A' }} />
-                  T1 Domestic Concourse & Gates A1 - B20
+                  Concourse A Domestic & Regional Gates A01 - A14
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, color: '#2E2E2C', fontSize: '0.84rem' }}>
                   <Box sx={{ width: 6, height: 6, borderRadius: '50%', background: '#C43E3A' }} />
-                  T2 International Hub & Widebody Gates C1 - D30
+                  Concourses B &amp; C Transcontinental &amp; Widebody Gates B01 - C18
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, color: '#2E2E2C', fontSize: '0.84rem' }}>
                   <Box sx={{ width: 6, height: 6, borderRadius: '50%', background: '#C43E3A' }} />
-                  Automated People Mover (APM) Express
+                  Central People Mover (APM) &amp; Skywalk Rotunda
                 </Box>
               </Box>
               <Button

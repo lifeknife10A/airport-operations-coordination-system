@@ -72,8 +72,12 @@ export const LiveFlightMatrix: React.FC = () => {
   };
 
   return (
-    <section className="matrix-section">
-      <SpotlightCard spotlightColor="rgba(30, 58, 95, 0.08)" className="matrix-card">
+    <section className="matrix-section" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+      <SpotlightCard
+        spotlightColor="rgba(30, 58, 95, 0.08)"
+        className="matrix-card"
+        style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+      >
         <div className="matrix-top">
           <div>
             <span className="matrix-tag">AIRPORT INFORMATION DISPLAY SYSTEM</span>
@@ -95,8 +99,8 @@ export const LiveFlightMatrix: React.FC = () => {
           </div>
         </div>
 
-        <div className="table-responsive">
-          <table className="flight-table">
+        <div className="table-responsive" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+          <table className="flight-table" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
             <thead>
               <tr>
                 <th>Flight No</th>

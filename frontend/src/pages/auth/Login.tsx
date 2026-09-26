@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import { SaphireLogo } from '../../components/common/SaphireLogo';
 import bannerLogin from '../../assets/banners/banner-login.jpg';
 
 export const Login: React.FC = () => {
@@ -88,6 +89,9 @@ export const Login: React.FC = () => {
         case 'SECURITY_OFFICER':
         case 'IMMIGRATION_OFFICER':
           targetPath = '/dashboard/passenger-security';
+          break;
+        case 'CHECKIN_AGENT':
+          targetPath = '/dashboard/check-in';
           break;
         default:
           targetPath = '/dashboard/system-admin';
@@ -159,12 +163,12 @@ export const Login: React.FC = () => {
           <Box
             sx={{
               position: 'relative',
-              p: { xs: 4, md: 6 },
+              p: { xs: 4, md: 5.5 },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
               minHeight: { xs: '360px', md: '640px' },
-              backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.72) 0%, rgba(15, 41, 66, 0.94) 100%), url(${bannerLogin})`,
+              backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.78) 0%, rgba(15, 41, 66, 0.94) 100%), url(${bannerLogin})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               color: '#FFFFFF',
@@ -172,74 +176,74 @@ export const Login: React.FC = () => {
           >
             {/* Top Brand Header */}
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 4 }}>
-                <Box
-                  sx={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: '12px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                    border: '1px solid rgba(255, 255, 255, 0.25)',
-                    backdropFilter: 'blur(8px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Plane size={22} color="#38BDF8" />
-                </Box>
-                <Box>
-                  <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, color: '#FFFFFF', fontSize: '1.3rem', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-                    SAPHIRE
-                  </Typography>
-                  <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.68rem', color: '#38BDF8', letterSpacing: '0.18em', fontWeight: 600 }}>
-                    OPERATIONS DISPATCH
-                  </Typography>
-                </Box>
+              <Box sx={{ mb: 3.5 }}>
+                <SaphireLogo size={44} variant="full" title="SAPHIRE" subtitle="OPERATIONS DISPATCH" theme="light" />
               </Box>
 
-              <Typography variant="h3" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, color: '#FFFFFF', fontSize: { xs: '1.8rem', md: '2.2rem' }, lineHeight: 1.25, mb: 2 }}>
+              <Typography variant="h3" sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, color: '#FFFFFF', fontSize: { xs: '1.75rem', md: '2.1rem' }, lineHeight: 1.25, mb: 1.5 }}>
                 Unified Aerodrome Command Gateway
               </Typography>
-              <Typography sx={{ fontFamily: "'Inter', sans-serif", color: 'rgba(255, 255, 255, 0.82)', fontSize: '0.92rem', lineHeight: 1.65, maxWidth: '440px' }}>
-                Secure real-time coordination bridge linking air traffic management, apron ramp control, turnaround services, cargo freight logistics, and terminal security.
+              <Typography sx={{ fontFamily: "'Inter', sans-serif", color: 'rgba(255, 255, 255, 0.82)', fontSize: '0.88rem', lineHeight: 1.6, maxWidth: '440px', mb: 3 }}>
+                Centralized coordination linking air traffic management, apron ramp control, turnaround logistics, and terminal security.
               </Typography>
+
+              {/* Structured Operational Capabilities */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.2, pt: 2.5, borderTop: '1px solid rgba(255, 255, 255, 0.12)' }}>
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 0.3 }}>
+                    <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#38BDF8', flexShrink: 0 }} />
+                    <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '0.88rem', fontWeight: 700, color: '#FFFFFF' }}>
+                      Airside Turnaround &amp; Ramp Safety
+                    </Typography>
+                  </Box>
+                  <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.78)', pl: 2.2, lineHeight: 1.55 }}>
+                    Sequenced ground handling, fueling dispatch, and pushback tug coordination to sustain target off-block times.
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 0.3 }}>
+                    <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#38BDF8', flexShrink: 0 }} />
+                    <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '0.88rem', fontWeight: 700, color: '#FFFFFF' }}>
+                      Stand &amp; Gate Capacity Balancing
+                    </Typography>
+                  </Box>
+                  <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.78)', pl: 2.2, lineHeight: 1.55 }}>
+                    Dynamic gate allocation across Concourses A, B &amp; C to eliminate taxiway holding delays and boarding bridge congestion.
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 0.3 }}>
+                    <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#38BDF8', flexShrink: 0 }} />
+                    <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '0.88rem', fontWeight: 700, color: '#FFFFFF' }}>
+                      Baggage &amp; Cargo Logistics Flow
+                    </Typography>
+                  </Box>
+                  <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.78)', pl: 2.2, lineHeight: 1.55 }}>
+                    Real-time reconciliation linking sortation carousels, ramp transfer dollies, and airfreight logistics manifests.
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 0.3 }}>
+                    <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#38BDF8', flexShrink: 0 }} />
+                    <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '0.88rem', fontWeight: 700, color: '#FFFFFF' }}>
+                      Unified Multi-Agency Coordination Mesh
+                    </Typography>
+                  </Box>
+                  <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.78)', pl: 2.2, lineHeight: 1.55 }}>
+                    Synchronized operating channels connecting AOCC duty directors, airline dispatch, and BCAS security units.
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
 
-            {/* Aerodrome Telemetry Strip */}
-            <Box
-              sx={{
-                mt: 4,
-                p: 2.5,
-                borderRadius: '16px',
-                backgroundColor: 'rgba(15, 41, 66, 0.65)',
-                backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-              }}
-            >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem', fontWeight: 700, color: '#38BDF8', letterSpacing: '0.12em' }}>
-                  PRECINCT TELEMETRY STATUS
-                </Typography>
-                <Box sx={{ px: 1, py: 0.3, borderRadius: '4px', backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10B981', fontSize: '0.68rem', fontFamily: "'Geist Mono', monospace", fontWeight: 700 }}>
-                  LIVE 24/7
-                </Box>
-              </Box>
-
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1.5, textAlign: 'center' }}>
-                <Box sx={{ p: 1.2, borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.06)' }}>
-                  <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '1.2rem', fontWeight: 700, color: '#FFFFFF' }}>200</Typography>
-                  <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.75)', fontFamily: "'Inter', sans-serif" }}>Gates Online</Typography>
-                </Box>
-                <Box sx={{ p: 1.2, borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.06)' }}>
-                  <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '1.2rem', fontWeight: 700, color: '#10B981' }}>99.8%</Typography>
-                  <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.75)', fontFamily: "'Inter', sans-serif" }}>Dispatch OTP</Typography>
-                </Box>
-                <Box sx={{ p: 1.2, borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.06)' }}>
-                  <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '1.2rem', fontWeight: 700, color: '#38BDF8' }}>7 Roles</Typography>
-                  <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.75)', fontFamily: "'Inter', sans-serif" }}>RBAC Access</Typography>
-                </Box>
-              </Box>
+            {/* Bottom Facility Identification */}
+            <Box sx={{ mt: 4, pt: 2, borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.55)', letterSpacing: '0.08em' }}>
+                SAPHIRE INTERNATIONAL AIRPORT • AIRSIDE OPERATIONS COMPLEX
+              </Typography>
             </Box>
           </Box>
 

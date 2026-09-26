@@ -94,7 +94,7 @@ export interface TurnaroundStep {
 
 export interface GateSlot {
   gate: string;
-  concourse: 'T1' | 'T2';
+  concourse: string;
   flight: string | null;
   aircraftType?: string;
   status: 'OCCUPIED' | 'AVAILABLE' | 'BOARDING' | 'DELAYED' | 'MAINTENANCE';
@@ -122,7 +122,7 @@ const INITIAL_FLIGHTS: OperationalFlight[] = [
     route: 'DEL → BOM',
     origin: 'DEL (New Delhi)',
     destination: 'BOM (Mumbai)',
-    gate: 'G12',
+    gate: 'A01',
     scheduledTime: '23:30 UTC',
     estimatedTime: '23:42 UTC',
     status: 'BOARDING',
@@ -142,7 +142,7 @@ const INITIAL_FLIGHTS: OperationalFlight[] = [
     route: 'BOM → BLR',
     origin: 'BOM (Mumbai)',
     destination: 'BLR (Bengaluru)',
-    gate: 'G08',
+    gate: 'A07',
     scheduledTime: '23:15 UTC',
     estimatedTime: '23:33 UTC',
     status: 'DELAYED',
@@ -162,7 +162,7 @@ const INITIAL_FLIGHTS: OperationalFlight[] = [
     route: 'BOM → DEL',
     origin: 'BOM (Mumbai)',
     destination: 'DEL (New Delhi)',
-    gate: 'G04',
+    gate: 'A04',
     scheduledTime: '23:05 UTC',
     estimatedTime: '23:05 UTC',
     status: 'READY',
@@ -180,7 +180,7 @@ const INITIAL_FLIGHTS: OperationalFlight[] = [
     route: 'SPH → LHR',
     origin: 'SPH (Saphire Hub)',
     destination: 'LHR (London Heathrow)',
-    gate: 'G10',
+    gate: 'B03',
     scheduledTime: '23:45 UTC',
     estimatedTime: '23:45 UTC',
     status: 'BOARDING',
@@ -198,7 +198,7 @@ const INITIAL_FLIGHTS: OperationalFlight[] = [
     route: 'SPH → DXB',
     origin: 'SPH (Saphire Hub)',
     destination: 'DXB (Dubai Int)',
-    gate: 'G01',
+    gate: 'B01',
     scheduledTime: '00:15 UTC',
     estimatedTime: '00:15 UTC',
     status: 'SCHEDULED',
@@ -216,7 +216,7 @@ const INITIAL_FLIGHTS: OperationalFlight[] = [
     route: 'SPH → LAX',
     origin: 'SPH (Saphire Hub)',
     destination: 'LAX (Los Angeles Int)',
-    gate: 'G03',
+    gate: 'C01',
     scheduledTime: '22:50 UTC',
     estimatedTime: '22:50 UTC',
     status: 'AIRBORNE',
@@ -234,7 +234,7 @@ const INITIAL_FLIGHTS: OperationalFlight[] = [
     route: 'SPH → JFK',
     origin: 'SPH (Saphire Hub)',
     destination: 'JFK (New York JFK)',
-    gate: 'G06',
+    gate: 'C04',
     scheduledTime: '23:55 UTC',
     estimatedTime: '00:20 UTC',
     status: 'DELAYED',
@@ -246,21 +246,53 @@ const INITIAL_FLIGHTS: OperationalFlight[] = [
     delayMinutes: 25,
     delayReason: 'Catering highloader hydraulic mechanical servicing',
   },
+  {
+    id: 'FL-201',
+    flightNumber: 'EK-201',
+    airline: 'Emirates',
+    aircraft: 'Airbus A380-800',
+    route: 'SPH → DXB',
+    origin: 'SPH (Saphire Hub)',
+    destination: 'DXB (Dubai Int)',
+    gate: 'C08',
+    scheduledTime: '00:50 UTC',
+    estimatedTime: '00:50 UTC',
+    status: 'SCHEDULED',
+    turnaroundProgress: 35,
+    turnaroundStage: 'Pre-flight catering & fuel upload',
+    passengers: 489,
+    fuelKg: 145000,
+    crew: 'Capt. F. Al-Nuaimi / FO S. Leclerc',
+  },
 ];
 
 const INITIAL_GATES: GateSlot[] = [
-  { gate: 'G01', concourse: 'T1', flight: 'SPH-204', aircraftType: 'Boeing 777-300ER', status: 'OCCUPIED' },
-  { gate: 'G02', concourse: 'T1', flight: null, status: 'AVAILABLE' },
-  { gate: 'G03', concourse: 'T1', flight: 'SPH-308', aircraftType: 'Boeing 787-9', status: 'OCCUPIED' },
-  { gate: 'G04', concourse: 'T1', flight: 'UK-901', aircraftType: 'Airbus A320neo', status: 'BOARDING' },
-  { gate: 'G05', concourse: 'T1', flight: null, status: 'AVAILABLE' },
-  { gate: 'G06', concourse: 'T1', flight: 'SPH-809', aircraftType: 'Airbus A330-300', status: 'DELAYED' },
-  { gate: 'G07', concourse: 'T2', flight: null, status: 'AVAILABLE' },
-  { gate: 'G08', concourse: 'T2', flight: '6E-521', aircraftType: 'Airbus A321neo', status: 'OCCUPIED' },
-  { gate: 'G09', concourse: 'T2', flight: null, status: 'AVAILABLE' },
-  { gate: 'G10', concourse: 'T2', flight: 'SPH-102', aircraftType: 'Airbus A350-900', status: 'BOARDING' },
-  { gate: 'G11', concourse: 'T2', flight: null, status: 'AVAILABLE' },
-  { gate: 'G12', concourse: 'T2', flight: 'AI-203', aircraftType: 'Boeing 787-8', status: 'OCCUPIED' },
+  // Concourse A (Domestic Pier)
+  { gate: 'A01', concourse: 'Concourse A', flight: 'AI-203', aircraftType: 'Boeing 787-8', status: 'BOARDING' },
+  { gate: 'A02', concourse: 'Concourse A', flight: null, status: 'AVAILABLE' },
+  { gate: 'A03', concourse: 'Concourse A', flight: null, status: 'AVAILABLE' },
+  { gate: 'A04', concourse: 'Concourse A', flight: 'UK-901', aircraftType: 'Airbus A320neo', status: 'BOARDING' },
+  { gate: 'A05', concourse: 'Concourse A', flight: null, status: 'AVAILABLE' },
+  { gate: 'A06', concourse: 'Concourse A', flight: null, status: 'AVAILABLE' },
+  { gate: 'A07', concourse: 'Concourse A', flight: '6E-521', aircraftType: 'Airbus A321neo', status: 'DELAYED' },
+  { gate: 'A08', concourse: 'Concourse A', flight: null, status: 'AVAILABLE' },
+
+  // Concourse B (Transcontinental Pier)
+  { gate: 'B01', concourse: 'Concourse B', flight: 'SPH-204', aircraftType: 'Boeing 777-300ER', status: 'OCCUPIED' },
+  { gate: 'B02', concourse: 'Concourse B', flight: null, status: 'AVAILABLE' },
+  { gate: 'B03', concourse: 'Concourse B', flight: 'SPH-102', aircraftType: 'Airbus A350-900', status: 'BOARDING' },
+  { gate: 'B04', concourse: 'Concourse B', flight: null, status: 'AVAILABLE' },
+  { gate: 'B05', concourse: 'Concourse B', flight: null, status: 'AVAILABLE' },
+  { gate: 'B06', concourse: 'Concourse B', flight: null, status: 'AVAILABLE' },
+
+  // Concourse C (Widebody Flagship Pier)
+  { gate: 'C01', concourse: 'Concourse C', flight: 'SPH-308', aircraftType: 'Boeing 787-9', status: 'OCCUPIED' },
+  { gate: 'C02', concourse: 'Concourse C', flight: null, status: 'AVAILABLE' },
+  { gate: 'C03', concourse: 'Concourse C', flight: null, status: 'AVAILABLE' },
+  { gate: 'C04', concourse: 'Concourse C', flight: 'SPH-809', aircraftType: 'Airbus A330-300', status: 'DELAYED' },
+  { gate: 'C05', concourse: 'Concourse C', flight: null, status: 'AVAILABLE' },
+  { gate: 'C08', concourse: 'Concourse C', flight: 'EK-201', aircraftType: 'Airbus A380-800', status: 'OCCUPIED' },
+  { gate: 'C12', concourse: 'Concourse C', flight: null, status: 'AVAILABLE' },
 ];
 
 const INITIAL_DELAYS: DelayLogItem[] = [
@@ -340,7 +372,7 @@ export const AOCCControllerDashboard: React.FC = () => {
   const [gates, setGates] = useState<GateSlot[]>(INITIAL_GATES);
   const [delayLogs, setDelayLogs] = useState<DelayLogItem[]>(INITIAL_DELAYS);
   const [selectedFlight, setSelectedFlight] = useState<OperationalFlight>(INITIAL_FLIGHTS[0]); // defaults to AI-203
-  const [selectedConcourse, setSelectedConcourse] = useState<'ALL' | 'T1' | 'T2'>('ALL');
+  const [selectedConcourse, setSelectedConcourse] = useState<'ALL' | 'Concourse A' | 'Concourse B' | 'Concourse C'>('ALL');
   const [flightSearch, setFlightSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
@@ -439,7 +471,7 @@ export const AOCCControllerDashboard: React.FC = () => {
         setGates(
           storeGates.map((sg) => ({
             gate: sg.gateCode,
-            concourse: sg.terminalName === 'Terminal 1' ? 'T1' : 'T2',
+            concourse: `Concourse ${sg.gateCode.charAt(0) || 'A'}`,
             flight: sg.assignedFlightNumber || null,
             status: (sg.status as any) || 'AVAILABLE',
           }))
@@ -554,8 +586,9 @@ export const AOCCControllerDashboard: React.FC = () => {
     const matchesStatus = statusFilter === 'ALL' || f.status === statusFilter;
     const matchesConcourse =
       selectedConcourse === 'ALL' ||
-      (selectedConcourse === 'T1' && f.gate.startsWith('G0') && parseInt(f.gate.replace('G0', ''), 10) <= 6) ||
-      (selectedConcourse === 'T2' && (f.gate.startsWith('G1') || parseInt(f.gate.replace('G0', '').replace('G', ''), 10) > 6));
+      (selectedConcourse === 'Concourse A' && (f.gate.startsWith('A') || (f.gate.startsWith('G0') && parseInt(f.gate.replace('G0', ''), 10) <= 14))) ||
+      (selectedConcourse === 'Concourse B' && (f.gate.startsWith('B') || f.gate.startsWith('G1') || f.gate.startsWith('G2'))) ||
+      (selectedConcourse === 'Concourse C' && (f.gate.startsWith('C') || f.gate.startsWith('G3') || f.gate.startsWith('G4')));
 
     return matchesSearch && matchesStatus && matchesConcourse;
   });
@@ -607,7 +640,7 @@ export const AOCCControllerDashboard: React.FC = () => {
             {/* Controls: Concourse Selector Pills + Primary Action */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Box sx={{ display: 'flex', backgroundColor: '#FFFFFF', p: 0.5, borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                {(['ALL', 'T1', 'T2'] as const).map((concourse) => (
+                {(['ALL', 'Concourse A', 'Concourse B', 'Concourse C'] as const).map((concourse) => (
                   <Button
                     key={concourse}
                     size="small"
@@ -628,7 +661,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                       },
                     }}
                   >
-                    {concourse === 'ALL' ? 'All Concourses' : concourse === 'T1' ? 'Concourse A (T1)' : 'Concourse B (T2)'}
+                    {concourse === 'ALL' ? 'All Concourses' : concourse}
                   </Button>
                 ))}
               </Box>
@@ -1295,7 +1328,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#DC2626' }} />
                         <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '0.88rem', color: '#991B1B' }}>
-                          AI-203 · Stand G12
+                          AI-203 · Gate A01 (Stand G01)
                         </Typography>
                       </Box>
                       <Chip label="+12 min" size="small" sx={{ height: 18, fontSize: '0.65rem', fontWeight: 800, bgcolor: '#FFFFFF', color: '#DC2626' }} />
@@ -1324,7 +1357,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                       <Button
                         size="small"
                         onClick={() => {
-                          const gateTarget = gates.find((g) => g.gate === 'G12') || gates[0];
+                          const gateTarget = gates.find((g) => g.gate === 'A01') || gates[0];
                           setReassignGateTarget(gateTarget);
                           setReassignModalOpen(true);
                         }}
@@ -1783,7 +1816,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                 Terminal Gate Occupancy Matrix
               </Typography>
               <Typography sx={{ fontSize: '0.86rem', color: '#64748B' }}>
-                Real-time stand telemetry for Concourse A (T1) and Concourse B (T2)
+                Real-time stand telemetry for Concourse A, B & C
               </Typography>
             </Box>
             <Button
@@ -2021,7 +2054,7 @@ export const AOCCControllerDashboard: React.FC = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Card sx={{ p: 2.5, borderRadius: '14px', border: '1px solid #FECACA', bgcolor: '#FEF2F2' }}>
               <Typography sx={{ fontWeight: 800, color: '#991B1B', fontSize: '0.95rem', mb: 0.5 }}>
-                🔴 CRITICAL: Gate G12 Stand Conflict & Maintenance Hold
+                CRITICAL: Gate G12 Stand Conflict & Maintenance Hold
               </Typography>
               <Typography sx={{ fontSize: '0.82rem', color: '#7F1D1D' }}>
                 Flight AI-203 line maintenance check running over slot by 12 minutes. Inbound widebody SPH-204 scheduled for G12 stand at 00:15 UTC. Stand reallocation required immediately.
@@ -2030,7 +2063,7 @@ export const AOCCControllerDashboard: React.FC = () => {
 
             <Card sx={{ p: 2.5, borderRadius: '14px', border: '1px solid #FDE68A', bgcolor: '#FFFBEB' }}>
               <Typography sx={{ fontWeight: 800, color: '#92400E', fontSize: '0.95rem', mb: 0.5 }}>
-                🟠 WARNING: Deccan Plateau Weather Routing Deviation
+                WARNING: Deccan Plateau Weather Routing Deviation
               </Typography>
               <Typography sx={{ fontSize: '0.82rem', color: '#78350F' }}>
                 Air traffic control reported active convective cloud build-up along Route W42. Inbound flight 6E-521 holding 45 nm west; delay logged +18m.
@@ -2039,7 +2072,7 @@ export const AOCCControllerDashboard: React.FC = () => {
 
             <Card sx={{ p: 2.5, borderRadius: '14px', border: '1px solid #BAE6FD', bgcolor: '#F0F9FF' }}>
               <Typography sx={{ fontWeight: 800, color: '#0369A1', fontSize: '0.95rem', mb: 0.5 }}>
-                ℹ INFO: Concourse A Biometric E-Gate Channel Operational
+                INFO: Concourse A Biometric E-Gate Channel Operational
               </Typography>
               <Typography sx={{ fontSize: '0.82rem', color: '#075985' }}>
                 All 8 boarding lanes for Flight SPH-102 (LHR) operational. Boarding completion estimated at 23:30 UTC.

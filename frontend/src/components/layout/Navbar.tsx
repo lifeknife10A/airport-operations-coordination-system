@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppBar, Toolbar, Box, Button, Paper, Typography } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { SaphireLogo } from '../common/SaphireLogo';
 
 interface SubItem {
   label: string;
@@ -142,45 +143,7 @@ export const Navbar: React.FC = () => {
           }}
           onClick={() => handleNavClick('/')}
         >
-          <img
-            src="/saphire_logo_clean.png"
-            alt="Saphire International Airport"
-            style={{
-              height: '42px',
-              width: 'auto',
-              objectFit: 'contain',
-              display: 'block',
-              imageRendering: '-webkit-optimize-contrast',
-              filter: 'drop-shadow(0 2px 8px rgba(2, 132, 199, 0.22))',
-            }}
-          />
-          <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-            <Typography
-              sx={{
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontWeight: 800,
-                fontSize: '1.05rem',
-                letterSpacing: '-0.025em',
-                color: '#0F2942',
-                lineHeight: 1.1,
-              }}
-            >
-              SAPHIRE
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: "'Geist Mono', monospace",
-                fontSize: '0.64rem',
-                color: '#0284C7',
-                fontWeight: 600,
-                letterSpacing: '0.12em',
-                lineHeight: 1.1,
-                textTransform: 'uppercase',
-              }}
-            >
-              AIRPORT
-            </Typography>
-          </Box>
+          <SaphireLogo size={38} variant="full" title="SAPHIRE" subtitle="INTERNATIONAL AIRPORT" />
         </Box>
 
         {/* Linear 1-Row Navigation Items - Centered */}
