@@ -76,7 +76,7 @@ const mapFlightToRecord = (f: Flight): FlightRecord => {
 
 const mockAlerts = [
   { id: 1, type: 'warning', title: 'Runway 09R/27L Scheduled Maintenance', message: 'Runway 09R/27L routine maintenance scheduled from 02:00 to 05:00 UTC. Minor taxiway rerouting in effect.', time: '10 mins ago' },
-  { id: 2, type: 'info', title: 'Terminal 2 Automated e-Gates Active', message: 'Gates C20 through C25 in Terminal 2 now operate with biometric facial matching clearance for international departures.', time: '1 hour ago' },
+  { id: 2, type: 'info', title: 'Concourse C Automated e-Gates Active', message: 'Gates C20 through C25 in Concourse C now operate with biometric facial matching clearance for international departures.', time: '1 hour ago' },
   { id: 3, type: 'caution', title: 'Low Visibility Approach Procedures (LVP)', message: 'Instrument Landing System (ILS Category III B) active across Runway 09L. Approach intervals adjusted to 5 nm.', time: '2 hours ago' },
 ];
 
@@ -409,6 +409,8 @@ export const FlightTracker: React.FC = () => {
                   boxShadow: '0 10px 30px rgba(30, 58, 95, 0.03)',
                   borderRadius: '16px',
                   overflow: 'hidden',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
                 }}
               >
                 <Table>
@@ -696,7 +698,7 @@ export const FlightTracker: React.FC = () => {
                   {/* 5-Step Visual Stepper */}
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, py: 2 }}>
                     {[
-                      { step: 1, title: 'Check-In & Automated Bag Drop', desc: 'Inducted into Terminal 2 High-Speed Baggage Sorter System', icon: <Luggage size={18} /> },
+                      { step: 1, title: 'Check-In & Automated Bag Drop', desc: 'Inducted into Central Terminal High-Speed Baggage Sorter System', icon: <Luggage size={18} /> },
                       { step: 2, title: 'In-Line CTX Explosive Screening', desc: 'Level 1 Automated CT X-Ray clearance certified clean', icon: <ShieldCheck size={18} /> },
                       { step: 3, title: 'Ramp Cart Transfer & ULD Containerization', desc: 'Loaded into airside container & verified by handler', icon: <ArrowRight size={18} /> },
                       { step: 4, title: 'Aircraft Cargo Hold Stowed', desc: 'Locked securely inside aft cargo compartment', icon: <Plane size={18} /> },
@@ -808,7 +810,7 @@ export const FlightTracker: React.FC = () => {
           </Box>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3 }}>
-            {mockAlerts.map((alert) => (
+            {mockAlerts.map((alert, idx) => (
               <SpotlightCard
                 key={alert.id}
                 className="apple-glass"

@@ -51,9 +51,21 @@ public class GateService {
                     .map(flightService::mapToDTO)
                     .collect(Collectors.toList());
 
+            String concourse = gate.getConcourse();
+            if (concourse == null && gate.getGateNumber() != null) {
+                if (gate.getGateNumber().startsWith("A")) concourse = "Concourse A";
+                else if (gate.getGateNumber().startsWith("B")) concourse = "Concourse B";
+                else if (gate.getGateNumber().startsWith("C")) concourse = "Concourse C";
+                else concourse = "Concourse A";
+            }
+            String terminal = gate.getTerminal() != null ? gate.getTerminal() : "Central Terminal";
+
             return GateResponseDTO.builder()
                     .gateId(gate.getGateId())
                     .gateNumber(gate.getGateNumber())
+                    .concourse(concourse)
+                    .terminal(terminal)
+                    .maxWingspanMeters(gate.getMaxWingspanMeters())
                     .stands(standsForGate)
                     .activeFlights(activeFlights)
                     .build();

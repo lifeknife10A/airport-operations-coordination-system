@@ -70,7 +70,7 @@ export interface CargoRecord {
 export interface CarouselRecord {
   id: string;
   carouselNumber: string; // 'C01', 'C02', etc.
-  terminal: string; // 'Terminal 1', 'Terminal 2'
+  terminal: string; // 'Concourse A', 'Concourse B', etc.
   status: CarouselStatus;
   flightNumber?: string;
   airline?: string;
@@ -129,12 +129,12 @@ const INITIAL_CARGO: CargoRecord[] = [
 ];
 
 const INITIAL_CAROUSELS: CarouselRecord[] = [
-  { id: 'CRSL-01', carouselNumber: 'C01', terminal: 'Terminal 1', status: 'ARRIVED', flightNumber: 'AI-203', airline: 'Air India', origin: 'Delhi (DEL)', bagsCount: 184, eta: 'Active Claim' },
-  { id: 'CRSL-02', carouselNumber: 'C02', terminal: 'Terminal 1', status: 'ARRIVING', flightNumber: '6E-521', airline: 'IndiGo', origin: 'Bengaluru (BLR)', bagsCount: 142, eta: 'In 8 mins' },
-  { id: 'CRSL-03', carouselNumber: 'C03', terminal: 'Terminal 1', status: 'AVAILABLE' },
-  { id: 'CRSL-04', carouselNumber: 'C04', terminal: 'Terminal 2', status: 'ARRIVED', flightNumber: 'UK-901', airline: 'Vistara', origin: 'Mumbai (BOM)', bagsCount: 168, eta: 'Active Claim' },
-  { id: 'CRSL-05', carouselNumber: 'C05', terminal: 'Terminal 2', status: 'AVAILABLE' },
-  { id: 'CRSL-06', carouselNumber: 'C06', terminal: 'Terminal 2', status: 'AVAILABLE' },
+  { id: 'CRSL-01', carouselNumber: 'C01', terminal: 'Concourse A', status: 'ARRIVED', flightNumber: 'AI-203', airline: 'Air India', origin: 'Delhi (DEL)', bagsCount: 184, eta: 'Active Claim' },
+  { id: 'CRSL-02', carouselNumber: 'C02', terminal: 'Concourse A', status: 'ARRIVING', flightNumber: '6E-521', airline: 'IndiGo', origin: 'Bengaluru (BLR)', bagsCount: 142, eta: 'In 8 mins' },
+  { id: 'CRSL-03', carouselNumber: 'C03', terminal: 'Concourse A', status: 'AVAILABLE' },
+  { id: 'CRSL-04', carouselNumber: 'C04', terminal: 'Concourse B', status: 'ARRIVED', flightNumber: 'UK-901', airline: 'Vistara', origin: 'Mumbai (BOM)', bagsCount: 168, eta: 'Active Claim' },
+  { id: 'CRSL-05', carouselNumber: 'C05', terminal: 'Concourse B', status: 'AVAILABLE' },
+  { id: 'CRSL-06', carouselNumber: 'C06', terminal: 'Concourse C', status: 'AVAILABLE' },
 ];
 
 const INITIAL_FUEL_LOGS: FuelSupplyLog[] = [
@@ -168,7 +168,7 @@ const INITIAL_ALERTS: LogisticsAlert[] = [
     severity: 'WARNING',
     type: 'CAROUSEL_UNASSIGNED',
     title: 'Baggage Carousel Unallocated',
-    description: 'Inbound passengers deplaning. Terminal 1 reclaim carousel not yet locked.',
+    description: 'Inbound passengers deplaning. Central Terminal reclaim carousel not yet locked.',
     actionLabel: 'Assign Carousel',
   },
   {
@@ -498,7 +498,7 @@ export const LogisticsDashboard: React.FC = () => {
             Baggage Carousels
           </Typography>
           <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8', mt: 0.3 }}>
-            Terminal 1 & 2 arrival reclaim belts
+            Central Terminal arrival reclaim belts
           </Typography>
         </Card>
 
@@ -612,8 +612,9 @@ export const LogisticsDashboard: React.FC = () => {
                               sx={{
                                 fontWeight: 800,
                                 fontSize: '0.66rem',
-                                bgcolor: c.status === 'LOADED' ? '#DCFCE7' : c.status === 'LOADING' ? '#E0F2FE' : '#F1F5F9',
-                                color: c.status === 'LOADED' ? '#15803D' : c.status === 'LOADING' ? '#0369A1' : '#64748B',
+                                bgcolor: c.status === 'LOADED' ? '#DCFCE7' : c.status === 'LOADING' ? '#E0F2FE' : '#FEF3C7',
+                                color: c.status === 'LOADED' ? '#15803D' : c.status === 'LOADING' ? '#0369A1' : '#B45309',
+                                border: c.status === 'PENDING' ? '1px solid #FCD34D' : undefined,
                               }}
                             />
                           </TableCell>
@@ -639,7 +640,7 @@ export const LogisticsDashboard: React.FC = () => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, pb: 1.5, borderBottom: '1px solid #E2E8F0' }}>
                   <Box>
                     <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
-                      Baggage Reclaim Flow (Terminal 1 & 2)
+                      Baggage Reclaim Flow (Concourses A, B & C)
                     </Typography>
                     <Typography sx={{ fontSize: '0.82rem', color: '#64748B' }}>
                       Physical reclaim carousel allocation for arriving passenger flights.
@@ -852,72 +853,71 @@ export const LogisticsDashboard: React.FC = () => {
                 <Box
                   key={flow.id}
                   sx={{
-                    p: 2,
-                    borderRadius: '12px',
+                    p: 2.2,
+                    borderRadius: '14px',
                     border: '1px solid #E2E8F0',
-                    bgcolor: '#F8FAFC',
-                    display: 'flex',
-                    flexDirection: { xs: 'column', md: 'row' },
-                    alignItems: { xs: 'flex-start', md: 'center' },
-                    justifyContent: 'space-between',
-                    gap: 2,
+                    bgcolor: '#FFFFFF',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', lg: '220px 1fr' },
+                    alignItems: 'center',
+                    gap: 3,
+                    transition: 'all 0.15s ease',
+                    '&:hover': { borderColor: '#CBD5E1', boxShadow: '0 4px 12px rgba(15, 41, 66, 0.05)' },
                   }}
                 >
                   {/* Left Flight Identity */}
-                  <Box sx={{ minWidth: '180px' }}>
-                    <Typography sx={{ fontWeight: 800, fontSize: '0.95rem', color: '#0F2942' }}>
-                      {flow.flightNumber} • {flow.stand}
-                    </Typography>
-                    <Typography sx={{ fontSize: '0.74rem', color: '#64748B' }}>
+                  <Box sx={{ pr: { lg: 2 }, borderRight: { lg: '1px solid #F1F5F9' } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.4 }}>
+                      <Typography sx={{ fontWeight: 800, fontSize: '1.02rem', color: '#0F2942', fontFamily: "'Outfit', sans-serif" }}>
+                        {flow.flightNumber}
+                      </Typography>
+                      <Chip label={flow.stand} size="small" sx={{ fontWeight: 800, fontSize: '0.68rem', bgcolor: '#F1F5F9', color: '#0F2942', height: 20 }} />
+                    </Box>
+                    <Typography sx={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 500 }}>
                       {flow.airline} · {flow.aircraft}
                     </Typography>
                   </Box>
 
-                  {/* Horizontal Pipeline Steps */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', flexGrow: 1 }}>
+                  {/* Horizontal Pipeline Steps - Spans 100% Width Equally */}
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(5, 1fr)' }, gap: 1.5, width: '100%', alignItems: 'stretch' }}>
                     {/* Step 1: Arrival */}
-                    <Box sx={{ px: 1.4, py: 0.6, borderRadius: '8px', bgcolor: flow.arrival === 'COMPLETED' ? '#DCFCE7' : '#F1F5F9', border: '1px solid #CBD5E1', textAlign: 'center' }}>
-                      <Typography sx={{ fontSize: '0.64rem', color: '#64748B', fontWeight: 800 }}>1. ARRIVAL</Typography>
-                      <Typography sx={{ fontSize: '0.76rem', color: flow.arrival === 'COMPLETED' ? '#15803D' : '#475569', fontWeight: 800 }}>✓ Docked</Typography>
+                    <Box sx={{ p: 1.5, borderRadius: '10px', bgcolor: flow.arrival === 'COMPLETED' ? '#F0FDF4' : '#F8FAFC', border: '1px solid', borderColor: flow.arrival === 'COMPLETED' ? '#BBF7D0' : '#E2E8F0', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <Typography sx={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 800, letterSpacing: '0.04em', mb: 0.3 }}>1. INBOUND ARRIVAL</Typography>
+                      <Typography sx={{ fontSize: '0.82rem', color: flow.arrival === 'COMPLETED' ? '#15803D' : '#475569', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        ✓ Docked Stand
+                      </Typography>
                     </Box>
-
-                    <ArrowRight size={14} color="#94A3B8" />
 
                     {/* Step 2: Baggage Offload */}
-                    <Box sx={{ px: 1.4, py: 0.6, borderRadius: '8px', bgcolor: flow.baggageOffload === 'COMPLETED' ? '#DCFCE7' : flow.baggageOffload === 'IN_PROGRESS' ? '#E0F2FE' : '#F1F5F9', border: '1px solid #CBD5E1', textAlign: 'center' }}>
-                      <Typography sx={{ fontSize: '0.64rem', color: '#64748B', fontWeight: 800 }}>2. BAGGAGE</Typography>
-                      <Typography sx={{ fontSize: '0.76rem', color: flow.baggageOffload === 'COMPLETED' ? '#15803D' : flow.baggageOffload === 'IN_PROGRESS' ? '#0369A1' : '#64748B', fontWeight: 800 }}>
-                        {flow.baggageOffload === 'COMPLETED' ? '✓ Offloaded' : flow.baggageOffload === 'IN_PROGRESS' ? '● Unloading' : '○ Pending'}
+                    <Box sx={{ p: 1.5, borderRadius: '10px', bgcolor: flow.baggageOffload === 'COMPLETED' ? '#F0FDF4' : flow.baggageOffload === 'IN_PROGRESS' ? '#EFF6FF' : '#F8FAFC', border: '1px solid', borderColor: flow.baggageOffload === 'COMPLETED' ? '#BBF7D0' : flow.baggageOffload === 'IN_PROGRESS' ? '#BFDBFE' : '#E2E8F0', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <Typography sx={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 800, letterSpacing: '0.04em', mb: 0.3 }}>2. BAGGAGE OFFLOAD</Typography>
+                      <Typography sx={{ fontSize: '0.82rem', color: flow.baggageOffload === 'COMPLETED' ? '#15803D' : flow.baggageOffload === 'IN_PROGRESS' ? '#0369A1' : '#64748B', fontWeight: 800 }}>
+                        {flow.baggageOffload === 'COMPLETED' ? '✓ Offloaded' : flow.baggageOffload === 'IN_PROGRESS' ? '● Active Unloading' : '○ Standby Hold'}
                       </Typography>
                     </Box>
-
-                    <ArrowRight size={14} color="#94A3B8" />
 
                     {/* Step 3: Cargo Handling */}
-                    <Box sx={{ px: 1.4, py: 0.6, borderRadius: '8px', bgcolor: flow.cargoHandling === 'COMPLETED' ? '#DCFCE7' : flow.cargoHandling === 'IN_PROGRESS' ? '#E0F2FE' : '#F1F5F9', border: '1px solid #CBD5E1', textAlign: 'center' }}>
-                      <Typography sx={{ fontSize: '0.64rem', color: '#64748B', fontWeight: 800 }}>3. CARGO</Typography>
-                      <Typography sx={{ fontSize: '0.76rem', color: flow.cargoHandling === 'COMPLETED' ? '#15803D' : flow.cargoHandling === 'IN_PROGRESS' ? '#0369A1' : '#64748B', fontWeight: 800 }}>
-                        {flow.cargoHandling === 'COMPLETED' ? '✓ Manifested' : flow.cargoHandling === 'IN_PROGRESS' ? '● Loading' : '○ Standby'}
+                    <Box sx={{ p: 1.5, borderRadius: '10px', bgcolor: flow.cargoHandling === 'COMPLETED' ? '#F0FDF4' : flow.cargoHandling === 'IN_PROGRESS' ? '#EFF6FF' : '#F8FAFC', border: '1px solid', borderColor: flow.cargoHandling === 'COMPLETED' ? '#BBF7D0' : flow.cargoHandling === 'IN_PROGRESS' ? '#BFDBFE' : '#E2E8F0', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <Typography sx={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 800, letterSpacing: '0.04em', mb: 0.3 }}>3. CARGO HANDLING</Typography>
+                      <Typography sx={{ fontSize: '0.82rem', color: flow.cargoHandling === 'COMPLETED' ? '#15803D' : flow.cargoHandling === 'IN_PROGRESS' ? '#0369A1' : '#64748B', fontWeight: 800 }}>
+                        {flow.cargoHandling === 'COMPLETED' ? '✓ Manifested' : flow.cargoHandling === 'IN_PROGRESS' ? '● Ramp Loading' : '○ Staged Apron'}
                       </Typography>
                     </Box>
-
-                    <ArrowRight size={14} color="#94A3B8" />
 
                     {/* Step 4: Fuel Supply */}
-                    <Box sx={{ px: 1.4, py: 0.6, borderRadius: '8px', bgcolor: flow.fuelSupply === 'COMPLETED' ? '#DCFCE7' : flow.fuelSupply === 'IN_PROGRESS' ? '#E0F2FE' : '#F1F5F9', border: '1px solid #CBD5E1', textAlign: 'center' }}>
-                      <Typography sx={{ fontSize: '0.64rem', color: '#64748B', fontWeight: 800 }}>4. FUEL</Typography>
-                      <Typography sx={{ fontSize: '0.76rem', color: flow.fuelSupply === 'COMPLETED' ? '#15803D' : flow.fuelSupply === 'IN_PROGRESS' ? '#0369A1' : '#64748B', fontWeight: 800 }}>
-                        {flow.fuelSupply === 'COMPLETED' ? '✓ Hydrant Pumped' : flow.fuelSupply === 'IN_PROGRESS' ? '● Dispensing' : '○ Standby'}
+                    <Box sx={{ p: 1.5, borderRadius: '10px', bgcolor: flow.fuelSupply === 'COMPLETED' ? '#F0FDF4' : flow.fuelSupply === 'IN_PROGRESS' ? '#EFF6FF' : '#F8FAFC', border: '1px solid', borderColor: flow.fuelSupply === 'COMPLETED' ? '#BBF7D0' : flow.fuelSupply === 'IN_PROGRESS' ? '#BFDBFE' : '#E2E8F0', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <Typography sx={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 800, letterSpacing: '0.04em', mb: 0.3 }}>4. HYDRANT FUELING</Typography>
+                      <Typography sx={{ fontSize: '0.82rem', color: flow.fuelSupply === 'COMPLETED' ? '#15803D' : flow.fuelSupply === 'IN_PROGRESS' ? '#0369A1' : '#64748B', fontWeight: 800 }}>
+                        {flow.fuelSupply === 'COMPLETED' ? '✓ Hydrant Pumped' : flow.fuelSupply === 'IN_PROGRESS' ? '● Dispensing Jet A-1' : '○ Bowser Queued'}
                       </Typography>
                     </Box>
 
-                    <ArrowRight size={14} color="#94A3B8" />
-
                     {/* Step 5: Dispatch Ready */}
-                    <Box sx={{ px: 1.4, py: 0.6, borderRadius: '8px', bgcolor: flow.dispatchReady === 'COMPLETED' ? '#DCFCE7' : flow.dispatchReady === 'IN_PROGRESS' ? '#FEF3C7' : '#F1F5F9', border: '1px solid #CBD5E1', textAlign: 'center' }}>
-                      <Typography sx={{ fontSize: '0.64rem', color: '#64748B', fontWeight: 800 }}>5. DISPATCH</Typography>
-                      <Typography sx={{ fontSize: '0.76rem', color: flow.dispatchReady === 'COMPLETED' ? '#15803D' : flow.dispatchReady === 'IN_PROGRESS' ? '#D97706' : '#64748B', fontWeight: 800 }}>
-                        {flow.dispatchReady === 'COMPLETED' ? '✓ Ready' : flow.dispatchReady === 'IN_PROGRESS' ? '● Pre-flight' : '○ Awaiting'}
+                    <Box sx={{ p: 1.5, borderRadius: '10px', bgcolor: flow.dispatchReady === 'COMPLETED' ? '#F0FDF4' : flow.dispatchReady === 'IN_PROGRESS' ? '#FFFBEB' : '#F8FAFC', border: '1px solid', borderColor: flow.dispatchReady === 'COMPLETED' ? '#BBF7D0' : flow.dispatchReady === 'IN_PROGRESS' ? '#FDE68A' : '#E2E8F0', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <Typography sx={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 800, letterSpacing: '0.04em', mb: 0.3 }}>5. DISPATCH RELEASE</Typography>
+                      <Typography sx={{ fontSize: '0.82rem', color: flow.dispatchReady === 'COMPLETED' ? '#15803D' : flow.dispatchReady === 'IN_PROGRESS' ? '#D97706' : '#64748B', fontWeight: 800 }}>
+                        {flow.dispatchReady === 'COMPLETED' ? '✓ Released' : flow.dispatchReady === 'IN_PROGRESS' ? '● Pre-flight Check' : '○ Hold Pending'}
                       </Typography>
                     </Box>
                   </Box>
@@ -1030,7 +1030,7 @@ export const LogisticsDashboard: React.FC = () => {
               Baggage Reclaim Carousel Allocation Hall
             </Typography>
             <Typography sx={{ fontSize: '0.86rem', color: '#64748B' }}>
-              Assign and monitor passenger reclaim belts across Terminal 1 and Terminal 2.
+              Assign and monitor passenger reclaim belts across Central Terminal concourses.
             </Typography>
           </Box>
 
@@ -1096,7 +1096,7 @@ export const LogisticsDashboard: React.FC = () => {
               Ramp Fuel Supply & Dispatch Monitoring
             </Typography>
             <Typography sx={{ fontSize: '0.86rem', color: '#64748B' }}>
-              Logistics supply telemetry: Hydrant bowser status, volume pumped, and density calibration records from <code>FUEL_LOGS</code>.
+              Logistics supply telemetry: Hydrant bowser status, volume pumped, and density calibration records.
             </Typography>
           </Box>
 
@@ -1291,15 +1291,15 @@ export const LogisticsDashboard: React.FC = () => {
               </Box>
               <Box>
                 <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8', fontWeight: 700 }}>STATION ASSIGNMENT</Typography>
-                <Typography sx={{ fontSize: '0.9rem', color: '#15803D', fontWeight: 800 }}>Terminal 1 & 2 Baggage Reclaim Hall</Typography>
+                <Typography sx={{ fontSize: '0.9rem', color: '#15803D', fontWeight: 800 }}>Central Terminal Baggage Reclaim Hall</Typography>
               </Box>
               <Box>
                 <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8', fontWeight: 700 }}>DUTY SHIFT</Typography>
                 <Typography sx={{ fontSize: '0.9rem', color: '#0F2942', fontWeight: 800 }}>Day Shift (06:00 - 15:00)</Typography>
               </Box>
               <Box>
-                <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8', fontWeight: 700 }}>DATABASE ROLE</Typography>
-                <Typography sx={{ fontSize: '0.9rem', color: '#0284C7', fontWeight: 800 }}>BAGGAGE_HANDLER (user_3_priya)</Typography>
+                <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8', fontWeight: 700 }}>OPERATIONAL SPECIALTY</Typography>
+                <Typography sx={{ fontSize: '0.9rem', color: '#0284C7', fontWeight: 800 }}>Baggage & Freight Logistics Lead</Typography>
               </Box>
             </Box>
           </Card>

@@ -100,6 +100,18 @@ export const AUTHORIZED_ACCOUNTS: AuthorizedAccount[] = [
     departmentName: 'SECURITY_AND_SAFETY',
     dashboardPath: '/dashboard/passenger-security',
   },
+  {
+    userId: 6,
+    username: 'checkin',
+    email: 'checkin@saphire.in',
+    dbUsername: 'user_6_meera',
+    name: 'Meera Nair',
+    roleId: 6,
+    roleName: 'CHECKIN_AGENT',
+    departmentId: 6,
+    departmentName: 'PASSENGER_SERVICES',
+    dashboardPath: '/dashboard/check-in',
+  },
 ];
 
 const VALID_PASSWORDS = ['SaphireOps@2026', 'pass', 'admin123'];

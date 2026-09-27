@@ -2,6 +2,7 @@ export interface User {
   userId: number;
   username: string;
   name: string;
+  email?: string;
   fullName?: string;
   roleId: number;
   roleName: string;
@@ -83,6 +84,9 @@ export interface Gate {
   gateId: number;
   gateCode: string;
   terminalName: string;
+  concourse?: string;
+  concourseName?: string;
+  maxWingspanMeters?: number;
   hasJetbridge: boolean;
   status: 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE';
   assignedFlightId?: number;
@@ -93,6 +97,7 @@ export interface Gate {
 export interface Stand {
   standId: number;
   standCode: string;
+  concourse?: string;
   isRemote: boolean;
   maxAircraftSize: string;
   status: 'AVAILABLE' | 'OCCUPIED';

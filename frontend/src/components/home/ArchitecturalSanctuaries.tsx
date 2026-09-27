@@ -51,7 +51,7 @@ const sanctuaries: SanctuaryItem[] = [
   },
   {
     id: 'retail',
-    tag: 'TERMINAL 1 & 2 • AIRSIDE PLAZA',
+    tag: 'CENTRAL TERMINAL • AIRSIDE PLAZA',
     title: 'The Haute Horlogerie & Duty-Free Boulevard',
     subtitle: 'CURATED SWISS TIMEPIECES & VINTAGE KRUG CHAMPAGNE BAR',
     architect: 'Tax-Free Luxury Pavilions & Private Tasting Salons',

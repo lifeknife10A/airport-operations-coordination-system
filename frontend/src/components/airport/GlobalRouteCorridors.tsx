@@ -182,19 +182,38 @@ export const GlobalRouteCorridors: React.FC = () => {
         })}
       </Box>
 
-      {/* Route Quick Switcher Pills */}
-      <Box className="grc-pills-row">
-        {destinations.map((dest) => (
-          <button
-            key={dest.id}
-            type="button"
-            className={`grc-pill-btn ${activeRoute.id === dest.id ? 'active' : ''}`}
-            onClick={() => setActiveRoute(dest)}
-          >
-            <Plane size={11} className="grc-pill-icon" />
-            <span>{dest.iata}</span>
-          </button>
-        ))}
+      {/* Clean Integrated Route Selector Tabs (No floating pill buttons) */}
+      <Box sx={{ display: 'flex', gap: 1, backgroundColor: 'rgba(255, 255, 255, 0.04)', p: 0.6, borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        {destinations.map((dest) => {
+          const isSelected = activeRoute.id === dest.id;
+          return (
+            <button
+              key={dest.id}
+              type="button"
+              onClick={() => setActiveRoute(dest)}
+              style={{
+                flex: 1,
+                padding: '6px 8px',
+                borderRadius: '6px',
+                border: isSelected ? '1px solid rgba(56, 189, 248, 0.5)' : '1px solid transparent',
+                backgroundColor: isSelected ? '#0284C7' : 'transparent',
+                color: isSelected ? '#FFFFFF' : '#94A3B8',
+                fontFamily: "'Geist Mono', monospace",
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.18s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '5px',
+              }}
+            >
+              <Plane size={12} />
+              <span>{dest.iata}</span>
+            </button>
+          );
+        })}
       </Box>
 
       {/* Active Route Telemetry Readout Box */}
@@ -209,7 +228,7 @@ export const GlobalRouteCorridors: React.FC = () => {
             </Typography>
           </Box>
           <Box className="grc-tel-time-box">
-            <Clock size={12} color="#10B981" />
+            <Clock size={13} color="#10B981" />
             <Typography className="grc-tel-time">{activeRoute.flightTime}</Typography>
           </Box>
         </Box>
@@ -221,13 +240,13 @@ export const GlobalRouteCorridors: React.FC = () => {
           </div>
           <div className="grc-tel-divider" />
           <div className="grc-tel-stat">
-            <span className="grc-tel-label">Scheduled Schedule</span>
+            <span className="grc-tel-label">Flight Frequency</span>
             <span className="grc-tel-value">{activeRoute.frequency}</span>
           </div>
           <div className="grc-tel-divider" />
           <div className="grc-tel-stat">
             <span className="grc-tel-label">Airway Status</span>
-            <span className="grc-tel-value status-clear">Clear (FL390)</span>
+            <span className="grc-tel-value status-clear">Normal Ops (FL390)</span>
           </div>
         </Box>
       </Box>

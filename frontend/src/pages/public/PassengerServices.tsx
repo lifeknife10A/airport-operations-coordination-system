@@ -41,7 +41,7 @@ import { LostFoundRecord } from '../../types';
 import bannerLounge from '../../assets/banners/vip-dining-lounge.jpg';
 
 const facilitiesList = [
-  { icon: <Wifi size={20} color="#0284C7" />, title: 'High-Speed 5G Wi-Fi', desc: 'Unlimited complimentary high-speed internet throughout both Terminal 1 and Terminal 2 concourses.' },
+  { icon: <Wifi size={20} color="#0284C7" />, title: 'High-Speed 5G Wi-Fi', desc: 'Unlimited complimentary high-speed internet throughout Central Terminal and Concourses A, B, and C.' },
   { icon: <Luggage size={20} color="#0284C7" />, title: 'Baggage Storage & Porterage', desc: 'Secure short-term luggage storage lockers and white-glove porter services available pre-security.' },
   { icon: <DollarSign size={20} color="#0284C7" />, title: 'Currency Exchange & Banking', desc: '24/7 multi-currency exchange booths and international premier banking ATMs in arrival halls.' },
   { icon: <Info size={20} color="#0284C7" />, title: '24/7 Concierge Desks', desc: 'Multilingual airport guest experience staff stationed across central rotunda information kiosks.' },
@@ -51,7 +51,7 @@ const loungesList = [
   { icon: <Sparkles size={20} color="#D97706" />, title: 'VIP Executive Sanctuary', desc: 'Private suite seating, rain showers, curated sommelier bar, and private boarding transit for premium class travelers.' },
   { icon: <Coffee size={20} color="#0284C7" />, title: 'Quiet Lounge & Family Suites', desc: 'Acoustically isolated quiet suites for deep relaxation, nursing rooms, and children play spaces.' },
   { icon: <ShieldCheck size={20} color="#10B981" />, title: 'FastTrack Security Access', desc: 'Dedicated priority screening lanes for diplomatic, first-class, and business travelers.' },
-  { icon: <Hotel size={20} color="#0284C7" />, title: 'Transit Hotel & Sleep Pods', desc: 'Soundproof luxury sleep capsules and micro-hotel suites situated directly inside the international airside concourse.' },
+  { icon: <Hotel size={20} color="#0284C7" />, title: 'Transit Hotel & Sleep Pods', desc: 'Soundproof luxury sleep capsules and micro-hotel suites situated directly inside the airside concourse.' },
 ];
 
 const medicalAccessibilityList = [
@@ -61,7 +61,7 @@ const medicalAccessibilityList = [
 
 const faqList = [
   { q: 'How early should I arrive before my scheduled departure?', a: 'We recommend arriving 2 hours prior to scheduled departure for domestic flights and 3 hours prior for international widebody services.' },
-  { q: 'Where is the Lost & Found central bureau located?', a: 'The primary Lost & Found office is situated on Terminal 2, Level 1 (Arrivals Concourse), adjacent to Baggage Reclaim Belt 6.' },
+  { q: 'Where is the Lost & Found central bureau located?', a: 'The primary Lost & Found office is situated on Central Terminal, Level 1 (Arrivals Concourse), adjacent to Baggage Reclaim Belt 6.' },
   { q: 'How can I connect to the airport complimentary network?', a: 'Select "SAPHIRE_AIRPORT_5G" on your device. Acceptance of standard terms grants uninterrupted high-speed connectivity.' },
   { q: 'Can mobility assistance be requested upon arrival?', a: 'Yes, wheelchair and mobility escorts can be booked through your carrier or requested directly at any terminal information desk.' },
 ];
@@ -117,7 +117,7 @@ export const PassengerServices: React.FC = () => {
       title: formData.title.trim(),
       category: formData.category,
       color: formData.color.trim() || 'Unspecified',
-      locationFound: formData.locationFound.trim() || 'Terminal 2 Concourse',
+      locationFound: formData.locationFound.trim() || 'Central Terminal Concourse',
       flightNumber: formData.flightNumber.trim() ? formData.flightNumber.trim().toUpperCase() : undefined,
       linkedPnr: formData.linkedPnr.trim() ? formData.linkedPnr.trim().toUpperCase() : undefined,
       description: formData.description.trim() || 'No additional description provided.',
@@ -239,12 +239,6 @@ export const PassengerServices: React.FC = () => {
                   borderRadius: '16px',
                   display: 'flex',
                   flexDirection: 'column',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    borderColor: '#0284C7',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 25px rgba(2, 132, 199, 0.08)',
-                  },
                 }}
               >
                 <Box sx={{ p: 1.3, width: 'fit-content', borderRadius: '10px', background: 'rgba(2, 132, 199, 0.08)', mb: 2.5 }}>
@@ -289,7 +283,6 @@ export const PassengerServices: React.FC = () => {
                   '&:hover': {
                     borderColor: 'rgba(56, 189, 248, 0.4)',
                     background: 'rgba(255, 255, 255, 0.07)',
-                    transform: 'translateY(-2px)',
                   },
                 }}
               >
@@ -332,8 +325,6 @@ export const PassengerServices: React.FC = () => {
                   display: 'flex',
                   gap: 3,
                   alignItems: 'flex-start',
-                  transition: 'all 0.2s ease',
-                  '&:hover': { borderColor: '#10B981', boxShadow: '0 8px 25px rgba(16, 185, 129, 0.08)' },
                 }}
               >
                 <Box sx={{ p: 1.4, borderRadius: '10px', background: '#ECFDF5', flexShrink: 0 }}>
@@ -354,7 +345,9 @@ export const PassengerServices: React.FC = () => {
 
         {/* Section 4: Lost & Found Central Bureau (Interactive Public ↔ Security Operations Bridge) */}
         <Box id="lost-found" sx={{ mb: 8 }}>
-          <Box sx={{ p: { xs: 3, md: 4.5 }, background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(15, 41, 66, 0.04)', borderRadius: '16px' }}>
+          <Box
+            sx={{ p: { xs: 3, md: 4.5 }, background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(15, 41, 66, 0.04)', borderRadius: '16px' }}
+          >
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 2, mb: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box sx={{ p: 1.2, borderRadius: '10px', background: 'rgba(30, 58, 95, 0.06)' }}>
@@ -393,7 +386,7 @@ export const PassengerServices: React.FC = () => {
             </Box>
 
             <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#475569', mb: 3, lineHeight: 1.65, fontSize: '0.94rem' }}>
-              Misplaced personal belongings in concourses or on inbound aircraft can be logged directly into our central system. All reports instantly queue to active Airside Security patrol agents and Terminal 2 Level 1 storage vaults.
+              Misplaced personal belongings in concourses or on inbound aircraft can be logged directly into our central system. All reports instantly queue to active Airside Security patrol agents and Central Terminal storage vaults.
             </Typography>
 
             {/* Submission Confirmation Alert */}
@@ -528,7 +521,7 @@ export const PassengerServices: React.FC = () => {
           </DialogTitle>
           <DialogContent dividers>
             <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.84rem', color: '#64748B', mb: 2.5 }}>
-              Please provide complete details. Your report is immediately pushed to the Airside Security patrol network and Terminal 2 Central Baggage Bureau.
+              Please provide complete details. Your report is immediately pushed to the Airside Security patrol network and Central Terminal Baggage Bureau.
             </Typography>
 
             <Box component="form" onSubmit={handleSubmitReport} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

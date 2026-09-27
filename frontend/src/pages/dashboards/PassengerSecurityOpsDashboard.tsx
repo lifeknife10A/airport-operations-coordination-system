@@ -157,7 +157,7 @@ const INITIAL_FLIGHTS_GATE: GateFlightReadiness[] = [
     airline: 'Air India',
     destination: 'London Heathrow (LHR)',
     gate: 'Gate A12',
-    terminal: 'Terminal 2',
+    terminal: 'Central Terminal (Concourse B)',
     scheduledDeparture: '14:45 Local',
     boardingStatus: 'BOARDING_STARTED',
     bookedPassengers: 160,
@@ -173,7 +173,7 @@ const INITIAL_FLIGHTS_GATE: GateFlightReadiness[] = [
     airline: 'IndiGo',
     destination: 'Singapore Changi (SIN)',
     gate: 'Gate B04',
-    terminal: 'Terminal 1',
+    terminal: 'Central Terminal (Concourse A)',
     scheduledDeparture: '15:20 Local',
     boardingStatus: 'LOCKED',
     bookedPassengers: 180,
@@ -189,7 +189,7 @@ const INITIAL_FLIGHTS_GATE: GateFlightReadiness[] = [
     airline: 'Vistara',
     destination: 'Dubai International (DXB)',
     gate: 'Gate C08',
-    terminal: 'Terminal 2',
+    terminal: 'Central Terminal (Concourse C)',
     scheduledDeparture: '16:00 Local',
     boardingStatus: 'LOCKED',
     bookedPassengers: 144,
@@ -205,7 +205,7 @@ const INITIAL_FLIGHTS_GATE: GateFlightReadiness[] = [
     airline: 'Saphire Executive',
     destination: 'Frankfurt (FRA)',
     gate: 'Gate A02',
-    terminal: 'Terminal 2',
+    terminal: 'Central Terminal (Concourse A)',
     scheduledDeparture: '13:50 Local',
     boardingStatus: 'PUSHBACK_READY',
     bookedPassengers: 220,
@@ -315,7 +315,7 @@ const INITIAL_LOST_FOUND: LostFoundItem[] = [
     id: 'LF-2024-089',
     title: 'Apple iPad Pro 11" Space Grey',
     category: 'ELECTRONICS',
-    locationFound: 'Terminal 2 Security Checkpoint B',
+    locationFound: 'Concourse B Security Checkpoint',
     reportedBy: 'Public Portal - Priya Sharma',
     contactNumber: '+91 98765 43210',
     linkedPnr: 'PNR-AI203-03',
@@ -344,7 +344,7 @@ const INITIAL_LOST_FOUND: LostFoundItem[] = [
     id: 'LF-2024-091',
     title: 'Leather Passport Holder with Visa Documents',
     category: 'DOCUMENTS',
-    locationFound: 'Terminal 1 Concourse Duty Free',
+    locationFound: 'Concourse A Duty Free',
     reportedBy: 'Public Portal - Kenji Takahashi',
     contactNumber: '+81 90 1234 5678',
     linkedPnr: 'PNR-6E521-01',
@@ -364,8 +364,8 @@ const INITIAL_LOST_FOUND: LostFoundItem[] = [
     contactNumber: 'Plaza Reception Ext 911',
     status: 'SEARCHING',
     reportedDate: 'Today, 09:30 AM',
-    description: 'Black zip case with audio cable and USB-C adapter.',
-    color: 'Black',
+    description: 'Triple Midnight special edition in black travel case.',
+    color: 'Triple Midnight',
     storageLocker: 'Locker C-03',
   },
   {
@@ -376,9 +376,9 @@ const INITIAL_LOST_FOUND: LostFoundItem[] = [
     reportedBy: 'Officer Aarav Li',
     contactNumber: '+91 94441 22334',
     status: 'RETURNED',
-    reportedDate: 'Yesterday, 18:00 PM',
-    description: 'Brown leather strap, white dial. Passenger verified with purchase bill.',
-    color: 'Gold / Brown',
+    reportedDate: 'Yesterday, 17:40 PM',
+    description: 'Classic gold automatic timepiece with alligator brown strap.',
+    color: 'Champagne Gold',
     storageLocker: 'Archived Release',
   },
 ];
@@ -386,30 +386,28 @@ const INITIAL_LOST_FOUND: LostFoundItem[] = [
 const INITIAL_INCIDENTS: SecurityIncident[] = [
   {
     id: 'INC-881',
-    title: 'Unattended Cabin Bag Detected',
-    location: 'Gate A14 Concourse Seats',
-    flightNumber: 'AI-203',
+    title: 'Unattended Carry-On Luggage at Gate A12',
+    location: 'Gate A12 Departures Concourse Stand 4',
     severity: 'HIGH',
     status: 'INVESTIGATING',
     reportedAt: '12 mins ago',
-    assignedOfficer: 'Officer Aarav Li',
-    description: 'K9 bomb disposal team sweeping perimeter. Standby cordon established.',
+    assignedOfficer: 'Officer Elena Wong',
+    description: 'K9 bomb disposal unit dispatched. Secondary perimeter cordon established.',
   },
   {
     id: 'INC-882',
-    title: 'Transit Visa Documentation Discrepancy',
-    location: 'Gate B04 Boarding Turnstile',
-    flightNumber: '6E-521',
+    title: 'Secondary Watchlist Identity Review: SPH-102',
+    location: 'Concourse A International Border E-Gate 02',
     severity: 'MEDIUM',
-    status: 'RESOLVED',
+    status: 'INVESTIGATING',
     reportedAt: '25 mins ago',
-    assignedOfficer: 'Immigration Desk 3',
-    description: 'Passenger PNR-6420 re-routed to consular desk for visa verification.',
+    assignedOfficer: 'Officer Priya Rao',
+    description: 'Passenger biometric mismatch triggered automated border review flag.',
   },
   {
     id: 'INC-883',
     title: 'Biometric E-Gate Reader #4 Optical Timeout',
-    location: 'Terminal 2 Concourse Central E-Gates',
+    location: 'Central Terminal Concourse B E-Gates',
     severity: 'LOW',
     status: 'INVESTIGATING',
     reportedAt: '42 mins ago',
@@ -422,7 +420,7 @@ const INITIAL_LOUNGES: LoungeRecord[] = [
   {
     id: 'LNG-01',
     name: 'Saphire First Class Presidential Suite',
-    terminal: 'Terminal 2',
+    terminal: 'Concourse B',
     capacity: 60,
     currentGuests: 48,
     status: 'BUSY',
@@ -431,7 +429,7 @@ const INITIAL_LOUNGES: LoungeRecord[] = [
   {
     id: 'LNG-02',
     name: 'Maharaja Business Lounge',
-    terminal: 'Terminal 2',
+    terminal: 'Concourse B',
     capacity: 150,
     currentGuests: 112,
     status: 'NORMAL',
@@ -440,7 +438,7 @@ const INITIAL_LOUNGES: LoungeRecord[] = [
   {
     id: 'LNG-03',
     name: 'Plaza Premium Airside Oasis',
-    terminal: 'Terminal 1',
+    terminal: 'Concourse A',
     capacity: 120,
     currentGuests: 64,
     status: 'NORMAL',
@@ -449,7 +447,7 @@ const INITIAL_LOUNGES: LoungeRecord[] = [
   {
     id: 'LNG-04',
     name: 'Executive Quiet Sanctuary',
-    terminal: 'Terminal 1',
+    terminal: 'Concourse C',
     capacity: 40,
     currentGuests: 38,
     status: 'NEAR_CAPACITY',
@@ -497,11 +495,11 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
   const { user } = useAuth();
 
   // URL Hash Tab State
-  const [activeTab, setActiveTab] = useState<'overview' | 'boarding' | 'clearance' | 'lost-found' | 'incidents' | 'lounges' | 'notifications' | 'profile'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'boarding' | 'security-screening' | 'clearance' | 'lost-found' | 'incidents' | 'lounges' | 'notifications' | 'profile'>('overview');
 
   useEffect(() => {
     const hash = location.hash.replace('#', '');
-    if (['boarding', 'clearance', 'lost-found', 'incidents', 'lounges', 'notifications', 'profile'].includes(hash)) {
+    if (['boarding', 'security-screening', 'clearance', 'lost-found', 'incidents', 'lounges', 'notifications', 'profile'].includes(hash)) {
       setActiveTab(hash as any);
     } else {
       setActiveTab('overview');
@@ -940,10 +938,10 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
             <Typography variant="h5" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
-              Passenger & Security Operations
+              Aviation Security Operations Center (ASOC)
             </Typography>
             <Chip
-              label="AIRSIDE SECURITY LEVEL 1"
+              label="AIRSIDE SECURITY COMMAND"
               size="small"
               sx={{
                 height: 22,
@@ -956,7 +954,7 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
             />
           </Box>
           <Typography sx={{ fontSize: '0.84rem', color: '#64748B', mt: 0.5, fontFamily: "'Outfit', sans-serif" }}>
-            Biometric gate screening, passenger manifests, airside clearances & public lost-and-found bridge.
+            Airside checkpoint verification, biometric passenger screening, threat mitigation, and property security intake.
           </Typography>
         </Box>
 
@@ -975,9 +973,10 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
               borderRadius: '9px',
               px: 1.8,
               py: 0.85,
-              whiteSpace: 'nowrap',
               backgroundColor: '#FFFFFF',
-              '&:hover': { borderColor: '#CBD5E1', backgroundColor: '#F8FAFC' },
+              boxShadow: 'none',
+              whiteSpace: 'nowrap',
+              '&:hover': { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
             }}
           >
             Intake Found Item
@@ -986,7 +985,7 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
           <Button
             variant="contained"
             onClick={() => setIncidentModalOpen(true)}
-            startIcon={<AlertTriangle size={15} />}
+            startIcon={<ShieldAlert size={15} />}
             sx={{
               backgroundColor: '#0F2942',
               color: '#FFFFFF',
@@ -996,8 +995,8 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
               borderRadius: '9px',
               px: 2,
               py: 0.85,
-              whiteSpace: 'nowrap',
               boxShadow: 'none',
+              whiteSpace: 'nowrap',
               '&:hover': { backgroundColor: '#1E3A5F', boxShadow: 'none' },
             }}
           >
@@ -1007,7 +1006,7 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
       </Box>
 
       {/* ========================================================================= */}
-      {/* 4 PROPTIA KPI METRIC CARDS                                                */}
+      {/* 4 DEDICATED AVIATION SECURITY KPI METRIC CARDS                            */}
       {/* ========================================================================= */}
       <Box
         sx={{
@@ -1017,9 +1016,9 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
           mb: 3.5,
         }}
       >
-        {/* KPI 1: Active Manifest */}
+        {/* KPI 1: Checkpoint Throughput */}
         <Card
-          onClick={() => navigate('/dashboard/passenger-security#clearance')}
+          onClick={() => navigate('/dashboard/passenger-security#security-screening')}
           sx={{
             p: 2.5,
             backgroundColor: '#FFFFFF',
@@ -1037,25 +1036,25 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <Box>
               <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                TOTAL BOOKED MANIFEST
+                CHECKPOINT SCREENING
               </Typography>
               <Typography variant="h4" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942', mt: 0.6 }}>
-                {flightsGate.reduce((acc, f) => acc + f.bookedPassengers, 0).toLocaleString()}
+                1,420
               </Typography>
             </Box>
             <Box sx={{ p: 1.2, borderRadius: '10px', backgroundColor: '#F0F9FF', color: '#0284C7' }}>
-              <UserCheck size={20} />
+              <ShieldCheck size={20} />
             </Box>
           </Box>
           <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Chip label={`${flightsGate.length} ACTIVE FLIGHTS`} size="small" sx={{ height: 20, fontSize: '0.62rem', fontWeight: 800, backgroundColor: '#E0F2FE', color: '#0369A1' }} />
-            <Typography sx={{ fontSize: '0.74rem', color: '#64748B' }}>Terminal 1 & 2</Typography>
+            <Chip label="8 LANES ACTIVE" size="small" sx={{ height: 20, fontSize: '0.62rem', fontWeight: 800, backgroundColor: '#E0F2FE', color: '#0369A1', borderRadius: '4px' }} />
+            <Typography sx={{ fontSize: '0.74rem', color: '#64748B' }}>Concourses A, B & C</Typography>
           </Box>
         </Card>
 
-        {/* KPI 2: Checked-In */}
+        {/* KPI 2: Biometric E-Gate Match Rate */}
         <Card
-          onClick={() => navigate('/dashboard/passenger-security#boarding')}
+          onClick={() => navigate('/dashboard/passenger-security#clearance')}
           sx={{
             p: 2.5,
             backgroundColor: '#FFFFFF',
@@ -1073,10 +1072,10 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <Box>
               <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                CHECKED-IN PASSENGERS
+                BIOMETRIC E-GATE MATCH
               </Typography>
               <Typography variant="h4" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942', mt: 0.6 }}>
-                {flightsGate.reduce((acc, f) => acc + f.checkedInPassengers, 0).toLocaleString()}
+                99.4%
               </Typography>
             </Box>
             <Box sx={{ p: 1.2, borderRadius: '10px', backgroundColor: '#F0FDF4', color: '#16A34A' }}>
@@ -1085,17 +1084,17 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
           </Box>
           <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#16A34A' }}>
-              {Math.round((flightsGate.reduce((acc, f) => acc + f.checkedInPassengers, 0) / (flightsGate.reduce((acc, f) => acc + f.bookedPassengers, 0) || 1)) * 100)}% check-in rate
+              Automated facial matching nominal
             </Typography>
             <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8' }}>
-              · {flightsGate.reduce((acc, f) => acc + f.bookedPassengers, 0) - flightsGate.reduce((acc, f) => acc + f.checkedInPassengers, 0)} pending
+              · 0.6% rerouted
             </Typography>
           </Box>
         </Card>
 
-        {/* KPI 3: Boarded & Cleared */}
+        {/* KPI 3: Secondary Inspection Holds */}
         <Card
-          onClick={() => navigate('/dashboard/passenger-security#boarding')}
+          onClick={() => navigate('/dashboard/passenger-security#clearance')}
           sx={{
             p: 2.5,
             backgroundColor: '#FFFFFF',
@@ -1107,27 +1106,27 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
             justifyContent: 'space-between',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
-            '&:hover': { transform: 'translateY(-2px)', borderColor: '#7C3AED' },
+            '&:hover': { transform: 'translateY(-2px)', borderColor: '#D97706' },
           }}
         >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <Box>
               <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                BOARDED THROUGH GATES
+                SECONDARY SCREENING
               </Typography>
               <Typography variant="h4" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942', mt: 0.6 }}>
-                {flightsGate.reduce((acc, f) => acc + f.boardedPassengers, 0).toLocaleString()}
+                3 Holds
               </Typography>
             </Box>
-            <Box sx={{ p: 1.2, borderRadius: '10px', backgroundColor: '#F5F3FF', color: '#7C3AED' }}>
-              <Plane size={20} />
+            <Box sx={{ p: 1.2, borderRadius: '10px', backgroundColor: '#FFFBEB', color: '#D97706' }}>
+              <ShieldAlert size={20} />
             </Box>
           </Box>
           <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#7C3AED' }}>
-              {Math.round((flightsGate.reduce((acc, f) => acc + f.boardedPassengers, 0) / (flightsGate.reduce((acc, f) => acc + f.bookedPassengers, 0) || 1)) * 100)}% boarded
+            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#D97706' }}>
+              Watchlist & visa verification
             </Typography>
-            <Typography sx={{ fontSize: '0.74rem', color: '#64748B' }}>· Biometric E-Gates Active</Typography>
+            <Typography sx={{ fontSize: '0.74rem', color: '#64748B' }}>· Immigration desk active</Typography>
           </Box>
         </Card>
 
@@ -1165,7 +1164,7 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
             <Chip
               label={`${incidents.filter((i) => (i.severity === 'CRITICAL' || i.severity === 'HIGH') && i.status !== 'RESOLVED').length} HIGH PRIORITY`}
               size="small"
-              sx={{ height: 20, fontSize: '0.62rem', fontWeight: 800, backgroundColor: '#FEE2E2', color: '#B91C1C' }}
+              sx={{ height: 20, fontSize: '0.62rem', fontWeight: 800, backgroundColor: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}
             />
             <Typography sx={{ fontSize: '0.74rem', color: '#64748B' }}>Airside dispatch monitoring</Typography>
           </Box>
@@ -1225,9 +1224,9 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
       {/* ========================================================================= */}
       {/* TAB 1: OVERVIEW / OPERATIONS CONSOLE                                      */}
       {/* ========================================================================= */}
-      {(activeTab === 'overview' || activeTab === 'boarding') && (
+      {(activeTab === 'overview' || activeTab === 'boarding' || activeTab === 'security-screening') && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5, mb: 4 }}>
-          {/* SECTION: BOARDING GATE CONTROL & PREREQUISITES VERIFICATION */}
+          {/* SECTION: AIRSIDE SECURITY VERIFICATION & CHECKPOINT SCREENING */}
           <Card
             sx={{
               p: 3,
@@ -1241,35 +1240,22 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
               <Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                   <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
-                    Boarding Gate Readiness & Turnstile Control
+                    Airside Security Verification & Checkpoint Screening
                   </Typography>
                   <Chip
-                    label={currentFlight.boardingStatus.replace(/_/g, ' ')}
+                    label={currentFlight.securityCleared ? 'SECURITY SWEEP CLEARED' : 'SWEEP IN PROGRESS'}
                     size="small"
                     sx={{
                       fontWeight: 800,
                       fontSize: '0.7rem',
-                      backgroundColor:
-                        currentFlight.boardingStatus === 'BOARDING_STARTED'
-                          ? '#DCFCE7'
-                          : currentFlight.boardingStatus === 'FINAL_CALL'
-                          ? '#FEF3C7'
-                          : currentFlight.boardingStatus === 'PUSHBACK_READY'
-                          ? '#E0F2FE'
-                          : '#FEE2E2',
-                      color:
-                        currentFlight.boardingStatus === 'BOARDING_STARTED'
-                          ? '#15803D'
-                          : currentFlight.boardingStatus === 'FINAL_CALL'
-                          ? '#B45309'
-                          : currentFlight.boardingStatus === 'PUSHBACK_READY'
-                          ? '#0369A1'
-                          : '#B91C1C',
+                      backgroundColor: currentFlight.securityCleared ? '#DCFCE7' : '#FEF3C7',
+                      color: currentFlight.securityCleared ? '#15803D' : '#B45309',
+                      borderRadius: '4px',
                     }}
                   />
                 </Box>
                 <Typography sx={{ fontSize: '0.82rem', color: '#64748B', mt: 0.5 }}>
-                  Enforce operational prerequisite checks (Security clearance, Cabin cleaning, Maintenance release) before authorizing gate turnstiles.
+                  Aviation security enforcement: Authorize pre-flight cabin security sweeps, certify explosive detection (K9), and verify biometric e-Gate clearance.
                 </Typography>
               </Box>
 
@@ -1304,7 +1290,7 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
               </Box>
             </Box>
 
-            {/* Flight Flight Board & Gate Telemetry */}
+            {/* Flight & Gate Telemetry */}
             <Box
               sx={{
                 p: 2.5,
@@ -1328,48 +1314,32 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
               </Box>
 
               <Box>
-                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>ASSIGNED GATE & TERMINAL</Typography>
+                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>ASSIGNED GATE & CONCOURSE</Typography>
                 <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.05rem', color: '#0F2942', mt: 0.3 }}>
                   {currentFlight.gate}
                 </Typography>
                 <Typography sx={{ fontSize: '0.78rem', color: '#64748B' }}>
-                  {currentFlight.terminal} · STD {currentFlight.scheduledDeparture}
+                  {currentFlight.terminal.replace(/Terminal [12]/g, 'Central Terminal')} · STD {currentFlight.scheduledDeparture}
                 </Typography>
               </Box>
 
               <Box>
-                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>BOARDING MANIFEST RATIO</Typography>
+                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>BIOMETRIC E-GATE CLEARANCE</Typography>
                 <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.05rem', color: '#0F2942', mt: 0.3 }}>
-                  {currentFlight.boardedPassengers} / {currentFlight.bookedPassengers} Boarded
+                  Facial Match Cleared
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.6 }}>
-                  <LinearProgress
-                    variant="determinate"
-                    value={(currentFlight.boardedPassengers / currentFlight.bookedPassengers) * 100}
-                    sx={{
-                      width: '100%',
-                      height: 6,
-                      borderRadius: 3,
-                      backgroundColor: '#E2E8F0',
-                      '& .MuiLinearProgress-bar': {
-                        backgroundColor:
-                          currentFlight.boardedPassengers === currentFlight.bookedPassengers ? '#16A34A' : '#0284C7',
-                      },
-                    }}
-                  />
-                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#0284C7', whiteSpace: 'nowrap' }}>
-                    {Math.round((currentFlight.boardedPassengers / currentFlight.bookedPassengers) * 100)}%
-                  </Typography>
-                </Box>
+                <Typography sx={{ fontSize: '0.78rem', color: '#0284C7', fontWeight: 600 }}>
+                  Turnstiles Linked · Secure Airside Corridor
+                </Typography>
               </Box>
 
               <Box>
-                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>CHECKED-IN COUNT</Typography>
-                <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.05rem', color: '#0F2942', mt: 0.3 }}>
-                  {currentFlight.checkedInPassengers} Passengers
+                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>CABIN & APRON SWEEP</Typography>
+                <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.05rem', color: currentFlight.securityCleared ? '#15803D' : '#D97706', mt: 0.3 }}>
+                  {currentFlight.securityCleared ? 'K9 Certified Clear' : 'Sweep In Progress'}
                 </Typography>
-                <Typography sx={{ fontSize: '0.78rem', color: '#16A34A', fontWeight: 600 }}>
-                  {currentFlight.bookedPassengers - currentFlight.checkedInPassengers} No-Show / Gate Pending
+                <Typography sx={{ fontSize: '0.78rem', color: '#64748B' }}>
+                  Explosive Detection Unit · Patrol Standby
                 </Typography>
               </Box>
             </Box>
@@ -1380,31 +1350,31 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
                 p: 2.2,
                 borderRadius: '12px',
                 border: '1px solid',
-                borderColor: currentFlight.boardingStatus === 'LOCKED' ? '#FCA5A5' : '#BBF7D0',
-                backgroundColor: currentFlight.boardingStatus === 'LOCKED' ? '#FEF2F2' : '#F0FDF4',
+                borderColor: currentFlight.securityCleared ? '#BBF7D0' : '#FCA5A5',
+                backgroundColor: currentFlight.securityCleared ? '#F0FDF4' : '#FEF2F2',
                 mb: 3,
               }}
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {currentFlight.boardingStatus === 'LOCKED' ? (
-                    <Lock size={18} color="#DC2626" />
+                  {currentFlight.securityCleared ? (
+                    <ShieldCheck size={18} color="#16A34A" />
                   ) : (
-                    <Unlock size={18} color="#16A34A" />
+                    <ShieldAlert size={18} color="#DC2626" />
                   )}
-                  <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '0.92rem', color: currentFlight.boardingStatus === 'LOCKED' ? '#991B1B' : '#166534' }}>
-                    {currentFlight.boardingStatus === 'LOCKED'
-                      ? '⚠ BOARDING LOCKED: Mandatory airside clearance prerequisites pending verification'
-                      : '✓ ALL CLEARANCES VERIFIED: Turnstiles authorized for passenger embarkation'}
+                  <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '0.92rem', color: currentFlight.securityCleared ? '#166534' : '#991B1B' }}>
+                    {currentFlight.securityCleared
+                      ? '✓ AIRSIDE SECURITY SWEEP VERIFIED: Pre-flight cabin and perimeter clearances certified'
+                      : '⚠ AIRSIDE SECURITY SWEEP PENDING: Cabin sweep & explosive inspection required'}
                   </Typography>
                 </Box>
               </Box>
 
-              {/* Prerequisite Badges & Overrides */}
+              {/* Security Sweeps & Verification Status */}
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
                 <Chip
                   icon={currentFlight.securityCleared ? <Check size={14} /> : <AlertTriangle size={14} />}
-                  label={`Security Sweep: ${currentFlight.securityCleared ? 'CLEARED' : 'PENDING'}`}
+                  label={`Cabin Security Sweep: ${currentFlight.securityCleared ? 'CLEARED' : 'PENDING'}`}
                   size="small"
                   onClick={() => !currentFlight.securityCleared && handleClearPrerequisite(currentFlight.flightNumber, 'securityCleared')}
                   sx={{
@@ -1415,110 +1385,60 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
                     color: currentFlight.securityCleared ? '#15803D' : '#B91C1C',
                     border: '1px solid',
                     borderColor: currentFlight.securityCleared ? '#86EFAC' : '#FCA5A5',
+                    borderRadius: '4px',
                   }}
                 />
 
                 <Chip
-                  icon={currentFlight.cabinCleaningCleared ? <Check size={14} /> : <AlertTriangle size={14} />}
-                  label={`Cabin Cleaning: ${currentFlight.cabinCleaningCleared ? 'COMPLETED' : 'PENDING'}`}
+                  icon={<Check size={14} />}
+                  label="K9 Explosive Detection: VERIFIED"
                   size="small"
-                  onClick={() => !currentFlight.cabinCleaningCleared && handleClearPrerequisite(currentFlight.flightNumber, 'cabinCleaningCleared')}
                   sx={{
                     fontWeight: 700,
                     fontSize: '0.76rem',
-                    cursor: !currentFlight.cabinCleaningCleared ? 'pointer' : 'default',
-                    backgroundColor: currentFlight.cabinCleaningCleared ? '#DCFCE7' : '#FEE2E2',
-                    color: currentFlight.cabinCleaningCleared ? '#15803D' : '#B91C1C',
-                    border: '1px solid',
-                    borderColor: currentFlight.cabinCleaningCleared ? '#86EFAC' : '#FCA5A5',
+                    backgroundColor: '#DCFCE7',
+                    color: '#15803D',
+                    border: '1px solid #86EFAC',
+                    borderRadius: '4px',
                   }}
                 />
 
                 <Chip
-                  icon={currentFlight.maintenanceReleased ? <Check size={14} /> : <AlertTriangle size={14} />}
-                  label={`Maintenance: ${currentFlight.maintenanceReleased ? 'RELEASED' : 'PENDING'}`}
+                  icon={<Check size={14} />}
+                  label="Biometric E-Gates: ONLINE"
                   size="small"
-                  onClick={() => !currentFlight.maintenanceReleased && handleClearPrerequisite(currentFlight.flightNumber, 'maintenanceReleased')}
                   sx={{
                     fontWeight: 700,
                     fontSize: '0.76rem',
-                    cursor: !currentFlight.maintenanceReleased ? 'pointer' : 'default',
-                    backgroundColor: currentFlight.maintenanceReleased ? '#DCFCE7' : '#FEE2E2',
-                    color: currentFlight.maintenanceReleased ? '#15803D' : '#B91C1C',
-                    border: '1px solid',
-                    borderColor: currentFlight.maintenanceReleased ? '#86EFAC' : '#FCA5A5',
+                    backgroundColor: '#DCFCE7',
+                    color: '#15803D',
+                    border: '1px solid #86EFAC',
+                    borderRadius: '4px',
                   }}
                 />
 
                 <Chip
-                  icon={currentFlight.fuelingCompleted ? <Check size={14} /> : <AlertTriangle size={14} />}
-                  label={`Fuel Load: ${currentFlight.fuelingCompleted ? 'COMPLETED' : 'PENDING'}`}
+                  icon={<Check size={14} />}
+                  label="Ramp Perimeter Watch: SECURE"
                   size="small"
-                  onClick={() => !currentFlight.fuelingCompleted && handleClearPrerequisite(currentFlight.flightNumber, 'fuelingCompleted')}
                   sx={{
                     fontWeight: 700,
                     fontSize: '0.76rem',
-                    cursor: !currentFlight.fuelingCompleted ? 'pointer' : 'default',
-                    backgroundColor: currentFlight.fuelingCompleted ? '#DCFCE7' : '#FEE2E2',
-                    color: currentFlight.fuelingCompleted ? '#15803D' : '#B91C1C',
-                    border: '1px solid',
-                    borderColor: currentFlight.fuelingCompleted ? '#86EFAC' : '#FCA5A5',
+                    backgroundColor: '#DCFCE7',
+                    color: '#15803D',
+                    border: '1px solid #86EFAC',
+                    borderRadius: '4px',
                   }}
                 />
               </Box>
             </Box>
 
-            {/* Boarding Lifecycle Control Actions */}
+            {/* Aviation Security Enforcement Actions */}
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
               <Button
                 variant="contained"
-                disabled={currentFlight.boardingStatus === 'BOARDING_STARTED' || currentFlight.boardingStatus === 'PUSHBACK_READY'}
-                onClick={() => handleStartBoarding(currentFlight.flightNumber)}
-                startIcon={<Plane size={16} />}
-                sx={{
-                  backgroundColor: '#0284C7',
-                  color: '#FFFFFF',
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  fontSize: '0.84rem',
-                  borderRadius: '9px',
-                  px: 2.5,
-                  py: 1,
-                  boxShadow: 'none',
-                  '&:hover': { backgroundColor: '#0369A1', boxShadow: 'none' },
-                  '&.Mui-disabled': { backgroundColor: '#E2E8F0', color: '#94A3B8' },
-                }}
-              >
-                Start Boarding
-              </Button>
-
-              <Button
-                variant="contained"
-                disabled={currentFlight.boardingStatus !== 'BOARDING_STARTED'}
-                onClick={() => handleFinalCall(currentFlight.flightNumber)}
-                startIcon={<Bell size={16} />}
-                sx={{
-                  backgroundColor: '#D97706',
-                  color: '#FFFFFF',
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  fontSize: '0.84rem',
-                  borderRadius: '9px',
-                  px: 2.5,
-                  py: 1,
-                  boxShadow: 'none',
-                  '&:hover': { backgroundColor: '#B45309', boxShadow: 'none' },
-                  '&.Mui-disabled': { backgroundColor: '#E2E8F0', color: '#94A3B8' },
-                }}
-              >
-                Broadcast Final Call
-              </Button>
-
-              <Button
-                variant="contained"
-                disabled={currentFlight.boardingStatus === 'BOARDING_CLOSED' || currentFlight.boardingStatus === 'PUSHBACK_READY' || currentFlight.boardingStatus === 'LOCKED'}
-                onClick={() => handleCloseBoarding(currentFlight.flightNumber)}
-                startIcon={<Lock size={16} />}
+                onClick={() => handleClearPrerequisite(currentFlight.flightNumber, 'securityCleared')}
+                startIcon={<ShieldCheck size={16} />}
                 sx={{
                   backgroundColor: '#0F2942',
                   color: '#FFFFFF',
@@ -1530,31 +1450,72 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
                   py: 1,
                   boxShadow: 'none',
                   '&:hover': { backgroundColor: '#1E3A5F', boxShadow: 'none' },
-                  '&.Mui-disabled': { backgroundColor: '#E2E8F0', color: '#94A3B8' },
                 }}
               >
-                Close Boarding
+                {currentFlight.securityCleared ? 'Re-Certify Security Release' : 'Certify Airside Security Release'}
               </Button>
 
               <Button
                 variant="outlined"
-                disabled={currentFlight.boardingStatus !== 'BOARDING_CLOSED'}
-                onClick={() => handleMarkPushbackReady(currentFlight.flightNumber)}
-                startIcon={<CheckCircle2 size={16} />}
+                onClick={() => {
+                  toast.error(`Secondary screening hold flagged for Flight ${currentFlight.flightNumber}.`);
+                  aocsDataStore.logAuditEvent('SECURITY', `Secondary screening hold flagged for ${currentFlight.flightNumber}`, currentFlight.flightNumber, user?.name || 'Elena Wong');
+                }}
+                startIcon={<AlertTriangle size={16} />}
                 sx={{
-                  borderColor: '#16A34A',
-                  color: '#16A34A',
+                  borderColor: '#F59E0B',
+                  color: '#D97706',
                   textTransform: 'none',
                   fontWeight: 700,
                   fontSize: '0.84rem',
                   borderRadius: '9px',
                   px: 2.5,
                   py: 1,
-                  '&:hover': { backgroundColor: '#F0FDF4', borderColor: '#15803D' },
-                  '&.Mui-disabled': { borderColor: '#E2E8F0', color: '#94A3B8' },
+                  '&:hover': { backgroundColor: '#FFFBEB', borderColor: '#D97706' },
                 }}
               >
-                Sign-off Pushback Ready
+                Flag Secondary Screening Hold
+              </Button>
+
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  toast.success(`K9 Explosive Detection Sweep dispatched to ${currentFlight.gate} stand.`);
+                  aocsDataStore.logAuditEvent('SECURITY', `K9 sweep dispatched to ${currentFlight.gate} for ${currentFlight.flightNumber}`, currentFlight.flightNumber, user?.name || 'Elena Wong');
+                }}
+                startIcon={<Radio size={16} />}
+                sx={{
+                  borderColor: '#0284C7',
+                  color: '#0284C7',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.84rem',
+                  borderRadius: '9px',
+                  px: 2.5,
+                  py: 1,
+                  '&:hover': { backgroundColor: '#F0F9FF', borderColor: '#0369A1' },
+                }}
+              >
+                Dispatch K9 Sweep Patrol
+              </Button>
+
+              <Button
+                variant="outlined"
+                onClick={() => setIncidentModalOpen(true)}
+                startIcon={<ShieldAlert size={16} />}
+                sx={{
+                  borderColor: '#EF4444',
+                  color: '#DC2626',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.84rem',
+                  borderRadius: '9px',
+                  px: 2.5,
+                  py: 1,
+                  '&:hover': { backgroundColor: '#FEF2F2', borderColor: '#B91C1C' },
+                }}
+              >
+                Log Security Incident
               </Button>
             </Box>
           </Card>
@@ -1830,16 +1791,11 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
-                  Lost & Found Bridge (Public Passenger Inquiries ↔ Airside Ops)
+                  Lost & Found
                 </Typography>
-                <Chip
-                  label="PUBLIC BRIDGE ACTIVE"
-                  size="small"
-                  sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800, backgroundColor: '#EFF6FF', color: '#0284C7' }}
-                />
               </Box>
               <Typography sx={{ fontSize: '0.82rem', color: '#64748B', mt: 0.3 }}>
-                Items submitted via public passenger portal matched against security office inventory and airside locker claims.
+                Custody registry of misplaced property and passenger claims.
               </Typography>
             </Box>
 
@@ -2383,7 +2339,7 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
                 Senior Security Officer · Airside Operations Command
               </Typography>
               <Typography sx={{ fontSize: '0.78rem', color: '#64748B', mt: 0.3 }}>
-                Station: Terminal 1 & 2 Security Control · Airside Level 1 Clearance
+                Station: Central Terminal Security Control · Airside Level 1 Clearance
               </Typography>
             </Box>
           </Box>
@@ -2764,7 +2720,7 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
             label="Location Found"
             fullWidth
             size="small"
-            placeholder="e.g. Terminal 2 Concourse B Gate 12 Standby Lounge"
+            placeholder="e.g. Concourse B Gate 12 Standby Lounge"
             value={newLfLocation}
             onChange={(e) => setNewLfLocation(e.target.value)}
           />
@@ -2784,14 +2740,14 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
             multiline
             rows={3}
             size="small"
-            placeholder="Serial number, stickers, color, wear, accessories included..."
+            placeholder="Describe condition, brand, color, stickers, contents..."
             value={newLfDescription}
             onChange={(e) => setNewLfDescription(e.target.value)}
           />
         </DialogContent>
 
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setNewLfModalOpen(false)} sx={{ textTransform: 'none', fontWeight: 700, color: '#64748B' }}>
+        <DialogActions sx={{ p: 2.5, pt: 1 }}>
+          <Button onClick={() => setNewLfModalOpen(false)} sx={{ color: '#64748B', fontWeight: 600, textTransform: 'none' }}>
             Cancel
           </Button>
           <Button
@@ -2799,13 +2755,15 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
             onClick={handleSaveNewFoundItem}
             sx={{
               backgroundColor: '#0F2942',
-              textTransform: 'none',
+              color: '#FFFFFF',
               fontWeight: 700,
-              boxShadow: 'none',
-              '&:hover': { backgroundColor: '#1E3A5F', boxShadow: 'none' },
+              textTransform: 'none',
+              borderRadius: '8px',
+              px: 3,
+              '&:hover': { backgroundColor: '#1E3A5F' },
             }}
           >
-            Save to Inventory
+            Catalog Item
           </Button>
         </DialogActions>
       </Dialog>
@@ -2820,35 +2778,19 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
         fullWidth
         slotProps={{
           paper: {
-            sx: {
-              borderRadius: '16px',
-              p: 1,
-              backgroundColor: '#FFFFFF',
-              boxShadow: '0 24px 60px rgba(15, 41, 66, 0.16)',
-            },
+            sx: { borderRadius: '16px', p: 1 },
           },
         }}
       >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-          <Box>
-            <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.1rem', color: '#0F2942' }}>
-              Log Security / Airside Incident
-            </Typography>
-            <Typography sx={{ fontSize: '0.76rem', color: '#64748B' }}>
-              Dispatch incident to security units and record in terminal event ledger.
-            </Typography>
-          </Box>
-          <IconButton size="small" onClick={() => setIncidentModalOpen(false)}>
-            <X size={18} color="#64748B" />
-          </IconButton>
+        <DialogTitle sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
+          Dispatch Security Incident Report
         </DialogTitle>
-
-        <DialogContent sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           <TextField
-            label="Incident Title"
+            label="Incident Title / Nature of Event"
             fullWidth
             size="small"
-            placeholder="e.g. Unattended Luggage Cordon at Gate C14"
+            placeholder="e.g. Unattended Baggage / Biometric Mismatch"
             value={incidentTitle}
             onChange={(e) => setIncidentTitle(e.target.value)}
           />
@@ -2871,7 +2813,7 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
             label="Location"
             fullWidth
             size="small"
-            placeholder="e.g. Terminal 2 Concourse B, Stand 14"
+            placeholder="e.g. Concourse B, Stand 14"
             value={incidentLocation}
             onChange={(e) => setIncidentLocation(e.target.value)}
           />

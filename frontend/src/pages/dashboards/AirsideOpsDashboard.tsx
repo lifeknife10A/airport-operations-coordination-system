@@ -57,8 +57,8 @@ export type RunwayStatus = 'ACTIVE_CAT_III' | 'DEPARTURE_ONLY' | 'AVAILABLE' | '
 export interface GateInfo {
   id: string;
   gateNumber: string;
-  terminal: 'T1' | 'T2';
-  concourse: 'Concourse A' | 'Concourse B';
+  terminal: string;
+  concourse: string;
   standNumber: string;
   hasJetbridge: boolean;
   maxWingspanMeters: number;
@@ -114,33 +114,59 @@ export interface OperationalConflict {
 // ============================================================================
 
 const INITIAL_GATES: GateInfo[] = [
-  // Terminal 1 - Concourse A
-  { id: 'G-A01', gateNumber: 'A01', terminal: 'T1', concourse: 'Concourse A', standNumber: 'Stand G12', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'OCCUPIED', assignedFlightNumber: 'AI-203', aircraft: 'Boeing 787-8', scheduledTime: '23:40' },
-  { id: 'G-A02', gateNumber: 'A02', terminal: 'T1', concourse: 'Concourse A', standNumber: 'Stand G11', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
-  { id: 'G-A03', gateNumber: 'A03', terminal: 'T1', concourse: 'Concourse A', standNumber: 'Stand G10', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'SPH-102', aircraft: 'Airbus A350-900', scheduledTime: '00:15' },
-  { id: 'G-A04', gateNumber: 'A04', terminal: 'T1', concourse: 'Concourse A', standNumber: 'Stand G09', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'UK-901', aircraft: 'Airbus A320neo', scheduledTime: '23:55' },
-  { id: 'G-A05', gateNumber: 'A05', terminal: 'T1', concourse: 'Concourse A', standNumber: 'Stand G08', hasJetbridge: false, maxWingspanMeters: 38.0, status: 'OCCUPIED', assignedFlightNumber: 'AF-225', aircraft: 'Boeing 777-300ER', scheduledTime: '01:10' },
-  { id: 'G-A06', gateNumber: 'A06', terminal: 'T1', concourse: 'Concourse A', standNumber: 'Stand G07', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
-  { id: 'G-A07', gateNumber: 'A07', terminal: 'T1', concourse: 'Concourse A', standNumber: 'Stand G06', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: '6E-521', aircraft: 'Airbus A321neo', scheduledTime: '23:42' },
-  { id: 'G-A08', gateNumber: 'A08', terminal: 'T1', concourse: 'Concourse A', standNumber: 'Stand G05', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'STANDBY' },
-  { id: 'G-A09', gateNumber: 'A09', terminal: 'T1', concourse: 'Concourse A', standNumber: 'Stand G04', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
-  { id: 'G-A10', gateNumber: 'A10', terminal: 'T1', concourse: 'Concourse A', standNumber: 'Stand G03', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'OCCUPIED', assignedFlightNumber: 'BA-142', aircraft: 'Boeing 787-9', scheduledTime: '00:30' },
-  { id: 'G-A11', gateNumber: 'A11', terminal: 'T1', concourse: 'Concourse A', standNumber: 'Stand G02', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'MAINTENANCE' },
-  { id: 'G-A12', gateNumber: 'A12', terminal: 'T1', concourse: 'Concourse A', standNumber: 'Stand G01', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  // Central Terminal - Concourse A (Domestic Pier - Stands G01 to G14)
+  { id: 'G-A01', gateNumber: 'A01', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G01', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'OCCUPIED', assignedFlightNumber: 'AI-203', aircraft: 'Boeing 787-8', scheduledTime: '23:40' },
+  { id: 'G-A02', gateNumber: 'A02', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G02', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { id: 'G-A03', gateNumber: 'A03', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G03', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'SPH-102', aircraft: 'Airbus A350-900', scheduledTime: '00:15' },
+  { id: 'G-A04', gateNumber: 'A04', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G04', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'UK-901', aircraft: 'Airbus A320neo', scheduledTime: '23:55' },
+  { id: 'G-A05', gateNumber: 'A05', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G05', hasJetbridge: false, maxWingspanMeters: 38.0, status: 'OCCUPIED', assignedFlightNumber: 'AF-225', aircraft: 'Boeing 777-300ER', scheduledTime: '01:10' },
+  { id: 'G-A06', gateNumber: 'A06', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G06', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { id: 'G-A07', gateNumber: 'A07', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G07', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: '6E-521', aircraft: 'Airbus A321neo', scheduledTime: '23:42' },
+  { id: 'G-A08', gateNumber: 'A08', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G08', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'STANDBY' },
+  { id: 'G-A09', gateNumber: 'A09', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G09', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { id: 'G-A10', gateNumber: 'A10', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G10', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'OCCUPIED', assignedFlightNumber: 'BA-142', aircraft: 'Boeing 787-9', scheduledTime: '00:30' },
+  { id: 'G-A11', gateNumber: 'A11', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G11', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'MAINTENANCE' },
+  { id: 'G-A12', gateNumber: 'A12', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G12', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { id: 'G-A13', gateNumber: 'A13', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G13', hasJetbridge: true, maxWingspanMeters: 36.0, status: 'AVAILABLE' },
+  { id: 'G-A14', gateNumber: 'A14', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G14', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
 
-  // Terminal 2 - Concourse B
-  { id: 'G-B01', gateNumber: 'B01', terminal: 'T2', concourse: 'Concourse B', standNumber: 'Stand G16', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'OCCUPIED', assignedFlightNumber: 'EK-506', aircraft: 'Boeing 777-300ER', scheduledTime: '00:45' },
-  { id: 'G-B02', gateNumber: 'B02', terminal: 'T2', concourse: 'Concourse B', standNumber: 'Stand G15', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
-  { id: 'G-B03', gateNumber: 'B03', terminal: 'T2', concourse: 'Concourse B', standNumber: 'Stand G14', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'LH-760', aircraft: 'Airbus A350-900', scheduledTime: '01:25' },
-  { id: 'G-B04', gateNumber: 'B04', terminal: 'T2', concourse: 'Concourse B', standNumber: 'Stand G13', hasJetbridge: false, maxWingspanMeters: 38.0, status: 'OCCUPIED', assignedFlightNumber: 'QR-557', aircraft: 'Airbus A330-300', scheduledTime: '01:40' },
-  { id: 'G-B05', gateNumber: 'B05', terminal: 'T2', concourse: 'Concourse B', standNumber: 'Stand G17', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
-  { id: 'G-B06', gateNumber: 'B06', terminal: 'T2', concourse: 'Concourse B', standNumber: 'Stand G18', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'SQ-402', aircraft: 'Boeing 787-10', scheduledTime: '02:00' },
-  { id: 'G-B07', gateNumber: 'B07', terminal: 'T2', concourse: 'Concourse B', standNumber: 'Stand G19', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'OCCUPIED', assignedFlightNumber: 'KL-871', aircraft: 'Boeing 777-200', scheduledTime: '02:15' },
-  { id: 'G-B08', gateNumber: 'B08', terminal: 'T2', concourse: 'Concourse B', standNumber: 'Stand G20', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'AVAILABLE' },
-  { id: 'G-B09', gateNumber: 'B09', terminal: 'T2', concourse: 'Concourse B', standNumber: 'Stand G21', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'TG-317', aircraft: 'Airbus A350-900', scheduledTime: '02:30' },
-  { id: 'G-B10', gateNumber: 'B10', terminal: 'T2', concourse: 'Concourse B', standNumber: 'Stand G22', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'MH-194', aircraft: 'Airbus A330-200', scheduledTime: '02:45' },
-  { id: 'G-B11', gateNumber: 'B11', terminal: 'T2', concourse: 'Concourse B', standNumber: 'Stand G23', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'STANDBY' },
-  { id: 'G-B12', gateNumber: 'B12', terminal: 'T2', concourse: 'Concourse B', standNumber: 'Stand G24', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+  // Central Terminal - Concourse B (Transcontinental Pier - Stands G15 to G30)
+  { id: 'G-B01', gateNumber: 'B01', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G15', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'OCCUPIED', assignedFlightNumber: 'EK-506', aircraft: 'Boeing 777-300ER', scheduledTime: '00:45' },
+  { id: 'G-B02', gateNumber: 'B02', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G16', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { id: 'G-B03', gateNumber: 'B03', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G17', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'LH-760', aircraft: 'Airbus A350-900', scheduledTime: '01:25' },
+  { id: 'G-B04', gateNumber: 'B04', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G18', hasJetbridge: false, maxWingspanMeters: 38.0, status: 'OCCUPIED', assignedFlightNumber: 'QR-557', aircraft: 'Airbus A330-300', scheduledTime: '01:40' },
+  { id: 'G-B05', gateNumber: 'B05', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G19', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { id: 'G-B06', gateNumber: 'B06', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G20', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'SQ-402', aircraft: 'Boeing 787-10', scheduledTime: '02:00' },
+  { id: 'G-B07', gateNumber: 'B07', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G21', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'OCCUPIED', assignedFlightNumber: 'KL-871', aircraft: 'Boeing 777-200', scheduledTime: '02:15' },
+  { id: 'G-B08', gateNumber: 'B08', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G22', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'AVAILABLE' },
+  { id: 'G-B09', gateNumber: 'B09', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G23', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'TG-317', aircraft: 'Airbus A350-900', scheduledTime: '02:30' },
+  { id: 'G-B10', gateNumber: 'B10', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G24', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'MH-194', aircraft: 'Airbus A330-200', scheduledTime: '02:45' },
+  { id: 'G-B11', gateNumber: 'B11', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G25', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'STANDBY' },
+  { id: 'G-B12', gateNumber: 'B12', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G26', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+  { id: 'G-B13', gateNumber: 'B13', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G27', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
+  { id: 'G-B14', gateNumber: 'B14', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G28', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+  { id: 'G-B15', gateNumber: 'B15', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G29', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'AVAILABLE' },
+  { id: 'G-B16', gateNumber: 'B16', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G30', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+
+  // Central Terminal - Concourse C (Widebody Flagship Pier - Stands G31 to G48)
+  { id: 'G-C01', gateNumber: 'C01', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G31', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'OCCUPIED', assignedFlightNumber: 'EK-201', aircraft: 'Airbus A380-800', scheduledTime: '00:50' },
+  { id: 'G-C02', gateNumber: 'C02', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G32', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+  { id: 'G-C03', gateNumber: 'C03', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G33', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'AVAILABLE' },
+  { id: 'G-C04', gateNumber: 'C04', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G34', hasJetbridge: true, maxWingspanMeters: 75.0, status: 'OCCUPIED', assignedFlightNumber: 'BA-117', aircraft: 'Boeing 777-300ER', scheduledTime: '01:05' },
+  { id: 'G-C05', gateNumber: 'C05', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G35', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+  { id: 'G-C06', gateNumber: 'C06', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G36', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'AVAILABLE' },
+  { id: 'G-C07', gateNumber: 'C07', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G37', hasJetbridge: true, maxWingspanMeters: 75.0, status: 'AVAILABLE' },
+  { id: 'G-C08', gateNumber: 'C08', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G38', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'OCCUPIED', assignedFlightNumber: 'SQ-406', aircraft: 'Airbus A350-900', scheduledTime: '01:35' },
+  { id: 'G-C09', gateNumber: 'C09', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G39', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+  { id: 'G-C10', gateNumber: 'C10', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G40', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+  { id: 'G-C11', gateNumber: 'C11', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G41', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'AVAILABLE' },
+  { id: 'G-C12', gateNumber: 'C12', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G42', hasJetbridge: true, maxWingspanMeters: 75.0, status: 'OCCUPIED', assignedFlightNumber: 'QR-571', aircraft: 'Boeing 777-200LR', scheduledTime: '01:50' },
+  { id: 'G-C13', gateNumber: 'C13', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G43', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+  { id: 'G-C14', gateNumber: 'C14', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G44', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'STANDBY' },
+  { id: 'G-C15', gateNumber: 'C15', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G45', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'OCCUPIED', assignedFlightNumber: 'LH-772', aircraft: 'Boeing 747-8', scheduledTime: '02:20' },
+  { id: 'G-C16', gateNumber: 'C16', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G46', hasJetbridge: true, maxWingspanMeters: 75.0, status: 'AVAILABLE' },
+  { id: 'G-C17', gateNumber: 'C17', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G47', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+  { id: 'G-C18', gateNumber: 'C18', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G48', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'AVAILABLE' },
 ];
 
 const INITIAL_RUNWAYS: RunwayInfo[] = [
@@ -151,18 +177,24 @@ const INITIAL_RUNWAYS: RunwayInfo[] = [
 ];
 
 const INITIAL_FLIGHTS: AirsideFlight[] = [
-  { id: 'FLT-203', flightNumber: 'AI-203', airline: 'Air India', aircraft: 'Boeing 787-8', wingspanMeters: 60.1, stand: 'Stand G12', gateNumber: 'A01', runwayCode: '28L', flightType: 'DEPARTURE', time: '23:40', status: 'BOARDING', hasConflict: false },
-  { id: 'FLT-521', flightNumber: '6E-521', airline: 'IndiGo', aircraft: 'Airbus A321neo', wingspanMeters: 35.8, stand: 'Stand G08', gateNumber: 'A07', runwayCode: '09R', flightType: 'DEPARTURE', time: '23:42', status: 'PUSHBACK', hasConflict: false },
+  { id: 'FLT-203', flightNumber: 'AI-203', airline: 'Air India', aircraft: 'Boeing 787-8', wingspanMeters: 60.1, stand: 'Stand G01', gateNumber: 'A01', runwayCode: '28L', flightType: 'DEPARTURE', time: '23:40', status: 'BOARDING', hasConflict: false },
+  { id: 'FLT-521', flightNumber: '6E-521', airline: 'IndiGo', aircraft: 'Airbus A321neo', wingspanMeters: 35.8, stand: 'Stand G07', gateNumber: 'A07', runwayCode: '09R', flightType: 'DEPARTURE', time: '23:42', status: 'PUSHBACK', hasConflict: false },
   { id: 'FLT-901', flightNumber: 'UK-901', airline: 'Vistara', aircraft: 'Airbus A320neo', wingspanMeters: 35.8, stand: 'Stand G04', gateNumber: 'A04', runwayCode: 'UNASSIGNED', flightType: 'DEPARTURE', time: '23:55', status: 'SCHEDULED', hasConflict: true, conflictReason: 'Departure in 22 mins with no takeoff runway vector assigned' },
-  { id: 'FLT-102', flightNumber: 'SPH-102', airline: 'Saphire Air', aircraft: 'Airbus A350-900', wingspanMeters: 64.75, stand: 'Stand G10', gateNumber: 'A03', runwayCode: '10L', flightType: 'DEPARTURE', time: '00:15', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-142', flightNumber: 'BA-142', airline: 'British Airways', aircraft: 'Boeing 787-9', wingspanMeters: 60.1, stand: 'Stand G03', gateNumber: 'A10', runwayCode: '28L', flightType: 'DEPARTURE', time: '00:30', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-506', flightNumber: 'EK-506', airline: 'Emirates', aircraft: 'Boeing 777-300ER', wingspanMeters: 64.8, stand: 'Stand G16', gateNumber: 'B01', runwayCode: '09R', flightType: 'DEPARTURE', time: '00:45', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-225', flightNumber: 'AF-225', airline: 'Air France', aircraft: 'Boeing 777-300ER', wingspanMeters: 64.8, stand: 'Stand G08', gateNumber: 'A05', runwayCode: '28L', flightType: 'DEPARTURE', time: '01:10', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-557', flightNumber: 'QR-557', airline: 'Qatar Airways', aircraft: 'Airbus A330-300', wingspanMeters: 60.3, stand: 'Stand G13', gateNumber: 'B04', runwayCode: 'UNASSIGNED', flightType: 'DEPARTURE', time: '01:40', status: 'SCHEDULED', hasConflict: true, conflictReason: 'Runway unassigned for international widebody' },
-  { id: 'FLT-760', flightNumber: 'LH-760', airline: 'Lufthansa', aircraft: 'Airbus A350-900', wingspanMeters: 64.75, stand: 'Stand G14', gateNumber: 'B03', runwayCode: '28L', flightType: 'DEPARTURE', time: '01:25', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-402', flightNumber: 'SQ-402', airline: 'Singapore Airlines', aircraft: 'Boeing 787-10', wingspanMeters: 60.1, stand: 'Stand G18', gateNumber: 'B06', runwayCode: '10L', flightType: 'DEPARTURE', time: '02:00', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-871', flightNumber: 'KL-871', airline: 'KLM Royal Dutch', aircraft: 'Boeing 777-200', wingspanMeters: 60.9, stand: 'Stand G19', gateNumber: 'B07', runwayCode: '09R', flightType: 'DEPARTURE', time: '02:15', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-317', flightNumber: 'TG-317', airline: 'Thai Airways', aircraft: 'Airbus A350-900', wingspanMeters: 64.75, stand: 'Stand G21', gateNumber: 'B09', runwayCode: '28L', flightType: 'DEPARTURE', time: '02:30', status: 'SCHEDULED', hasConflict: false },
+  { id: 'FLT-102', flightNumber: 'SPH-102', airline: 'Saphire Air', aircraft: 'Airbus A350-900', wingspanMeters: 64.75, stand: 'Stand G03', gateNumber: 'A03', runwayCode: '10L', flightType: 'DEPARTURE', time: '00:15', status: 'SCHEDULED', hasConflict: false },
+  { id: 'FLT-142', flightNumber: 'BA-142', airline: 'British Airways', aircraft: 'Boeing 787-9', wingspanMeters: 60.1, stand: 'Stand G10', gateNumber: 'A10', runwayCode: '28L', flightType: 'DEPARTURE', time: '00:30', status: 'SCHEDULED', hasConflict: false },
+  { id: 'FLT-506', flightNumber: 'EK-506', airline: 'Emirates', aircraft: 'Boeing 777-300ER', wingspanMeters: 64.8, stand: 'Stand G15', gateNumber: 'B01', runwayCode: '09R', flightType: 'DEPARTURE', time: '00:45', status: 'SCHEDULED', hasConflict: false },
+  { id: 'FLT-225', flightNumber: 'AF-225', airline: 'Air France', aircraft: 'Boeing 777-300ER', wingspanMeters: 64.8, stand: 'Stand G05', gateNumber: 'A05', runwayCode: '28L', flightType: 'DEPARTURE', time: '01:10', status: 'SCHEDULED', hasConflict: false },
+  { id: 'FLT-557', flightNumber: 'QR-557', airline: 'Qatar Airways', aircraft: 'Airbus A330-300', wingspanMeters: 60.3, stand: 'Stand G18', gateNumber: 'B04', runwayCode: 'UNASSIGNED', flightType: 'DEPARTURE', time: '01:40', status: 'SCHEDULED', hasConflict: true, conflictReason: 'Runway unassigned for international widebody' },
+  { id: 'FLT-760', flightNumber: 'LH-760', airline: 'Lufthansa', aircraft: 'Airbus A350-900', wingspanMeters: 64.75, stand: 'Stand G17', gateNumber: 'B03', runwayCode: '28L', flightType: 'DEPARTURE', time: '01:25', status: 'SCHEDULED', hasConflict: false },
+  { id: 'FLT-402', flightNumber: 'SQ-402', airline: 'Singapore Airlines', aircraft: 'Boeing 787-10', wingspanMeters: 60.1, stand: 'Stand G20', gateNumber: 'B06', runwayCode: '10L', flightType: 'DEPARTURE', time: '02:00', status: 'SCHEDULED', hasConflict: false },
+  { id: 'FLT-871', flightNumber: 'KL-871', airline: 'KLM Royal Dutch', aircraft: 'Boeing 777-200', wingspanMeters: 60.9, stand: 'Stand G21', gateNumber: 'B07', runwayCode: '09R', flightType: 'DEPARTURE', time: '02:15', status: 'SCHEDULED', hasConflict: false },
+  { id: 'FLT-317', flightNumber: 'TG-317', airline: 'Thai Airways', aircraft: 'Airbus A350-900', wingspanMeters: 64.75, stand: 'Stand G23', gateNumber: 'B09', runwayCode: '28L', flightType: 'DEPARTURE', time: '02:30', status: 'SCHEDULED', hasConflict: false },
+  // Concourse C Flagship Flights
+  { id: 'FLT-201', flightNumber: 'EK-201', airline: 'Emirates', aircraft: 'Airbus A380-800', wingspanMeters: 79.8, stand: 'Stand G31', gateNumber: 'C01', runwayCode: '28L', flightType: 'DEPARTURE', time: '00:50', status: 'SCHEDULED', hasConflict: false },
+  { id: 'FLT-117', flightNumber: 'BA-117', airline: 'British Airways', aircraft: 'Boeing 777-300ER', wingspanMeters: 64.8, stand: 'Stand G34', gateNumber: 'C04', runwayCode: '10L', flightType: 'DEPARTURE', time: '01:05', status: 'SCHEDULED', hasConflict: false },
+  { id: 'FLT-406', flightNumber: 'SQ-406', airline: 'Singapore Airlines', aircraft: 'Airbus A350-900', wingspanMeters: 64.75, stand: 'Stand G38', gateNumber: 'C08', runwayCode: '28L', flightType: 'DEPARTURE', time: '01:35', status: 'SCHEDULED', hasConflict: false },
+  { id: 'FLT-571', flightNumber: 'QR-571', airline: 'Qatar Airways', aircraft: 'Boeing 777-200LR', wingspanMeters: 64.8, stand: 'Stand G42', gateNumber: 'C12', runwayCode: '09R', flightType: 'DEPARTURE', time: '01:50', status: 'SCHEDULED', hasConflict: false },
+  { id: 'FLT-772', flightNumber: 'LH-772', airline: 'Lufthansa', aircraft: 'Boeing 747-8', wingspanMeters: 68.4, stand: 'Stand G45', gateNumber: 'C15', runwayCode: '28L', flightType: 'DEPARTURE', time: '02:20', status: 'SCHEDULED', hasConflict: false },
 ];
 
 const INITIAL_CONFLICTS: OperationalConflict[] = [
@@ -224,8 +256,7 @@ export const AirsideOpsDashboard: React.FC = () => {
   const [conflicts, setConflicts] = useState<OperationalConflict[]>(INITIAL_CONFLICTS);
 
   // Filter for Gate Boards
-  const [selectedTerminal, setSelectedTerminal] = useState<'ALL' | 'T1' | 'T2'>('ALL');
-  const [selectedConcourse, setSelectedConcourse] = useState<'ALL' | 'Concourse A' | 'Concourse B'>('ALL');
+  const [selectedConcourse, setSelectedConcourse] = useState<'ALL' | 'Concourse A' | 'Concourse B' | 'Concourse C'>('ALL');
   const [gateStatusFilter, setGateStatusFilter] = useState<'ALL' | 'AVAILABLE' | 'OCCUPIED'>('ALL');
 
   // Cross-dashboard synchronization with aocsDataStore
@@ -385,7 +416,6 @@ export const AirsideOpsDashboard: React.FC = () => {
 
   // Filtered Gates
   const filteredGates = gates.filter((g) => {
-    if (selectedTerminal !== 'ALL' && g.terminal !== selectedTerminal) return false;
     if (selectedConcourse !== 'ALL' && g.concourse !== selectedConcourse) return false;
     if (gateStatusFilter !== 'ALL' && g.status !== gateStatusFilter) return false;
     return true;
@@ -614,11 +644,11 @@ export const AirsideOpsDashboard: React.FC = () => {
                       sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontWeight: 700, fontSize: '0.72rem' }}
                     />
                   )}
-                  {(['ALL', 'T1', 'T2'] as const).map((t) => (
+                  {(['ALL', 'Concourse A', 'Concourse B', 'Concourse C'] as const).map((c) => (
                     <Button
-                      key={t}
+                      key={c}
                       size="small"
-                      onClick={() => setSelectedTerminal(t)}
+                      onClick={() => setSelectedConcourse(c)}
                       sx={{
                         fontFamily: "'Outfit', sans-serif",
                         fontWeight: 700,
@@ -627,14 +657,14 @@ export const AirsideOpsDashboard: React.FC = () => {
                         py: 0.4,
                         borderRadius: '7px',
                         textTransform: 'none',
-                        backgroundColor: selectedTerminal === t ? '#0F2942' : 'transparent',
-                        color: selectedTerminal === t ? '#FFFFFF' : '#64748B',
+                        backgroundColor: selectedConcourse === c ? '#0F2942' : 'transparent',
+                        color: selectedConcourse === c ? '#FFFFFF' : '#64748B',
                         border: '1px solid',
-                        borderColor: selectedTerminal === t ? '#0F2942' : '#E2E8F0',
-                        '&:hover': { backgroundColor: selectedTerminal === t ? '#1E3A5F' : '#F1F5F9' },
+                        borderColor: selectedConcourse === c ? '#0F2942' : '#E2E8F0',
+                        '&:hover': { backgroundColor: selectedConcourse === c ? '#1E3A5F' : '#F1F5F9' },
                       }}
                     >
-                      {t === 'ALL' ? `All (${gates.length})` : t === 'T1' ? 'T1 Concourse A' : 'T2 Concourse B'}
+                      {c === 'ALL' ? `All (${gates.length})` : c}
                     </Button>
                   ))}
                 </Box>
@@ -1028,7 +1058,7 @@ export const AirsideOpsDashboard: React.FC = () => {
               Terminal Gate Allocation Matrix
             </Typography>
             <Typography sx={{ fontSize: '0.86rem', color: '#64748B' }}>
-              Comprehensive real-time stand management for all 24 gates across Concourse A (T1) and Concourse B (T2).
+              Comprehensive real-time stand management for all {gates.length} gates across Concourse A (Domestic Pier), Concourse B (Transcontinental Pier), and Concourse C (Widebody Flagship Pier).
             </Typography>
           </Box>
 
@@ -1040,7 +1070,7 @@ export const AirsideOpsDashboard: React.FC = () => {
               variant={selectedConcourse === 'ALL' ? 'contained' : 'outlined'}
               sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, borderRadius: '8px', textTransform: 'none' }}
             >
-              All Concourses (24)
+              All Concourses ({gates.length})
             </Button>
             <Button
               size="small"
@@ -1048,7 +1078,7 @@ export const AirsideOpsDashboard: React.FC = () => {
               variant={selectedConcourse === 'Concourse A' ? 'contained' : 'outlined'}
               sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, borderRadius: '8px', textTransform: 'none' }}
             >
-              Concourse A (Gates A01 - A12)
+              Concourse A (Gates A01 - A14)
             </Button>
             <Button
               size="small"
@@ -1056,7 +1086,15 @@ export const AirsideOpsDashboard: React.FC = () => {
               variant={selectedConcourse === 'Concourse B' ? 'contained' : 'outlined'}
               sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, borderRadius: '8px', textTransform: 'none' }}
             >
-              Concourse B (Gates B01 - B12)
+              Concourse B (Gates B01 - B16)
+            </Button>
+            <Button
+              size="small"
+              onClick={() => setSelectedConcourse('Concourse C')}
+              variant={selectedConcourse === 'Concourse C' ? 'contained' : 'outlined'}
+              sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, borderRadius: '8px', textTransform: 'none' }}
+            >
+              Concourse C (Gates C01 - C18)
             </Button>
           </Box>
 
@@ -1342,7 +1380,7 @@ export const AirsideOpsDashboard: React.FC = () => {
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, pt: 2, borderTop: '1px solid #E2E8F0' }}>
               <Box>
                 <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8', fontWeight: 700 }}>AUTHORIZED STATION</Typography>
-                <Typography sx={{ fontSize: '0.9rem', color: '#0F2942', fontWeight: 800 }}>Terminal 1 & 2 Apron Tower</Typography>
+                <Typography sx={{ fontSize: '0.9rem', color: '#0F2942', fontWeight: 800 }}>Central Terminal Apron Control Tower</Typography>
               </Box>
               <Box>
                 <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8', fontWeight: 700 }}>CLEARANCE LEVEL</Typography>
@@ -1353,8 +1391,8 @@ export const AirsideOpsDashboard: React.FC = () => {
                 <Typography sx={{ fontSize: '0.9rem', color: '#0F2942', fontWeight: 800 }}>Morning / Afternoon (06:00 - 14:30)</Typography>
               </Box>
               <Box>
-                <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8', fontWeight: 700 }}>DATABASE ROLE</Typography>
-                <Typography sx={{ fontSize: '0.9rem', color: '#0284C7', fontWeight: 800 }}>GATE_AGENT (user_5_aditya)</Typography>
+                <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8', fontWeight: 700 }}>OPERATIONAL SPECIALTY</Typography>
+                <Typography sx={{ fontSize: '0.9rem', color: '#0284C7', fontWeight: 800 }}>Airside Movement & Gate Allocation Lead</Typography>
               </Box>
             </Box>
           </Card>

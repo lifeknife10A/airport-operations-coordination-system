@@ -35,7 +35,7 @@
 
 .grc-title-mono {
   font-family: 'Geist Mono', monospace !important;
-  font-size: 10px !important;
+  font-size: 11px !important;
   font-weight: 700 !important;
   letter-spacing: 0.12em !important;
   color: #38BDF8 !important;
@@ -43,7 +43,7 @@
 
 .grc-active-badge {
   font-family: 'Geist Mono', monospace !important;
-  font-size: 9.5px !important;
+  font-size: 11px !important;
   color: #94A3B8 !important;
   letter-spacing: 0.06em !important;
 }

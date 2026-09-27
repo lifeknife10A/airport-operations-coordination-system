@@ -71,11 +71,19 @@ import {
   Wrench,
   Sparkles,
   X,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { DashboardLayout } from '../../components/dashboard/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
-import { aocsDataStore } from '../../services/aocsDataStore';
+import { aocsDataStore, OperationalNotification } from '../../services/aocsDataStore';
+import { getUserInitials } from '../../utils/userUtils';
+import {
+  exportFlightMovementCSV,
+  exportGateUtilizationPDF,
+  exportAirlineBillingExcel,
+} from '../../utils/exportReports';
 
 // Types
 interface StaffAccount {
@@ -156,16 +164,16 @@ const INITIAL_AUDIT: AuditRecord[] = [
 ];
 
 const RBAC_ROLES = [
-  { role: 'SYSTEM_ADMINISTRATOR', name: 'System Administrator', desc: 'Full airport operations, RBAC, users, audit, reports & flight configuration.', level: 'Level 5 (Root)' },
-  { role: 'AIRPORT_OPERATIONS_MANAGER', name: 'AOCC Operations Manager', desc: 'Airside movement, gate assignment, vector tracking, emergency response.', level: 'Level 4 (Executive)' },
-  { role: 'GROUND_HANDLING_SUPERVISOR', name: 'Ground Handling Supervisor', desc: 'Apron turnarounds, baggage reconciliation, ramp crew management.', level: 'Level 3 (Operational)' },
-  { role: 'RAMP_AGENT', name: 'Ramp Agent', desc: 'Aircraft marshaling, tug towing, pushback coordination on stands.', level: 'Level 2 (Airside)' },
-  { role: 'BAGGAGE_HANDLER', name: 'Baggage Handler', desc: 'Conveyor routing, BRS telemetry, barcode validation, lost luggage tracking.', level: 'Level 2 (Airside)' },
-  { role: 'GATE_AGENT', name: 'Gate Agent', desc: 'Aerobridge operation, boarding passes, standby seating, door closures.', level: 'Level 2 (Terminal)' },
-  { role: 'SECURITY_OFFICER', name: 'Security Officer', desc: 'Security checkpoint, e-gate biometric scans, airside access validation.', level: 'Level 3 (Safety)' },
-  { role: 'IMMIGRATION_OFFICER', name: 'Immigration Officer', desc: 'Customs declaration, passport clearance, international entry manifests.', level: 'Level 3 (Border)' },
-  { role: 'AIRLINE_BILLING_CLERK', name: 'Airline Billing Clerk', desc: 'Airport landing fees, parking charges, utility tariffs, passenger reconciliation.', level: 'Level 3 (Finance)' },
-  { role: 'PASSENGER', name: 'Passenger (Public Portal)', desc: 'Flight tracker, live schedule, concourse maps, terminal dining & services.', level: 'Level 1 (Public)' },
+  { role: 'SYSTEM_ADMINISTRATOR', name: 'System Administrator', desc: 'Full airport operations, RBAC, users, audit, reports & flight configuration.', level: 'Level 5 (Root)', scope: 'Global Administration & Security Command' },
+  { role: 'AIRPORT_OPERATIONS_MANAGER', name: 'AOCC Operations Manager', desc: 'Airside movement, gate assignment, vector tracking, emergency response.', level: 'Level 4 (Executive)', scope: 'Flight Operations & Airside Command' },
+  { role: 'GROUND_HANDLING_SUPERVISOR', name: 'Ground Handling Supervisor', desc: 'Apron turnarounds, baggage reconciliation, ramp crew management.', level: 'Level 3 (Operational)', scope: 'Apron Turnarounds & Ramp Operations' },
+  { role: 'RAMP_AGENT', name: 'Ramp Agent', desc: 'Aircraft marshaling, tug towing, pushback coordination on stands.', level: 'Level 2 (Airside)', scope: 'Aircraft Marshaling & Pushback' },
+  { role: 'BAGGAGE_HANDLER', name: 'Baggage Handler', desc: 'Conveyor routing, BRS telemetry, barcode validation, lost luggage tracking.', level: 'Level 2 (Airside)', scope: 'Baggage Logistics & Carousel Routing' },
+  { role: 'GATE_AGENT', name: 'Gate Agent', desc: 'Aerobridge operation, boarding passes, standby seating, door closures.', level: 'Level 2 (Terminal)', scope: 'Concourse Gates & Passenger Boarding' },
+  { role: 'SECURITY_OFFICER', name: 'Security Officer', desc: 'Security checkpoint, e-gate biometric scans, airside access validation.', level: 'Level 3 (Safety)', scope: 'Terminal Security & Access Validation' },
+  { role: 'IMMIGRATION_OFFICER', name: 'Immigration Officer', desc: 'Customs declaration, passport clearance, international entry manifests.', level: 'Level 3 (Border)', scope: 'Border Clearance & Customs Control' },
+  { role: 'AIRLINE_BILLING_CLERK', name: 'Airline Billing Clerk', desc: 'Airport landing fees, parking charges, utility tariffs, passenger reconciliation.', level: 'Level 3 (Finance)', scope: 'Airline Billing & Tariff Reconciliation' },
+  { role: 'PASSENGER', name: 'Passenger (Public Portal)', desc: 'Flight tracker, live schedule, concourse maps, terminal dining & services.', level: 'Level 1 (Public)', scope: 'Public Flight Schedules & Concourse Services' },
 ];
 
 // Custom Recharts Tooltip Component
@@ -214,6 +222,7 @@ export const SystemAdminDashboard: React.FC = () => {
       case '#roles': return 'roles';
       case '#audit': return 'audit';
       case '#reports': return 'reports';
+      case '#notifications': return 'notifications';
       case '#profile': return 'profile';
       default: return 'overview';
     }
@@ -243,6 +252,19 @@ export const SystemAdminDashboard: React.FC = () => {
   const [auditSearch, setAuditSearch] = useState('');
   const [auditEntityFilter, setAuditEntityFilter] = useState('ALL');
 
+  // Operational Notifications State (Synchronized with Reactive Data Store)
+  const [notificationsList, setNotificationsList] = useState<OperationalNotification[]>(() =>
+    aocsDataStore.getNotifications()
+  );
+  const [notificationFilter, setNotificationFilter] = useState('ALL');
+
+  // Password Management State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
   // Master Operational Overrides State (Administrative Dispatch Authority)
   const [overrideModalOpen, setOverrideModalOpen] = useState(false);
   const [overrideSection, setOverrideSection] = useState<'status' | 'gate' | 'turnaround' | 'lockdown'>('status');
@@ -252,7 +274,7 @@ export const SystemAdminDashboard: React.FC = () => {
   const [overrideGateCode, setOverrideGateCode] = useState('B12');
   const [overrideBypassConflict, setOverrideBypassConflict] = useState(true);
   const [overridePin, setOverridePin] = useState('8821');
-  const [overrideTerminal, setOverrideTerminal] = useState('Terminal 2');
+  const [overrideTerminal, setOverrideTerminal] = useState('Concourse B');
   const [terminalLocked, setTerminalLocked] = useState(false);
 
   // Turnaround Telemetry Modal
@@ -289,6 +311,8 @@ export const SystemAdminDashboard: React.FC = () => {
         }))
       );
     }
+
+    setNotificationsList(aocsDataStore.getNotifications());
   };
 
   useEffect(() => {
@@ -379,11 +403,25 @@ export const SystemAdminDashboard: React.FC = () => {
   };
 
   const toggleStaffStatus = (id: string) => {
+    const target = staff.find((s) => s.id === id);
+    if (!target) return;
+
+    // Security Policy: Administrator cannot suspend their own operational account
+    const isSelf =
+      target.id === 'USR-10' ||
+      target.email.toLowerCase() === (user?.email || 'admin@saphire.in').toLowerCase() ||
+      target.name.toLowerCase() === (user?.name || 'aarav li').toLowerCase();
+
+    if (isSelf) {
+      toast.error('Administrative security policy: You cannot suspend your own administrative account.');
+      return;
+    }
+
     setStaff(
       staff.map((s) => {
         if (s.id === id) {
           const updated = s.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-          toast(`Account status set to ${updated}: ${s.name}`, { icon: '🔒' });
+          toast.success(`Account status set to ${updated}: ${s.name}`);
           return { ...s, status: updated };
         }
         return s;
@@ -450,6 +488,65 @@ export const SystemAdminDashboard: React.FC = () => {
     return matchesSearch && matchesEntity;
   });
 
+  const handleAcknowledgeNotification = (id: string) => {
+    aocsDataStore.toggleNotificationRead(id);
+    toast.success('Notification acknowledgement updated.');
+  };
+
+  const handleResolveNotification = (id: string) => {
+    aocsDataStore.resolveNotification(id);
+    toast.success('Operational alert marked as resolved.');
+  };
+
+  const handleMarkAllNotificationsRead = () => {
+    aocsDataStore.markAllNotificationsRead();
+    toast.success('All operational notifications acknowledged.');
+  };
+
+  const handleDispatchAirsideBroadcast = () => {
+    aocsDataStore.addNotification({
+      title: 'Advisory Broadcast: Operational Concourse Sync',
+      detail: 'Administrative dispatch confirmed regular flight turnaround operations across Terminal concourses.',
+      category: 'OPERATIONS',
+      read: false,
+    });
+    toast.success('Airside operational broadcast dispatched.');
+  };
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword.trim()) {
+      toast.error('Please enter your current operational password.');
+      return;
+    }
+    if (!newPassword || newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match. Please re-enter.');
+      return;
+    }
+
+    aocsDataStore.logAuditEvent(
+      'SECURITY_CREDENTIAL_CHANGE',
+      `Administrative password updated and authenticated for ${user?.email || 'admin@saphire.in'}`,
+      'AUTH_SUBSYSTEM',
+      user?.name || 'Administrator'
+    );
+
+    toast.success('Operational password updated successfully. Session re-verified.');
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+  };
+
+  const filteredNotifications = notificationsList.filter((n) => {
+    if (notificationFilter === 'ALL') return true;
+    return n.category === notificationFilter;
+  });
+
+
   return (
     <DashboardLayout activeRole="system-admin">
       {/* ========================================================================= */}
@@ -498,21 +595,21 @@ export const SystemAdminDashboard: React.FC = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Button
                 variant="outlined"
-                startIcon={<ShieldAlert size={16} color="#0284C7" />}
+                startIcon={<ShieldAlert size={16} color="#0F2942" />}
                 onClick={() => setOverrideModalOpen(true)}
                 sx={{
-                  borderColor: '#0284C7',
-                  color: '#0284C7',
-                  backgroundColor: '#F0F9FF',
+                  borderColor: '#CBD5E1',
+                  color: '#0F2942',
+                  backgroundColor: '#FFFFFF',
                   fontFamily: "'Outfit', sans-serif",
                   fontWeight: 700,
                   fontSize: '0.84rem',
                   textTransform: 'none',
-                  borderRadius: '10px',
+                  borderRadius: '6px',
                   px: 2.0,
-                  py: 0.9,
-                  boxShadow: '0 1px 3px rgba(2, 132, 199, 0.08)',
-                  '&:hover': { backgroundColor: '#E0F2FE', borderColor: '#0369A1' },
+                  py: 0.85,
+                  boxShadow: 'none',
+                  '&:hover': { backgroundColor: '#F8FAFC', borderColor: '#94A3B8' },
                 }}
               >
                 Master Operational Overrides
@@ -1216,18 +1313,33 @@ export const SystemAdminDashboard: React.FC = () => {
                       />
                     </TableCell>
                     <TableCell>
-                      <Button
+                      <Select
                         size="small"
-                        variant="outlined"
-                        onClick={() => {
-                          const nextStatus = f.status === 'SCHEDULED' ? 'BOARDING' : f.status === 'BOARDING' ? 'AIRBORNE' : 'SCHEDULED';
-                          setFlights(flights.map((item) => item.id === f.id ? { ...item, status: nextStatus } : item));
-                          toast.success(`Flight ${f.flightNumber} status set to ${nextStatus}`);
+                        value={f.status}
+                        onChange={(e) => {
+                          const newStatus = e.target.value as HubFlight['status'];
+                          setFlights(flights.map((item) => item.id === f.id ? { ...item, status: newStatus } : item));
+                          toast.success(`Flight ${f.flightNumber} status set directly to ${newStatus}`);
                         }}
-                        sx={{ fontSize: '0.72rem', py: 0.3, px: 1.2, borderColor: '#CBD5E1', color: '#0284C7', textTransform: 'none' }}
+                        sx={{
+                          fontSize: '0.74rem',
+                          height: '28px',
+                          borderRadius: '6px',
+                          fontFamily: "'Geist Mono', monospace",
+                          fontWeight: 700,
+                          backgroundColor: '#FAF9F6',
+                          minWidth: '130px',
+                          '& .MuiSelect-select': { py: 0.4, px: 1.2 },
+                          '& fieldset': { borderColor: '#CBD5E1' },
+                          '&:hover fieldset': { borderColor: '#0284C7' },
+                        }}
                       >
-                        Advance Status
-                      </Button>
+                        <MenuItem value="SCHEDULED" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>SCHEDULED</MenuItem>
+                        <MenuItem value="BOARDING" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>BOARDING</MenuItem>
+                        <MenuItem value="AIRBORNE" sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#15803D' }}>AIRBORNE</MenuItem>
+                        <MenuItem value="ON_BLOCK" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>ON BLOCK</MenuItem>
+                        <MenuItem value="DELAYED" sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#B91C1C' }}>DELAYED</MenuItem>
+                      </Select>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -1344,23 +1456,39 @@ export const SystemAdminDashboard: React.FC = () => {
                       />
                     </TableCell>
                     <TableCell>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => toggleStaffStatus(s.id)}
-                        sx={{
-                          fontSize: '0.72rem',
-                          py: 0.3,
-                          px: 1.5,
-                          borderRadius: '6px',
-                          borderColor: '#CBD5E1',
-                          color: s.status === 'ACTIVE' ? '#DC2626' : '#15803D',
-                          textTransform: 'none',
-                          '&:hover': { borderColor: s.status === 'ACTIVE' ? '#DC2626' : '#15803D' },
-                        }}
-                      >
-                        {s.status === 'ACTIVE' ? 'Suspend' : 'Activate'}
-                      </Button>
+                      {s.id === 'USR-10' ||
+                      s.email.toLowerCase() === (user?.email || 'admin@saphire.in').toLowerCase() ||
+                      s.name.toLowerCase() === (user?.name || 'aarav li').toLowerCase() ? (
+                        <Chip
+                          label="Current User"
+                          size="small"
+                          sx={{
+                            backgroundColor: '#F1F5F9',
+                            color: '#64748B',
+                            fontWeight: 700,
+                            fontSize: '0.7rem',
+                            border: '1px solid #CBD5E1',
+                          }}
+                        />
+                      ) : (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => toggleStaffStatus(s.id)}
+                          sx={{
+                            fontSize: '0.72rem',
+                            py: 0.3,
+                            px: 1.5,
+                            borderRadius: '6px',
+                            borderColor: '#CBD5E1',
+                            color: s.status === 'ACTIVE' ? '#DC2626' : '#15803D',
+                            textTransform: 'none',
+                            '&:hover': { borderColor: s.status === 'ACTIVE' ? '#DC2626' : '#15803D' },
+                          }}
+                        >
+                          {s.status === 'ACTIVE' ? 'Suspend' : 'Activate'}
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -1393,8 +1521,8 @@ export const SystemAdminDashboard: React.FC = () => {
                   </Typography>
                   <Chip label={r.level} size="small" sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontWeight: 800, fontSize: '0.68rem' }} />
                 </Box>
-                <Typography sx={{ fontSize: '0.78rem', color: '#0284C7', fontFamily: "'Inter', monospace", mb: 0.8 }}>
-                  ROLE_{r.role}
+                <Typography sx={{ fontSize: '0.78rem', color: '#0284C7', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, mb: 0.8 }}>
+                  {r.scope}
                 </Typography>
                 <Typography sx={{ fontSize: '0.82rem', color: '#475569', lineHeight: 1.4 }}>
                   {r.desc}
@@ -1556,7 +1684,7 @@ export const SystemAdminDashboard: React.FC = () => {
                 variant="outlined"
                 size="small"
                 startIcon={<Download size={14} />}
-                onClick={() => toast.success('Exporting Flight Movement Summary (CSV)...')}
+                onClick={exportFlightMovementCSV}
                 sx={{ borderColor: '#CBD5E1', color: '#0F2942', fontWeight: 700, fontSize: '0.78rem', textTransform: 'none' }}
               >
                 Export CSV
@@ -1574,7 +1702,7 @@ export const SystemAdminDashboard: React.FC = () => {
                 variant="outlined"
                 size="small"
                 startIcon={<Download size={14} />}
-                onClick={() => toast.success('Exporting Gate Utilization Report (PDF)...')}
+                onClick={exportGateUtilizationPDF}
                 sx={{ borderColor: '#CBD5E1', color: '#0F2942', fontWeight: 700, fontSize: '0.78rem', textTransform: 'none' }}
               >
                 Export PDF
@@ -1592,7 +1720,7 @@ export const SystemAdminDashboard: React.FC = () => {
                 variant="outlined"
                 size="small"
                 startIcon={<Download size={14} />}
-                onClick={() => toast.success('Exporting Billing Summary (Excel)...')}
+                onClick={exportAirlineBillingExcel}
                 sx={{ borderColor: '#CBD5E1', color: '#0F2942', fontWeight: 700, fontSize: '0.78rem', textTransform: 'none' }}
               >
                 Export Excel
@@ -1603,13 +1731,213 @@ export const SystemAdminDashboard: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* 7. PROFILE VIEW                                                           */}
+      {/* 7. OPERATIONAL NOTIFICATIONS & ALERTS CENTER                              */}
+      {/* ========================================================================= */}
+      {activeTab === 'notifications' && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* Header */}
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2 }}>
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+                <Typography variant="h5" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
+                  Operational Notifications & Telemetry Alerts
+                </Typography>
+                <Chip
+                  label={`${notificationsList.filter((n) => !n.read).length} Unacknowledged`}
+                  size="small"
+                  sx={{ bgcolor: '#FEE2E2', color: '#DC2626', fontWeight: 800, fontSize: '0.75rem' }}
+                />
+              </Box>
+              <Typography sx={{ fontSize: '0.85rem', color: '#64748B' }}>
+                Real-time situational awareness broadcast feeds from Airside, Security, Ground Handling, and Terminal command.
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', gap: 1.5 }}>
+              <Button
+                variant="outlined"
+                startIcon={<CheckCircle2 size={16} />}
+                onClick={handleMarkAllNotificationsRead}
+                sx={{
+                  borderColor: '#E2E8F0',
+                  color: '#0F2942',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  textTransform: 'none',
+                  borderRadius: '10px',
+                  bgcolor: '#FFFFFF',
+                  '&:hover': { bgcolor: '#F8FAFC', borderColor: '#CBD5E1' },
+                }}
+              >
+                Mark All Acknowledged
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<Radio size={16} />}
+                onClick={handleDispatchAirsideBroadcast}
+                sx={{
+                  bgcolor: '#0F2942',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  textTransform: 'none',
+                  borderRadius: '10px',
+                  '&:hover': { bgcolor: '#1E3A8A' },
+                }}
+              >
+                Dispatch Broadcast
+              </Button>
+            </Box>
+          </Box>
+
+          {/* Filter Pills */}
+          <Card elevation={0} sx={{ p: 2, bgcolor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '14px', display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748B', mr: 1 }}>FILTER CHANNEL:</Typography>
+            {['ALL', 'CRITICAL', 'AIRSIDE', 'SECURITY', 'OPERATIONS'].map((channel) => (
+              <Chip
+                key={channel}
+                label={channel}
+                clickable
+                onClick={() => setNotificationFilter(channel)}
+                sx={{
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  bgcolor: notificationFilter === channel ? '#0F2942' : '#F1F5F9',
+                  color: notificationFilter === channel ? '#FFFFFF' : '#475569',
+                  '&:hover': { bgcolor: notificationFilter === channel ? '#1E293B' : '#E2E8F0' },
+                }}
+              />
+            ))}
+          </Card>
+
+          {/* Notification Cards List */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {filteredNotifications.length === 0 ? (
+              <Card elevation={0} sx={{ p: 6, textAlign: 'center', bgcolor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '16px' }}>
+                <Bell size={40} color="#94A3B8" style={{ marginBottom: 12 }} />
+                <Typography variant="h6" sx={{ fontWeight: 700, color: '#0F2942' }}>
+                  No Alerts in this Channel
+                </Typography>
+                <Typography sx={{ fontSize: '0.85rem', color: '#64748B', mt: 0.5 }}>
+                  All systems operating within nominal aeronautical safety parameters.
+                </Typography>
+              </Card>
+            ) : (
+              filteredNotifications.map((notif) => {
+                const isCritical = notif.category === 'CRITICAL';
+                const isAirside = notif.category === 'AIRSIDE';
+                const isSecurity = notif.category === 'SECURITY';
+
+                return (
+                  <Card
+                    key={notif.id}
+                    elevation={0}
+                    sx={{
+                      p: 2.5,
+                      bgcolor: notif.read ? '#FFFFFF' : '#F8FAFC',
+                      border: '1px solid',
+                      borderColor: notif.read ? '#E2E8F0' : isCritical ? '#FECDD3' : '#CBD5E1',
+                      borderLeft: `5px solid ${
+                        isCritical ? '#EF4444' : isAirside ? '#0284C7' : isSecurity ? '#8B5CF6' : '#10B981'
+                      }`,
+                      borderRadius: '14px',
+                      display: 'flex',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      justifyContent: 'space-between',
+                      alignItems: { xs: 'flex-start', sm: 'center' },
+                      gap: 2,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        boxShadow: '0 4px 12px rgba(15, 41, 66, 0.05)',
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                      <Box
+                        sx={{
+                          p: 1.2,
+                          borderRadius: '10px',
+                          bgcolor: isCritical ? '#FEE2E2' : isAirside ? '#E0F2FE' : isSecurity ? '#EDE9FE' : '#D1FAE5',
+                          color: isCritical ? '#DC2626' : isAirside ? '#0284C7' : isSecurity ? '#7C3AED' : '#059669',
+                          mt: 0.5,
+                        }}
+                      >
+                        {isCritical ? <AlertTriangle size={20} /> : isAirside ? <Plane size={20} /> : isSecurity ? <ShieldAlert size={20} /> : <Activity size={20} />}
+                      </Box>
+                      <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+                          <Typography sx={{ fontWeight: 800, fontSize: '0.95rem', color: '#0F2942' }}>
+                            {notif.title}
+                          </Typography>
+                          <Chip
+                            label={notif.category}
+                            size="small"
+                            sx={{
+                              height: 20,
+                              fontSize: '0.68rem',
+                              fontWeight: 800,
+                              bgcolor: isCritical ? '#FEE2E2' : isAirside ? '#E0F2FE' : isSecurity ? '#EDE9FE' : '#D1FAE5',
+                              color: isCritical ? '#DC2626' : isAirside ? '#0284C7' : isSecurity ? '#7C3AED' : '#059669',
+                            }}
+                          />
+                          <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8' }}>{notif.time}</Typography>
+                        </Box>
+                        <Typography sx={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.5 }}>
+                          {notif.detail}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', gap: 1, alignSelf: { xs: 'flex-end', sm: 'center' } }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => handleAcknowledgeNotification(notif.id)}
+                        sx={{
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          textTransform: 'none',
+                          borderColor: '#E2E8F0',
+                          color: notif.read ? '#64748B' : '#0F2942',
+                          bgcolor: notif.read ? '#F1F5F9' : '#FFFFFF',
+                          borderRadius: '8px',
+                          '&:hover': { bgcolor: '#F8FAFC' },
+                        }}
+                      >
+                        {notif.read ? 'Acknowledged' : 'Acknowledge'}
+                      </Button>
+                      <Button
+                        size="small"
+                        color="inherit"
+                        onClick={() => handleResolveNotification(notif.id)}
+                        sx={{
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          textTransform: 'none',
+                          color: '#DC2626',
+                          borderRadius: '8px',
+                          '&:hover': { bgcolor: '#FEE2E2' },
+                        }}
+                      >
+                        Dismiss
+                      </Button>
+                    </Box>
+                  </Card>
+                );
+              })
+            )}
+          </Box>
+        </Box>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 8. PROFILE VIEW                                                           */}
       {/* ========================================================================= */}
       {activeTab === 'profile' && (
         <Card elevation={0} sx={{ p: 3.5, backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '16px', maxWidth: '800px' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, mb: 3 }}>
             <Avatar sx={{ width: 64, height: 64, bgcolor: '#0F2942', color: '#FFFFFF', fontSize: '1.4rem', fontWeight: 800 }}>
-              {user?.name ? user.name.slice(0, 2).toUpperCase() : 'AD'}
+              {getUserInitials(user?.name)}
             </Avatar>
             <Box>
               <Typography variant="h5" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
@@ -1641,8 +1969,108 @@ export const SystemAdminDashboard: React.FC = () => {
               <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, color: '#059669' }}>Active & Signed with Token</Typography>
             </Box>
           </Box>
+
+          <Divider sx={{ my: 3, borderColor: '#E2E8F0' }} />
+
+          {/* Password & Security Management */}
+          <Box component="form" onSubmit={handleChangePassword}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+              <Key size={20} color="#0F2942" />
+              <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
+                Change Administrative Password
+              </Typography>
+            </Box>
+            <Typography sx={{ fontSize: '0.82rem', color: '#64748B', mb: 2.5 }}>
+              Maintain secure operational credentials. Passwords must be at least 8 characters with authenticated system signing.
+            </Typography>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField
+                fullWidth
+                size="small"
+                type={showCurrentPassword ? 'text' : 'password'}
+                label="Current Password"
+                placeholder="Enter existing password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                          edge="end"
+                        >
+                          {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  type={showNewPassword ? 'text' : 'password'}
+                  label="New Password"
+                  placeholder="Minimum 8 characters"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            size="small"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            edge="end"
+                          >
+                            {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                />
+
+                <TextField
+                  fullWidth
+                  size="small"
+                  type={showNewPassword ? 'text' : 'password'}
+                  label="Confirm New Password"
+                  placeholder="Repeat new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </Box>
+
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  sx={{
+                    bgcolor: '#0F2942',
+                    color: '#FFFFFF',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    textTransform: 'none',
+                    borderRadius: '10px',
+                    px: 3,
+                    py: 1,
+                    '&:hover': { bgcolor: '#1E3A8A' },
+                  }}
+                >
+                  Update Credentials
+                </Button>
+              </Box>
+            </Box>
+          </Box>
         </Card>
       )}
+
 
       {/* ========================================================================= */}
       {/* MODAL: ADD STAFF ACCOUNT                                                  */}
@@ -2067,9 +2495,10 @@ export const SystemAdminDashboard: React.FC = () => {
                   label="Target Terminal Facility"
                   onChange={(e) => setOverrideTerminal(e.target.value)}
                 >
-                  <MenuItem value="Terminal 1">Terminal 1 (Gates A01 - A20)</MenuItem>
-                  <MenuItem value="Terminal 2">Terminal 2 (Gates B01 - C30)</MenuItem>
-                  <MenuItem value="All Terminals">All Airport Terminals (T1 + T2)</MenuItem>
+                  <MenuItem value="Concourse A">Concourse A (Gates A01 - A20)</MenuItem>
+                  <MenuItem value="Concourse B">Concourse B (Gates B01 - B20)</MenuItem>
+                  <MenuItem value="Concourse C">Concourse C (Gates C01 - C30)</MenuItem>
+                  <MenuItem value="Central Terminal">Entire Central Terminal (Concourses A, B & C)</MenuItem>
                 </Select>
               </FormControl>
 
