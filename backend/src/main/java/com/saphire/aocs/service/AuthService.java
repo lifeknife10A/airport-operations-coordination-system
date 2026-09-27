@@ -44,7 +44,7 @@ public class AuthService {
         // dto.username/password are already guaranteed non-blank by @NotBlank + the fixed
         // GlobalExceptionHandler (see exception/GlobalExceptionHandler.java) — no need to
         // hand-roll that check here the way the original did.
-        User user = userRepository.findByUsername(dto.getUsername())
+        User user = userRepository.findByUsernameOrEmail(dto.getUsername(), dto.getUsername())
                 .orElseThrow(() -> new UnauthorizedException(GENERIC_FAILURE));
 
         if (!passwordEncoder.matches(dto.getPassword(), user.getPasswordHash())) {
@@ -58,6 +58,7 @@ public class AuthService {
                 .token(token)
                 .userId(user.getUserId())
                 .username(user.getUsername())
+                .email(user.getEmail())
                 .name(user.getName())
                 .roleId(user.getRole() != null ? user.getRole().getRoleId() : null)
                 .roleName(roleName)
