@@ -69,6 +69,19 @@ public class TurnaroundTaskService {
     private final DelayLogRepository delayLogRepository;
 
     @Transactional(readOnly = true)
+    public List<TaskDTO> getAllTasks(String status) {
+        if (status != null && !status.isBlank()) {
+            return taskRepository.findByStatus(status.trim().toUpperCase()).stream()
+                    .map(this::mapToDTO)
+                    .collect(Collectors.toList());
+        }
+        return taskRepository.findAll().stream()
+                .limit(200)
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public List<TaskDTO> getTasksByFlight(Long flightId) {
         if (!flightRepository.existsById(flightId)) {
             throw new ResourceNotFoundException("Flight not found with ID: " + flightId);
@@ -176,15 +189,31 @@ public class TurnaroundTaskService {
 
         int nextSeq = delayLogRepository.findMaxSeqForFlight(flightId) + 1;
 
-        String codePrefix = taskName.length() >= 3 ? taskName.substring(0, 3).toUpperCase() : taskName.toUpperCase();
         DelayLog log = DelayLog.builder()
                 .id(new DelayLogId(flightId, nextSeq))
                 .flight(lockedFlight)
-                .delayCode("TASK_" + codePrefix)
+                .delayCode(delayCodeForTask(taskName))
                 .delayMinutes(delayMinutes)
                 .build();
 
         delayLogRepository.save(log);
+    }
+
+    /**
+     * Was previously "TASK_" + the task name's first 3 letters (e.g. "TASK_CLE") -- delay_code
+     * has a FOREIGN KEY to delay_codes(delay_code), which only ever contains the seeded D01-D25
+     * IATA-style codes (see V2__seed_data.sql). No "TASK_*" value has ever existed there, so
+     * every late-running task threw a foreign-key violation on save. Maps the task's category
+     * (this entity's taskName column deliberately holds a category like CLEANING/REFUELING/
+     * MAINTENANCE/SECURITY, not a free-text label -- see TurnaroundTask.java's own field comment)
+     * to one of the real seeded codes for that category instead of inventing a new one.
+     */
+    private String delayCodeForTask(String taskName) {
+        String upper = taskName == null ? "" : taskName.toUpperCase();
+        if (upper.contains("SECURITY")) return "D04";
+        if (upper.contains("MAINTENANCE") || upper.contains("TECHNICAL")) return "D06";
+        return "D05"; // GROUND_HANDLING -- cleaning, refueling, catering, boarding, and any
+                       // other task category all fall under ground handling operations.
     }
 
     private TaskStatus parseStatus(String raw) {

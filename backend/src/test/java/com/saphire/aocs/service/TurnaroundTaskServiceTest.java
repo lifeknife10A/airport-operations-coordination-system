@@ -146,7 +146,9 @@ class TurnaroundTaskServiceTest {
         verify(delayLogRepository).save(captor.capture());
         DelayLog saved = captor.getValue();
 
-        assertThat(saved.getDelayCode()).isEqualTo("TASK_CLE"); // first 3 chars of CLEANING
+        // Must be a code that really exists in delay_codes (seeded D01-D25): delay_logs.delay_code
+        // is a FOREIGN KEY, and the old synthesized "TASK_CLE" made every late completion fail.
+        assertThat(saved.getDelayCode()).isEqualTo("D05"); // CLEANING -> GROUND_HANDLING
         assertThat(saved.getDelayMinutes()).isGreaterThanOrEqualTo(12);
 
         // Sequence must continue from MAX(delay_seq_no)+1 read under a row lock -- NOT from
@@ -154,6 +156,29 @@ class TurnaroundTaskServiceTest {
         // hand the same composite key to two concurrent late completions on the same flight.
         assertThat(saved.getId().getDelaySeqNo()).isEqualTo(3);
         verify(flightRepository).findByIdForUpdate(101L);
+    }
+
+
+    @Test
+    @DisplayName("late MAINTENANCE and SECURITY tasks map to their own delay-code categories")
+    void lateCompletion_ShouldMapCategoryToSeededDelayCode() {
+        String[][] cases = { {"MAINTENANCE", "D06"}, {"SECURITY", "D04"}, {"REFUELING", "D05"} };
+        for (String[] c : cases) {
+            reset(taskRepository, flightRepository, delayLogRepository);
+            TurnaroundTask late = task(TaskStatus.IN_PROGRESS, ZonedDateTime.now().minusMinutes(12),
+                    ZonedDateTime.now().minusMinutes(40));
+            late.setTaskName(c[0]);
+            when(taskRepository.findById(500L)).thenReturn(Optional.of(late));
+            when(flightRepository.findByIdForUpdate(101L)).thenReturn(Optional.of(flight()));
+            when(delayLogRepository.findMaxSeqForFlight(101L)).thenReturn(0);
+            stubSaveEchoesArgument();
+
+            taskService.updateTaskStatus(500L, "COMPLETED", null, null);
+
+            ArgumentCaptor<DelayLog> captor = ArgumentCaptor.forClass(DelayLog.class);
+            verify(delayLogRepository).save(captor.capture());
+            assertThat(captor.getValue().getDelayCode()).as(c[0]).isEqualTo(c[1]);
+        }
     }
 
     @Test

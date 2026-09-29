@@ -20,13 +20,17 @@ public interface LostFoundRepository extends JpaRepository<LostFoundItem, Long> 
 
     List<LostFoundItem> findByCategory(String category);
 
+    // Every nullable filter is CAST to string. Without it Hibernate 6 sends a null :query with no
+    // type information, Postgres infers bytea for it, and LOWER(bytea) doesn't exist -- so any
+    // request that didn't supply a search term (i.e. the default list view) threw a 500.
     @Query("SELECT item FROM LostFoundItem item " +
-           "WHERE (:query IS NULL OR LOWER(item.referenceCode) LIKE LOWER(CONCAT('%', :query, '%')) " +
-           "   OR LOWER(item.itemName) LIKE LOWER(CONCAT('%', :query, '%')) " +
-           "   OR LOWER(item.colorAndDescription) LIKE LOWER(CONCAT('%', :query, '%')) " +
-           "   OR LOWER(item.foundLocationDetail) LIKE LOWER(CONCAT('%', :query, '%'))) " +
-           "AND (:category IS NULL OR item.category = :category) " +
-           "AND (:status IS NULL OR item.status = :status) " +
+           "WHERE (CAST(:query AS string) IS NULL " +
+           "   OR LOWER(item.referenceCode) LIKE LOWER(CONCAT('%', CAST(:query AS string), '%')) " +
+           "   OR LOWER(item.itemName) LIKE LOWER(CONCAT('%', CAST(:query AS string), '%')) " +
+           "   OR LOWER(item.colorAndDescription) LIKE LOWER(CONCAT('%', CAST(:query AS string), '%')) " +
+           "   OR LOWER(item.foundLocationDetail) LIKE LOWER(CONCAT('%', CAST(:query AS string), '%'))) " +
+           "AND (CAST(:category AS string) IS NULL OR item.category = CAST(:category AS string)) " +
+           "AND (CAST(:status AS string) IS NULL OR item.status = CAST(:status AS string)) " +
            "ORDER BY item.createdAt DESC")
     Page<LostFoundItem> searchItems(
             @Param("query") String query,

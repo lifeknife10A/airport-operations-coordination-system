@@ -2,6 +2,7 @@ package com.saphire.aocs.controller;
 
 import com.saphire.aocs.dto.FlightCreateDTO;
 import com.saphire.aocs.dto.FlightDTO;
+import com.saphire.aocs.dto.PagedResponseDTO;
 import com.saphire.aocs.dto.StatusUpdateDTO;
 import com.saphire.aocs.service.FlightService;
 import jakarta.validation.Valid;
@@ -22,6 +23,17 @@ public class FlightController {
     @GetMapping
     public ResponseEntity<List<FlightDTO>> getAllSaphireHubFlights() {
         return ResponseEntity.ok(flightService.getSaphireHubFlights());
+    }
+
+    // Added alongside the unbounded endpoint above (not replacing it) so existing callers that
+    // expect the full list (dashboard KPI counts, pickers, search) keep working unchanged, while
+    // any UI that renders a flight table can switch to this and never pull more than `size` rows
+    // per request. Default size 10 to match the "10 at a time, prev/next" requirement.
+    @GetMapping("/paged")
+    public ResponseEntity<PagedResponseDTO<FlightDTO>> getSaphireHubFlightsPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(flightService.getSaphireHubFlightsPaged(page, size));
     }
 
     @GetMapping("/{id}")

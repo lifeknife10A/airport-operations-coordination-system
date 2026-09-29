@@ -5,13 +5,17 @@ import com.saphire.aocs.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+// Full staff directory + account status changes -- admin-only. Any authenticated account could
+// previously list every user in the system and suspend/reactivate other accounts.
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('SYSTEM_ADMINISTRATOR')")
 public class UserController {
 
     private final UserRepository userRepository;

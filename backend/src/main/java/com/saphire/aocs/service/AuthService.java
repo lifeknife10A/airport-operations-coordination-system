@@ -38,8 +38,11 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final SessionService sessionService;
 
-    @Transactional(readOnly = true)
+    // Not readOnly anymore: a successful login now also writes an auth_sessions row (and revokes
+    // any prior active session for this user -- single-session-per-user enforcement).
+    @Transactional
     public LoginResponseDTO login(LoginDTO dto) {
         // dto.username/password are already guaranteed non-blank by @NotBlank + the fixed
         // GlobalExceptionHandler (see exception/GlobalExceptionHandler.java) — no need to
@@ -52,7 +55,8 @@ public class AuthService {
         }
 
         String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
-        String token = jwtService.issueToken(user.getUserId(), user.getUsername(), roleName);
+        var session = sessionService.createSession(user.getUserId(), jwtService.getExpiryMs());
+        String token = jwtService.issueToken(user.getUserId(), user.getUsername(), roleName, session.getSessionId());
 
         return LoginResponseDTO.builder()
                 .token(token)

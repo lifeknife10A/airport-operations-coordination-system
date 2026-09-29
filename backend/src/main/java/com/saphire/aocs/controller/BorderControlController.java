@@ -8,14 +8,21 @@ import com.saphire.aocs.service.BorderControlService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
+// Passport lookups and immigration/clearance records are the most sensitive PII this system
+// handles. Authentication alone (any valid staff session) used to be enough to reach these --
+// now restricted to the roles whose job actually involves border control, matching the real
+// seeded role_name values (roles.role_name in the DB), not the guessed ones SecurityConfig's
+// old comment referenced.
 @RestController
 @RequestMapping({"/api/border-control", "/api/v1/border-control"})
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('IMMIGRATION_OFFICER', 'SECURITY_OFFICER', 'SYSTEM_ADMINISTRATOR')")
 public class BorderControlController {
 
     private final BorderControlService borderControlService;

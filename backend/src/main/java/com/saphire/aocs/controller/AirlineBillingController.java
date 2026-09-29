@@ -6,6 +6,7 @@ import com.saphire.aocs.service.AirlineBillingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -13,9 +14,13 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+// Financial data (invoices, per-line charges) -- restricted to the role whose job this actually
+// is, plus admin oversight. Any authenticated staff account could previously read every airline's
+// billing details.
 @RestController
 @RequestMapping({"/api/billing", "/api/v1/billing"})
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('AIRLINE_BILLING_CLERK', 'SYSTEM_ADMINISTRATOR')")
 public class AirlineBillingController {
 
     private final AirlineBillingService billingService;

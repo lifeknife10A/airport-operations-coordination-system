@@ -2,6 +2,7 @@ package com.saphire.aocs.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -17,20 +18,39 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 /**
- * Minimal security wiring. This entire package/class did not exist in the reviewed ZIP — every
- * endpoint, including PUT /api/flights/{id}/status and PUT /api/gates/assign, was reachable by
- * anyone with network access regardless of login state.
+ * Every route used to be permitAll() regardless of login state -- a valid JWT proved who you
+ * were but nothing ever checked it. Now anyRequest() requires a valid, non-revoked session
+ * (JwtAuthFilter populates SecurityContext only when SessionService confirms the "sid" claim is
+ * still active), with a narrow, deliberate allowlist carved out below for routes the frontend
+ * genuinely calls unauthenticated:
  *
- * The role names in requestMatchers below (ADMIN, SUPERVISOR, GROUND_CREW, ATC) match the
- * ROLE_* values already named in README.md's RBAC table and
- * operational_flow_and_data_dictionary.md Table 1 — wire this up against whatever the real
- * `roles.role_name` values turn out to be (they're currently defined as ROLE_ADMIN,
- * ROLE_SUPERVISOR, ROLE_GROUND_CREW, ROLE_ATC, ROLE_DISPATCH; JwtAuthFilter already normalizes
- * to a "ROLE_" prefix so hasRole("ADMIN") below matches a ROLE_ADMIN authority).
+ *  - POST /api/auth/login, /logout -- how you'd get/revoke a session in the first place.
+ *  - GET on flights, gates, tasks -- these three are fetched together in one Promise.all by
+ *    frontend/src/services/aocsDataStore.ts's initRemoteSync(), which runs on the public
+ *    FlightTracker page and the homepage's LiveFlightMatrix widget for anonymous visitors.
+ *    Promise.all rejects entirely if ANY of the three 401s, so gates/tasks reads have to stay
+ *    public too even though nothing public actually renders gate/task data directly, or the
+ *    public flight views silently fall back to demo data for every anonymous visitor.
+ *  - Lost & found create/browse and inquiry submission -- genuine public passenger self-service
+ *    (frontend/src/pages/public/PassengerServices.tsx, Contact.tsx) with no login of any kind.
+ *  - Inquiry lookup by ticket number -- same idea as a package-tracking number: knowing the
+ *    specific ticket is the access control, not a login.
  *
- * Scope note: this is deliberately minimal for a project at this stage — no refresh tokens, no
- * token revocation list, no rate limiting on /api/auth/login. Call these out explicitly as
- * "next steps" rather than pretending this is a finished IAM system.
+ * Everything else (all mutations, billing, border control, check-in/PNR, audit logs, user
+ * management, shift handover, runway telemetry, incidents, reports) requires authentication.
+ *
+ * NOT covered by this pass, flagged as still-open gaps rather than silently pretended-away:
+ *  - This is authentication only (any valid staff session), not role-based authorization. The
+ *    role names this class's previous version guessed at (ADMIN/SUPERVISOR/GROUND_CREW/ATC)
+ *    don't match the real seeded role_name values (e.g. AIRPORT_OPERATIONS_MANAGER,
+ *    SYSTEM_ADMINISTRATOR) -- so today a CHECKIN_AGENT's token can call the billing or
+ *    border-control endpoints just as successfully as a SYSTEM_ADMINISTRATOR's. Per-endpoint
+ *    @PreAuthorize/hasRole rules against the real role names are a separate follow-up.
+ *  - /api/webhooks/** now requires a browser-style JWT session, which doesn't really fit a
+ *    system-to-system webhook (an external system won't have a staff login). Left authenticated
+ *    (the safer default) rather than public, but the correct long-term fix is a separate
+ *    API-key/HMAC scheme for that controller, not user auth.
+ *  - No refresh tokens, no rate limiting on /api/auth/login.
  */
 @Configuration
 @EnableWebSecurity
@@ -49,8 +69,22 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable()) // stateless bearer-token API, no cookies -> CSRF doesn't apply
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/**").permitAll()
-                .anyRequest().permitAll())
+                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/v1/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/logout", "/api/v1/auth/logout").permitAll()
+
+                .requestMatchers(HttpMethod.GET, "/api/flights/**", "/api/v1/flights/**").permitAll()
+                .requestMatchers(HttpMethod.GET,
+                        "/api/gates", "/api/v1/gates", "/api/airside/gates", "/api/v1/airside/gates").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/tasks", "/api/v1/tasks").permitAll()
+
+                .requestMatchers(HttpMethod.GET, "/api/lost-found/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/lost-found").permitAll()
+
+                .requestMatchers(HttpMethod.POST, "/api/inquiries", "/api/v1/inquiries").permitAll()
+                .requestMatchers(HttpMethod.GET,
+                        "/api/inquiries/ticket/**", "/api/v1/inquiries/ticket/**").permitAll()
+
+                .anyRequest().authenticated())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
