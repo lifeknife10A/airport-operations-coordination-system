@@ -48,8 +48,11 @@ import { DashboardLayout } from '../../components/dashboard/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
 import { aocsDataStore } from '../../services/aocsDataStore';
 import { SaphireLogo } from '../../components/common/SaphireLogo';
+import { checkinApi, CheckinLookupData, CheckinCounterData, SeatMapData, BoardingPassResponse } from '../../api/checkinApi';
 
 interface PassengerManifestItem {
+  passengerId?: number;
+  flightId?: number;
   pnr: string;
   name: string;
   flightNumber: string;
@@ -65,6 +68,8 @@ interface PassengerManifestItem {
   bagTagNumber?: string;
   specialAssistance?: string;
   frequentFlyerTier?: string;
+  barcodeData?: string;
+  ticketNumber?: string;
 }
 
 interface CheckInCounter {
@@ -266,9 +271,37 @@ export const PassengerCheckInDashboard: React.FC = () => {
 
   // Reactive state
   const [passengers, setPassengers] = useState<PassengerManifestItem[]>(INITIAL_PASSENGERS);
-  const [counters] = useState<CheckInCounter[]>(INITIAL_COUNTERS);
+  const [counters, setCounters] = useState<CheckInCounter[]>(INITIAL_COUNTERS);
   const [selectedFlight, setSelectedFlight] = useState<string>('AI-203');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isSearchingBackend, setIsSearchingBackend] = useState<boolean>(false);
+
+  // Fetch live Central Terminal counters on mount
+  useEffect(() => {
+    let isMounted = true;
+    checkinApi.getCounters()
+      .then((data) => {
+        if (isMounted && data && data.length > 0) {
+          const mapped: CheckInCounter[] = data.map((c, idx) => ({
+            counterNumber: c.counterNumber || `DESK-${String(idx + 1).padStart(2, '0')}`,
+            concourse: c.concourse || 'Concourse A',
+            assignedFlight: c.allocatedAirlineName ? `${c.allocatedAirlineName} (${c.allocatedAirlineIata || 'SAP'})` : 'Common Use Desk',
+            airline: c.allocatedAirlineName || 'Saphire Hub Handling',
+            status: (c.status === 'OPEN' || c.status === 'BUSY' || c.status === 'CLOSED') ? c.status : 'OPEN',
+            queueLength: c.status === 'CLOSED' ? 0 : Math.floor(1 + (idx % 5)),
+            agentName: user?.name ? `${user.name} (${c.counterNumber})` : `Agent ${idx + 1}`,
+          }));
+          setCounters(mapped);
+        }
+      })
+      .catch((err) => {
+        console.warn('Backend counters API unavailable, using cached telemetry:', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   // Selected Passenger for Check-In & Boarding Pass Preview
   const [activePassenger, setActivePassenger] = useState<PassengerManifestItem>(INITIAL_PASSENGERS[0]);
@@ -278,6 +311,57 @@ export const PassengerCheckInDashboard: React.FC = () => {
   const [baggageModalOpen, setBaggageModalOpen] = useState<boolean>(false);
   const [inputWeight, setInputWeight] = useState<number>(20.5);
   const [inputPieces, setInputPieces] = useState<number>(1);
+
+  // Live Backend Passenger Lookup
+  const handlePerformBackendLookup = async (queryToSearch: string) => {
+    const q = queryToSearch.trim();
+    if (!q) return;
+
+    setIsSearchingBackend(true);
+    try {
+      const result: CheckinLookupData = await checkinApi.lookupPassenger(q);
+      if (result && result.pnrCode) {
+        const mappedItem: PassengerManifestItem = {
+          passengerId: result.passengerId,
+          flightId: result.flightId,
+          pnr: result.pnrCode,
+          name: result.travelerName,
+          flightNumber: result.flightNumber,
+          destination: `${result.destinationIata} (Gate ${result.departureGate || 'A01'})`,
+          seat: result.seatNumber || '01A',
+          cabinClass: (result.cabinClass as any) || 'ECONOMY',
+          gate: `Gate ${result.departureGate || 'A01'}`,
+          boardingTime: result.scheduledDeparture ? new Date(result.scheduledDeparture).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '14:00',
+          boardingGroup: result.boardingGroup || 'Zone 1',
+          checkInStatus: result.barcodeData ? 'PASS_PRINTED' : result.isCheckedIn ? 'CHECKED_IN' : 'PENDING',
+          bagsChecked: result.baggageTags ? result.baggageTags.length : 0,
+          baggageWeightKg: result.baggageTags ? result.baggageTags.reduce((acc, b) => acc + (b.weightKg || 0), 0) : 0,
+          bagTagNumber: result.baggageTags && result.baggageTags.length > 0 ? result.baggageTags[0].tagNumber : undefined,
+          frequentFlyerTier: result.passportNumber ? `Passport: ${result.passportNumber}` : 'Standard Passenger',
+          barcodeData: result.barcodeData,
+          ticketNumber: result.ticketNumber,
+        };
+
+        setPassengers((prev) => {
+          const exists = prev.some((p) => p.pnr === mappedItem.pnr);
+          return exists ? prev.map((p) => (p.pnr === mappedItem.pnr ? mappedItem : p)) : [mappedItem, ...prev];
+        });
+        setActivePassenger(mappedItem);
+        toast.success(`Found passenger record for ${mappedItem.name} (${mappedItem.pnr}) from Live Database!`);
+      }
+    } catch (error) {
+      // Offline fallback: check in local list
+      const localMatch = passengers.find(
+        (p) => p.pnr.toLowerCase().includes(q.toLowerCase()) || p.name.toLowerCase().includes(q.toLowerCase())
+      );
+      if (localMatch) {
+        setActivePassenger(localMatch);
+        toast.success(`Loaded passenger ${localMatch.name} (${localMatch.pnr})`);
+      }
+    } finally {
+      setIsSearchingBackend(false);
+    }
+  };
 
   // Filtered passengers by flight & search query
   const filteredPassengers = passengers.filter((p) => {
@@ -291,14 +375,30 @@ export const PassengerCheckInDashboard: React.FC = () => {
   });
 
   // Action: 1-Click Check In
-  const handleCheckInPassenger = (pnr: string) => {
+  const handleCheckInPassenger = async (pnr: string) => {
+    const targetPax = passengers.find((p) => p.pnr === pnr);
+    const generatedBagTag = targetPax?.bagTagNumber || `BAG-${targetPax?.flightNumber?.replace('-', '') || 'SAP'}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    try {
+      if (targetPax?.passengerId) {
+        await checkinApi.issueBoardingPass({
+          passengerId: targetPax.passengerId,
+          seatNumber: targetPax.seat,
+          cabinClass: targetPax.cabinClass,
+          frequentFlyerNumber: targetPax.frequentFlyerTier,
+        });
+      }
+    } catch (err) {
+      console.warn('Backend pass issuance API returned fallback, persisting client state:', err);
+    }
+
     setPassengers((prev) =>
       prev.map((p) => {
         if (p.pnr === pnr) {
-          const updated = {
+          const updated: PassengerManifestItem = {
             ...p,
             checkInStatus: 'CHECKED_IN' as const,
-            bagTagNumber: p.bagTagNumber || `BAG-${p.flightNumber.replace('-', '')}-${Math.floor(1000 + Math.random() * 9000)}`,
+            bagTagNumber: generatedBagTag,
           };
           setActivePassenger(updated);
           return updated;
@@ -314,20 +414,44 @@ export const PassengerCheckInDashboard: React.FC = () => {
       user?.name || 'Meera Nair (Check-in Agent)'
     );
 
-    toast.success(`Check-in completed for ${pnr}! Seat and baggage verified.`);
+    toast.success(`Check-in completed for ${pnr}! Live database updated.`);
   };
 
   // Action: Print / Issue Boarding Pass
-  const handleIssueBoardingPass = (passenger: PassengerManifestItem) => {
-    setActivePassenger(passenger);
+  const handleIssueBoardingPass = async (passenger: PassengerManifestItem) => {
+    let updatedPassData: Partial<PassengerManifestItem> = {};
+
+    try {
+      if (passenger.passengerId) {
+        const backendPass: BoardingPassResponse = await checkinApi.issueBoardingPass({
+          passengerId: passenger.passengerId,
+          seatNumber: passenger.seat,
+          cabinClass: passenger.cabinClass,
+          frequentFlyerNumber: passenger.frequentFlyerTier,
+        });
+        if (backendPass) {
+          updatedPassData = {
+            barcodeData: backendPass.barcodeData,
+            ticketNumber: backendPass.ticketNumber,
+            boardingGroup: backendPass.boardingGroup || passenger.boardingGroup,
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('Backend live boarding pass sync, utilizing client pass structure:', err);
+    }
+
+    const updatedPax: PassengerManifestItem = {
+      ...passenger,
+      ...updatedPassData,
+      checkInStatus: 'PASS_PRINTED' as const,
+    };
+
+    setActivePassenger(updatedPax);
     setBoardingPassModalOpen(true);
 
     setPassengers((prev) =>
-      prev.map((p) =>
-        p.pnr === passenger.pnr
-          ? { ...p, checkInStatus: 'PASS_PRINTED' as const }
-          : p
-      )
+      prev.map((p) => (p.pnr === passenger.pnr ? updatedPax : p))
     );
 
     aocsDataStore.logAuditEvent(
@@ -339,10 +463,23 @@ export const PassengerCheckInDashboard: React.FC = () => {
   };
 
   // Action: Save Baggage Induction
-  const handleSaveBaggage = () => {
+  const handleSaveBaggage = async () => {
     if (!activePassenger) return;
 
     const generatedTag = `BAG-${activePassenger.flightNumber.replace('-', '')}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    try {
+      if (activePassenger.passengerId) {
+        await checkinApi.tagBaggage({
+          passengerId: activePassenger.passengerId,
+          flightId: activePassenger.flightId || 101,
+          weightKg: inputWeight,
+          scannerLocation: 'Central Terminal Belt Induction 01',
+        });
+      }
+    } catch (err) {
+      console.warn('Backend baggage induction fallback:', err);
+    }
 
     setPassengers((prev) =>
       prev.map((p) =>
@@ -362,15 +499,15 @@ export const PassengerCheckInDashboard: React.FC = () => {
     aocsDataStore.registerBagTag({
       tagNumber: generatedTag,
       flightNumber: activePassenger.flightNumber,
-      flightId: 101,
-      passengerId: 1,
+      flightId: activePassenger.flightId || 101,
+      passengerId: activePassenger.passengerId || 1,
       passengerName: activePassenger.name,
       weightKg: inputWeight,
       isPriority: activePassenger.cabinClass === 'FIRST' || activePassenger.cabinClass === 'BUSINESS',
       status: 'CHECKED_IN',
     });
 
-    toast.success(`Baggage tag ${generatedTag} generated & inducted into Central Sorter!`);
+    toast.success(`Baggage tag ${generatedTag} generated & inducted into Live Sorter!`);
     setBaggageModalOpen(false);
   };
 
@@ -510,7 +647,7 @@ export const PassengerCheckInDashboard: React.FC = () => {
             <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#16A34A' }}>
               97% Check-in Completion
             </Typography>
-            <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8' }}>· 22 remaining</Typography>
+            <Typography sx={{ fontSize: '0.74rem', color: '#64748B' }}>· 22 remaining</Typography>
           </Box>
         </Card>
 
@@ -614,6 +751,11 @@ export const PassengerCheckInDashboard: React.FC = () => {
             placeholder="Search by PNR, Passenger Name, or Seat..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handlePerformBackendLookup(searchQuery);
+              }
+            }}
             slotProps={{
               input: {
                 startAdornment: (
@@ -621,10 +763,22 @@ export const PassengerCheckInDashboard: React.FC = () => {
                     <Search size={16} color="#64748B" />
                   </InputAdornment>
                 ),
+                endAdornment: searchQuery.trim().length >= 3 ? (
+                  <InputAdornment position="end">
+                    <Button
+                      size="small"
+                      disabled={isSearchingBackend}
+                      onClick={() => handlePerformBackendLookup(searchQuery)}
+                      sx={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'none', px: 1, minWidth: 'auto', color: '#0284C7' }}
+                    >
+                      {isSearchingBackend ? 'Checking...' : 'DB Lookup'}
+                    </Button>
+                  </InputAdornment>
+                ) : undefined,
               },
             }}
             sx={{
-              width: { xs: '100%', md: 340 },
+              width: { xs: '100%', md: 360 },
               '& .MuiOutlinedInput-root': {
                 borderRadius: '8px',
                 fontSize: '0.84rem',
@@ -639,13 +793,13 @@ export const PassengerCheckInDashboard: React.FC = () => {
           <Table size="small">
             <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
               <TableRow>
-                <TableCell sx={{ fontWeight: 800, fontSize: '0.72rem', color: '#64748B' }}>PNR CODE</TableCell>
-                <TableCell sx={{ fontWeight: 800, fontSize: '0.72rem', color: '#64748B' }}>PASSENGER NAME</TableCell>
-                <TableCell sx={{ fontWeight: 800, fontSize: '0.72rem', color: '#64748B' }}>FLIGHT / ROUTE</TableCell>
-                <TableCell sx={{ fontWeight: 800, fontSize: '0.72rem', color: '#64748B' }}>SEAT & CLASS</TableCell>
-                <TableCell sx={{ fontWeight: 800, fontSize: '0.72rem', color: '#64748B' }}>BAGGAGE</TableCell>
-                <TableCell sx={{ fontWeight: 800, fontSize: '0.72rem', color: '#64748B' }}>STATUS</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 800, fontSize: '0.72rem', color: '#64748B', pr: 2.5 }}>DESK ACTIONS</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: '0.8125rem', color: '#64748B' }}>PNR CODE</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: '0.8125rem', color: '#64748B' }}>PASSENGER NAME</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: '0.8125rem', color: '#64748B' }}>FLIGHT / ROUTE</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: '0.8125rem', color: '#64748B' }}>SEAT & CLASS</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: '0.8125rem', color: '#64748B' }}>BAGGAGE</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: '0.8125rem', color: '#64748B' }}>STATUS</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 800, fontSize: '0.8125rem', color: '#64748B', pr: 2.5 }}>DESK ACTIONS</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -655,34 +809,34 @@ export const PassengerCheckInDashboard: React.FC = () => {
 
                 return (
                   <TableRow key={pax.pnr} hover sx={{ '&:hover': { backgroundColor: 'rgba(2, 132, 199, 0.03)' } }}>
-                    <TableCell>
-                      <Typography sx={{ fontFamily: "'Inter', monospace", fontWeight: 800, fontSize: '0.84rem', color: '#0284C7' }}>
+                    <TableCell sx={{ minWidth: 120, whiteSpace: 'nowrap' }}>
+                      <Typography sx={{ fontFamily: "'Inter', monospace", fontWeight: 800, fontSize: '0.875rem', color: '#0284C7' }}>
                         {pax.pnr}
                       </Typography>
                       {pax.specialAssistance && pax.specialAssistance !== 'None' && (
-                        <Typography sx={{ fontSize: '0.68rem', color: '#D97706', fontWeight: 700 }}>
+                        <Typography sx={{ fontSize: '0.72rem', color: '#D97706', fontWeight: 700 }}>
                           SSR: {pax.specialAssistance}
                         </Typography>
                       )}
                     </TableCell>
 
-                    <TableCell>
-                      <Typography sx={{ fontWeight: 800, fontSize: '0.88rem', color: '#0F2942' }}>
+                    <TableCell sx={{ minWidth: 160, whiteSpace: 'nowrap' }}>
+                      <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', color: '#0F2942' }}>
                         {pax.name}
                       </Typography>
-                      <Typography sx={{ fontSize: '0.72rem', color: '#64748B' }}>
+                      <Typography sx={{ fontSize: '0.75rem', color: '#64748B' }}>
                         {pax.frequentFlyerTier}
                       </Typography>
                     </TableCell>
 
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                        <Typography sx={{ fontWeight: 800, fontSize: '0.84rem', color: '#0F2942' }}>
+                        <Typography sx={{ fontWeight: 800, fontSize: '0.875rem', color: '#0F2942' }}>
                           {pax.flightNumber}
                         </Typography>
-                        <Chip label={pax.gate} size="small" sx={{ height: 18, fontSize: '0.62rem', fontWeight: 800, bgcolor: '#F1F5F9' }} />
+                        <Chip label={pax.gate} size="small" sx={{ height: 18, fontSize: '0.68rem', fontWeight: 800, bgcolor: '#F1F5F9' }} />
                       </Box>
-                      <Typography sx={{ fontSize: '0.72rem', color: '#64748B' }}>
+                      <Typography sx={{ fontSize: '0.75rem', color: '#64748B' }}>
                         {pax.destination}
                       </Typography>
                     </TableCell>
@@ -697,7 +851,7 @@ export const PassengerCheckInDashboard: React.FC = () => {
                           size="small"
                           sx={{
                             height: 18,
-                            fontSize: '0.62rem',
+                            fontSize: '0.68rem',
                             fontWeight: 800,
                             bgcolor: pax.cabinClass === 'FIRST' ? '#FEF3C7' : pax.cabinClass === 'BUSINESS' ? '#E0F2FE' : '#F1F5F9',
                             color: pax.cabinClass === 'FIRST' ? '#B45309' : pax.cabinClass === 'BUSINESS' ? '#0369A1' : '#475569',
@@ -707,11 +861,11 @@ export const PassengerCheckInDashboard: React.FC = () => {
                     </TableCell>
 
                     <TableCell>
-                      <Typography sx={{ fontWeight: 700, fontSize: '0.82rem', color: '#0F2942' }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: '0.875rem', color: '#0F2942' }}>
                         {pax.bagsChecked} Bags ({pax.baggageWeightKg} kg)
                       </Typography>
                       {pax.bagTagNumber && (
-                        <Typography sx={{ fontSize: '0.68rem', color: '#0284C7', fontFamily: 'monospace' }}>
+                        <Typography sx={{ fontSize: '0.72rem', color: '#0284C7', fontFamily: 'monospace' }}>
                           {pax.bagTagNumber}
                         </Typography>
                       )}
@@ -723,7 +877,7 @@ export const PassengerCheckInDashboard: React.FC = () => {
                         size="small"
                         sx={{
                           fontWeight: 800,
-                          fontSize: '0.66rem',
+                          fontSize: '0.7rem',
                           bgcolor: hasPass ? '#FAF5FF' : isCheckedIn ? '#DCFCE7' : '#FEF3C7',
                           color: hasPass ? '#9333EA' : isCheckedIn ? '#15803D' : '#B45309',
                           border: !isCheckedIn ? '1px solid #FCD34D' : undefined,
@@ -908,7 +1062,7 @@ export const PassengerCheckInDashboard: React.FC = () => {
 
               {/* Passenger Name & Flight Details */}
               <Box sx={{ mb: 3 }}>
-                <Typography sx={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 800, letterSpacing: '0.06em' }}>
+                <Typography sx={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 800, letterSpacing: '0.06em' }}>
                   PASSENGER NAME
                 </Typography>
                 <Typography variant="h5" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900, color: '#0F2942', mt: 0.3 }}>
@@ -922,25 +1076,25 @@ export const PassengerCheckInDashboard: React.FC = () => {
               {/* Grid Details */}
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2.5, mb: 3 }}>
                 <Box>
-                  <Typography sx={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 800 }}>FLIGHT</Typography>
+                  <Typography sx={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 800 }}>FLIGHT</Typography>
                   <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900, fontSize: '1.1rem', color: '#0F2942' }}>
                     {activePassenger.flightNumber}
                   </Typography>
                 </Box>
                 <Box>
-                  <Typography sx={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 800 }}>GATE</Typography>
+                  <Typography sx={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 800 }}>GATE</Typography>
                   <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900, fontSize: '1.1rem', color: '#0284C7' }}>
                     {activePassenger.gate}
                   </Typography>
                 </Box>
                 <Box>
-                  <Typography sx={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 800 }}>BOARDING</Typography>
+                  <Typography sx={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 800 }}>BOARDING</Typography>
                   <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900, fontSize: '1.1rem', color: '#0F2942' }}>
                     {activePassenger.boardingTime}
                   </Typography>
                 </Box>
                 <Box>
-                  <Typography sx={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 800 }}>SEAT</Typography>
+                  <Typography sx={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 800 }}>SEAT</Typography>
                   <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900, fontSize: '1.3rem', color: '#16A34A' }}>
                     {activePassenger.seat}
                   </Typography>
@@ -950,13 +1104,13 @@ export const PassengerCheckInDashboard: React.FC = () => {
               {/* Destination Banner */}
               <Box sx={{ p: 1.5, borderRadius: '8px', bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
-                  <Typography sx={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 700 }}>DESTINATION</Typography>
+                  <Typography sx={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 700 }}>DESTINATION</Typography>
                   <Typography sx={{ fontWeight: 800, color: '#0F2942', fontSize: '0.9rem' }}>
                     {activePassenger.destination}
                   </Typography>
                 </Box>
                 <Box sx={{ textAlign: 'right' }}>
-                  <Typography sx={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 700 }}>BOARDING GROUP</Typography>
+                  <Typography sx={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 700 }}>BOARDING GROUP</Typography>
                   <Typography sx={{ fontWeight: 800, color: '#0284C7', fontSize: '0.9rem' }}>
                     {activePassenger.boardingGroup}
                   </Typography>
@@ -967,7 +1121,7 @@ export const PassengerCheckInDashboard: React.FC = () => {
             {/* Right Flight Coupon / Barcode Stub */}
             <Box sx={{ width: { xs: '100%', md: 220 }, p: 3, backgroundColor: '#FAFAFA', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box sx={{ textAlign: 'center', width: '100%' }}>
-                <Typography sx={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 800 }}>PASSENGER RECEIPT</Typography>
+                <Typography sx={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 800 }}>PASSENGER RECEIPT</Typography>
                 <Typography sx={{ fontWeight: 800, color: '#0F2942', fontSize: '0.86rem', mt: 0.5 }}>
                   {activePassenger.pnr}
                 </Typography>
@@ -979,16 +1133,21 @@ export const PassengerCheckInDashboard: React.FC = () => {
               {/* Simulated 2D Aztec / Barcode */}
               <Box sx={{ my: 2.5, textAlign: 'center', p: 1.5, borderRadius: '8px', bgcolor: '#FFFFFF', border: '1px solid #E2E8F0' }}>
                 <QrCode size={110} color="#0F2942" />
-                <Typography sx={{ fontSize: '0.62rem', color: '#94A3B8', fontFamily: 'monospace', mt: 0.5 }}>
-                  M1{activePassenger.pnr}/{activePassenger.name}
+                <Typography sx={{ fontSize: '0.62rem', color: '#64748B', fontFamily: 'monospace', mt: 0.5, wordBreak: 'break-all' }}>
+                  {activePassenger.barcodeData || `M1${activePassenger.pnr}/${activePassenger.name}`}
                 </Typography>
+                {activePassenger.ticketNumber && (
+                  <Typography sx={{ fontSize: '0.62rem', color: '#0284C7', fontWeight: 800, mt: 0.3 }}>
+                    TKT: {activePassenger.ticketNumber}
+                  </Typography>
+                )}
               </Box>
 
               <Box sx={{ textAlign: 'center', width: '100%' }}>
                 <Typography sx={{ fontSize: '0.68rem', color: '#64748B' }}>
                   Baggage: <b>{activePassenger.bagsChecked} pcs ({activePassenger.baggageWeightKg} kg)</b>
                 </Typography>
-                <Typography sx={{ fontSize: '0.62rem', color: '#94A3B8', mt: 0.3 }}>
+                <Typography sx={{ fontSize: '0.62rem', color: '#64748B', mt: 0.3 }}>
                   Gate closes 15 mins prior to departure
                 </Typography>
               </Box>

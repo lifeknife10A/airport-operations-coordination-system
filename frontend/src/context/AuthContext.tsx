@@ -120,7 +120,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   login: (identifier: string, passkey: string) => Promise<User>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -193,7 +193,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Revoke the session server-side (the auth_sessions row behind this token) before clearing
+    // the token locally -- otherwise there'd be no Authorization header left to identify which
+    // session to revoke. Best-effort: if the backend is unreachable (e.g. the offline fallback
+    // login path was used, which never created a real session) this call has nothing to revoke
+    // and is safe to ignore, but the local session must still end either way.
+    try {
+      await authApi.logout();
+    } catch {
+      // Backend unreachable or token already invalid -- local logout still proceeds below.
+    }
     localStorage.removeItem('aocs_token');
     localStorage.removeItem('aocs_user');
     setUser(null);

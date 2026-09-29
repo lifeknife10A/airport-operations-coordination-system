@@ -184,7 +184,7 @@ export const Login: React.FC = () => {
                 Unified Aerodrome Command Gateway
               </Typography>
               <Typography sx={{ fontFamily: "'Inter', sans-serif", color: 'rgba(255, 255, 255, 0.82)', fontSize: '0.88rem', lineHeight: 1.6, maxWidth: '440px', mb: 3 }}>
-                Centralized coordination linking air traffic management, apron ramp control, turnaround logistics, and terminal security.
+                Centralized coordination across air traffic, ramp control, logistics, and terminal security.
               </Typography>
 
               {/* Structured Operational Capabilities */}
@@ -197,7 +197,7 @@ export const Login: React.FC = () => {
                     </Typography>
                   </Box>
                   <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.78)', pl: 2.2, lineHeight: 1.55 }}>
-                    Sequenced ground handling, fueling dispatch, and pushback tug coordination to sustain target off-block times.
+                    Ground handling, fueling, and pushback sequencing.
                   </Typography>
                 </Box>
 
@@ -209,7 +209,7 @@ export const Login: React.FC = () => {
                     </Typography>
                   </Box>
                   <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.78)', pl: 2.2, lineHeight: 1.55 }}>
-                    Dynamic gate allocation across Concourses A, B &amp; C to eliminate taxiway holding delays and boarding bridge congestion.
+                    Dynamic gate allocation across Concourses A, B &amp; C.
                   </Typography>
                 </Box>
 
@@ -221,7 +221,7 @@ export const Login: React.FC = () => {
                     </Typography>
                   </Box>
                   <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.78)', pl: 2.2, lineHeight: 1.55 }}>
-                    Real-time reconciliation linking sortation carousels, ramp transfer dollies, and airfreight logistics manifests.
+                    Real-time tracking from carousel to cargo hold.
                   </Typography>
                 </Box>
 
@@ -233,7 +233,7 @@ export const Login: React.FC = () => {
                     </Typography>
                   </Box>
                   <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.78)', pl: 2.2, lineHeight: 1.55 }}>
-                    Synchronized operating channels connecting AOCC duty directors, airline dispatch, and BCAS security units.
+                    Synchronized channels linking AOCC, airlines, and security.
                   </Typography>
                 </Box>
               </Box>

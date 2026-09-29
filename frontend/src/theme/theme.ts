@@ -122,6 +122,27 @@ export const theme = createTheme({
         },
       },
     },
+    MuiButtonBase: {
+      styleOverrides: {
+        root: {
+          '&.Mui-focusVisible': {
+            outline: '3px solid #0284C7',
+            outlineOffset: '2px',
+          },
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#0284C7',
+            borderWidth: '2px',
+            boxShadow: '0 0 0 3px rgba(2, 132, 199, 0.18)',
+          },
+        },
+      },
+    },
     MuiPaper: {
       styleOverrides: {
         root: {

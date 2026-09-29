@@ -350,6 +350,7 @@ class AocsDataStore {
   private notifications: OperationalNotification[] = [];
   private listeners: Set<(event: AocsEvent) => void> = new Set();
   private initialized = false;
+  private liveDataActive = false;
 
   constructor() {
     this.loadInitialState();
@@ -422,11 +423,19 @@ private async initRemoteSync() {
     this.persist('saphire_gates', this.gates);
     this.persist('saphire_tasks', this.tasks);
 
-    this.emit('INITIALIZED', { source: 'RemoteSync' }, 'AocsDataStore');
+    this.liveDataActive = Boolean(remoteFlights?.length || remoteGates?.length);
+    this.emit('INITIALIZED', { source: 'RemoteSync', live: this.liveDataActive }, 'AocsDataStore');
   } catch (e) {
     console.warn('Remote sync failed – falling back to seed/local data', e);
+    this.liveDataActive = false;
+    this.emit('REFRESH', { source: 'RemoteSync', live: false }, 'AocsDataStore');
   }
 }
+
+  /** True once at least flights or gates were successfully pulled from the live backend this session. */
+  public isLiveDataActive(): boolean {
+    return this.liveDataActive;
+  }
 
 private persist(key: string, data: any) {
     try {

@@ -55,6 +55,7 @@ import { DashboardLayout } from '../../components/dashboard/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
 import { aocsDataStore } from '../../services/aocsDataStore';
 import toast from 'react-hot-toast';
+import { lostFoundApi, LostFoundItemData } from '../../api/lostFoundApi';
 
 // ============================================================================
 // DATA TYPES & INTERFACES
@@ -515,8 +516,46 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
   const [lounges] = useState<LoungeRecord[]>(INITIAL_LOUNGES);
   const [loungeVisits, setLoungeVisits] = useState<LoungeVisitLog[]>(INITIAL_LOUNGE_VISITS);
 
-  // Cross-dashboard synchronizer with aocsDataStore
+  // Cross-dashboard synchronizer with aocsDataStore and Live Database
   useEffect(() => {
+    let isMounted = true;
+
+    // Fetch live Lost & Found records from Table #39 in PostgreSQL
+    lostFoundApi.getAll({ size: 50 })
+      .then((res: any) => {
+        if (!isMounted) return;
+        const items = Array.isArray(res) ? res : res?.content || [];
+        if (items.length > 0) {
+          const mappedBackend: LostFoundItem[] = items.map((it: LostFoundItemData) => ({
+            id: it.referenceCode || `LF-2026-${String(it.itemId).padStart(4, '0')}`,
+            title: it.itemName,
+            category: (it.category as any) || 'OTHER',
+            locationFound: it.foundLocationDetail || it.foundLocationType || 'Central Concourse',
+            reportedBy: it.claimantName || 'Security Intake',
+            contactNumber: it.claimantContactPhone || 'N/A',
+            flightNumber: it.flightNumber,
+            status: (it.status as LostFoundStatus) || 'NEW_REPORT',
+            reportedDate: it.createdAt ? new Date(it.createdAt).toLocaleDateString() : 'Today',
+            description: it.colorAndDescription || 'Cataloged in database',
+            color: 'Standard',
+            storageLocker: it.storageVaultLocation || 'Vault Locker 01',
+          }));
+
+          setLostFoundList((prev) => {
+            const combined = [...mappedBackend];
+            for (const p of prev) {
+              if (!combined.some((c) => c.id === p.id)) {
+                combined.push(p);
+              }
+            }
+            return combined;
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn('Backend lost and found sync fallback:', err);
+      });
+
     const syncFromStore = () => {
       // 1. Sync turnaround prerequisites from aocsDataStore
       setFlightsGate((prev) =>
@@ -563,7 +602,10 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
 
     syncFromStore();
     const unsub = aocsDataStore.subscribe(syncFromStore);
-    return unsub;
+    return () => {
+      isMounted = false;
+      unsub();
+    };
   }, []);
 
   // Filter States for Passenger Table
@@ -783,6 +825,18 @@ export const PassengerSecurityOpsDashboard: React.FC = () => {
     };
 
     setLostFoundList((prev) => [newItem, ...prev]);
+
+    // Backend database persistence (Table #39)
+    lostFoundApi.reportFound({
+      itemName: newLfTitle,
+      category: newLfCategory,
+      colorAndDescription: newLfDescription || 'Retrieved from airside concourse.',
+      foundLocationType: 'TERMINAL_CONCOURSE',
+      foundLocationDetail: newLfLocation,
+      finderType: 'SECURITY_OFFICER',
+      loggedByUserId: user?.userId || 1,
+      storageVaultLocation: newLfLocker || 'Locker Sec-01',
+    }).catch((err) => console.warn('Backend report lost item fallback:', err));
 
     // Cross-dashboard bridge
     aocsDataStore.reportLostItem({

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
-import { Box, Container, Typography, Paper, TextField, Button, Alert, MenuItem } from '@mui/material';
-import { Phone, Mail, MapPin, ShieldAlert, Send, Clock, CheckCircle2, Building, Radio } from 'lucide-react';
+import { Box, Container, Typography, Paper, TextField, Button, Alert, MenuItem, CircularProgress } from '@mui/material';
+import { Phone, Mail, MapPin, ShieldAlert, Send, Clock, CheckCircle2, Building, Radio, Ticket } from 'lucide-react';
 import bannerContact from '../../assets/banners/banner-contact.jpg';
+import { inquiryApi } from '../../api/inquiryApi';
 
 const emergencyContacts = [
   { dept: 'Airport Security Command Center', number: '+91 (022) 8900-9111', sub: 'Airside & landside perimeter security' },
@@ -12,18 +13,46 @@ const emergencyContacts = [
   { dept: 'Passenger Concierge & Baggage Assistance', number: '+91 (022) 8900-1000', sub: 'Toll-free 24-hour bilingual hotline' },
 ];
 
-export const Contact: React.FC = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', subject: 'General Enquiry', message: '' });
-  const [submitted, setSubmitted] = useState(false);
+const categoryMapping: Record<string, string> = {
+  'General Enquiry': 'GENERAL_PASSENGER_ASSISTANCE',
+  'Flight Info': 'FLIGHT_SCHEDULE_STATUS',
+  'Lost & Found': 'LOST_PROPERTY_BAGGAGE',
+  'Cargo & Customs': 'CARGO_CUSTOMS',
+  'VIP Services': 'VIP_PROTOCOL',
+};
 
-  const handleSubmit = (e: React.FormEvent) => {
+export const Contact: React.FC = () => {
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', subject: 'General Enquiry', message: '' });
+  const [loading, setLoading] = useState(false);
+  const [ticketNumber, setTicketNumber] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.message) return;
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setFormData({ name: '', email: '', subject: 'General Enquiry', message: '' });
-    }, 4000);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const categoryKey = categoryMapping[formData.subject] || 'GENERAL_PASSENGER_ASSISTANCE';
+      const response = await inquiryApi.submitInquiry({
+        fullName: formData.name,
+        emailAddress: formData.email,
+        phoneNumber: formData.phone || undefined,
+        category: categoryKey,
+        inquiryDetails: formData.message,
+        sourceChannel: 'WEB_PORTAL',
+        priority: 'NORMAL',
+      });
+
+      setTicketNumber(response.ticketNumber);
+      setFormData({ name: '', email: '', phone: '', subject: 'General Enquiry', message: '' });
+    } catch (err: any) {
+      console.error('Failed to submit inquiry:', err);
+      setError('Unable to register inquiry with the operations desk. Please try again or call our hotline.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -198,9 +227,9 @@ export const Contact: React.FC = () => {
               For passenger experience queries, lost baggage assistance, or special flight requirements.
             </Typography>
 
-            {submitted && (
+            {ticketNumber && (
               <Alert
-                icon={<CheckCircle2 size={18} />}
+                icon={<CheckCircle2 size={20} />}
                 severity="success"
                 sx={{
                   mb: 3,
@@ -211,7 +240,13 @@ export const Contact: React.FC = () => {
                   fontFamily: "'Inter', sans-serif",
                 }}
               >
-                Inquiry registered successfully. Reference ticket dispatched to your email.
+                Inquiry registered successfully! Your tracking reference ticket is: <strong>{ticketNumber}</strong>. Our duty team will process your request shortly.
+              </Alert>
+            )}
+
+            {error && (
+              <Alert severity="error" sx={{ mb: 3, borderRadius: '10px' }}>
+                {error}
               </Alert>
             )}
 
@@ -257,30 +292,49 @@ export const Contact: React.FC = () => {
                   />
                 </Box>
 
-                <TextField
-                  fullWidth
-                  select
-                  label="Category of Inquiry"
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      color: '#0F2942',
-                      backgroundColor: '#FAF9F6',
-                      borderRadius: '10px',
-                      '& fieldset': { borderColor: '#E2E8F0' },
-                      '&:hover fieldset': { borderColor: '#1E3A5F' },
-                      '&.Mui-focused fieldset': { borderColor: '#1E3A5F' },
-                    },
-                    '& .MuiInputLabel-root': { color: '#64748B', '&.Mui-focused': { color: '#1E3A5F' } },
-                  }}
-                >
-                  <MenuItem value="General Enquiry">General Passenger Assistance</MenuItem>
-                  <MenuItem value="Flight Info">Flight Schedule &amp; Status Confirmation</MenuItem>
-                  <MenuItem value="Lost & Found">Lost Property &amp; Baggage Tracing</MenuItem>
-                  <MenuItem value="Cargo & Customs">Cargo &amp; Customs EDI Guidance</MenuItem>
-                  <MenuItem value="VIP Services">VIP Protocol &amp; Executive Lounges</MenuItem>
-                </TextField>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                  <TextField
+                    fullWidth
+                    label="Phone Number (Optional)"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        color: '#0F2942',
+                        backgroundColor: '#FAF9F6',
+                        borderRadius: '10px',
+                        '& fieldset': { borderColor: '#E2E8F0' },
+                        '&:hover fieldset': { borderColor: '#1E3A5F' },
+                        '&.Mui-focused fieldset': { borderColor: '#1E3A5F' },
+                      },
+                      '& .MuiInputLabel-root': { color: '#64748B', '&.Mui-focused': { color: '#1E3A5F' } },
+                    }}
+                  />
+                  <TextField
+                    fullWidth
+                    select
+                    label="Category of Inquiry"
+                    value={formData.subject}
+                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        color: '#0F2942',
+                        backgroundColor: '#FAF9F6',
+                        borderRadius: '10px',
+                        '& fieldset': { borderColor: '#E2E8F0' },
+                        '&:hover fieldset': { borderColor: '#1E3A5F' },
+                        '&.Mui-focused fieldset': { borderColor: '#1E3A5F' },
+                      },
+                      '& .MuiInputLabel-root': { color: '#64748B', '&.Mui-focused': { color: '#1E3A5F' } },
+                    }}
+                  >
+                    <MenuItem value="General Enquiry">General Passenger Assistance</MenuItem>
+                    <MenuItem value="Flight Info">Flight Schedule &amp; Status Confirmation</MenuItem>
+                    <MenuItem value="Lost & Found">Lost Property &amp; Baggage Tracing</MenuItem>
+                    <MenuItem value="Cargo & Customs">Cargo &amp; Customs EDI Guidance</MenuItem>
+                    <MenuItem value="VIP Services">VIP Protocol &amp; Executive Lounges</MenuItem>
+                  </TextField>
+                </Box>
 
                 <TextField
                   fullWidth
@@ -306,7 +360,8 @@ export const Contact: React.FC = () => {
                 <Button
                   type="submit"
                   variant="contained"
-                  endIcon={<Send size={16} />}
+                  disabled={loading}
+                  endIcon={loading ? <CircularProgress size={16} color="inherit" /> : <Send size={16} />}
                   sx={{
                     py: 1.5,
                     px: 3.5,
@@ -325,7 +380,7 @@ export const Contact: React.FC = () => {
                     },
                   }}
                 >
-                  Transmit Message
+                  {loading ? 'Transmitting...' : 'Transmit Message'}
                 </Button>
               </Box>
             </form>

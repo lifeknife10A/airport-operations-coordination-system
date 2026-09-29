@@ -46,6 +46,7 @@ import { DashboardLayout } from '../../components/dashboard/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
 import { aocsDataStore } from '../../services/aocsDataStore';
 import toast from 'react-hot-toast';
+import { runwayApi, RunwayTelemetryData } from '../../api/runwayApi';
 
 // ============================================================================
 // TYPES & DATA STRUCTURES
@@ -259,8 +260,33 @@ export const AirsideOpsDashboard: React.FC = () => {
   const [selectedConcourse, setSelectedConcourse] = useState<'ALL' | 'Concourse A' | 'Concourse B' | 'Concourse C'>('ALL');
   const [gateStatusFilter, setGateStatusFilter] = useState<'ALL' | 'AVAILABLE' | 'OCCUPIED'>('ALL');
 
-  // Cross-dashboard synchronization with aocsDataStore
+  // Cross-dashboard synchronization with aocsDataStore and Live Runway Telemetry
   useEffect(() => {
+    let isMounted = true;
+
+    // Fetch live runway telemetry from backend API
+    runwayApi.getAll()
+      .then((data) => {
+        if (!isMounted || !data || data.length === 0) return;
+        setRunways((prev) =>
+          prev.map((r) => {
+            const telemetry = data.find((d) => d.runwayCode === r.runwayCode);
+            if (!telemetry) return r;
+            return {
+              ...r,
+              status: (telemetry.operationalStatus as RunwayStatus) || r.status,
+              surfaceCondition: `DRY (Friction ${telemetry.surfaceFriction?.toFixed(2) || '0.84'})`,
+              wind: telemetry.headwindVector || r.wind,
+              crosswind: telemetry.crosswindVector || r.crosswind,
+              queueCount: telemetry.activeDeparturesCount || r.queueCount,
+            };
+          })
+        );
+      })
+      .catch((err) => {
+        console.warn('Backend runway telemetry fallback:', err);
+      });
+
     const syncFromStore = () => {
       const storeGates = aocsDataStore.getGates();
       if (storeGates.length > 0) {
@@ -282,8 +308,47 @@ export const AirsideOpsDashboard: React.FC = () => {
 
     syncFromStore();
     const unsub = aocsDataStore.subscribe(syncFromStore);
-    return unsub;
+    return () => {
+      isMounted = false;
+      unsub();
+    };
   }, []);
+
+  // Handler: Toggle Runway Operational Mode / Trigger Surface Sweep
+  const handleToggleRunwayMode = async (rwy: RunwayInfo) => {
+    const nextStatus: RunwayStatus =
+      rwy.status === 'ACTIVE_CAT_III'
+        ? 'DEPARTURE_ONLY'
+        : rwy.status === 'DEPARTURE_ONLY'
+        ? 'SWEEP'
+        : 'ACTIVE_CAT_III';
+
+    const rwyIdNum = rwy.runwayCode === '28L' ? 1 : rwy.runwayCode === '09R' ? 2 : rwy.runwayCode === '10L' ? 3 : 4;
+
+    try {
+      await runwayApi.updateStatus(rwyIdNum, {
+        operationalStatus: nextStatus,
+        surfaceFriction: nextStatus === 'SWEEP' ? 0.72 : 0.85,
+        visualRangeMeters: 1200,
+      });
+    } catch (err) {
+      console.warn('Backend runway update fallback:', err);
+    }
+
+    setRunways((prev) =>
+      prev.map((r) =>
+        r.id === rwy.id
+          ? {
+              ...r,
+              status: nextStatus,
+              surfaceCondition: nextStatus === 'SWEEP' ? 'MAINTENANCE (Radar FOD Scan)' : 'DRY (Friction 0.85)',
+            }
+          : r
+      )
+    );
+
+    toast.success(`Runway ${rwy.runwayCode} mode updated to ${nextStatus.replace(/_/g, ' ')}`);
+  };
 
   // Interactive Assignment Modal State
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
@@ -1223,7 +1288,12 @@ export const AirsideOpsDashboard: React.FC = () => {
                   <Typography sx={{ fontSize: '0.84rem', color: '#64748B' }}>
                     Active Departure: <strong style={{ color: '#0F2942' }}>{r.activeFlightNumber || 'No queue'}</strong>
                   </Typography>
-                  <Button size="small" variant="outlined" sx={{ textTransform: 'none', fontWeight: 700 }}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => handleToggleRunwayMode(r)}
+                    sx={{ textTransform: 'none', fontWeight: 700 }}
+                  >
                     Switch Operational Mode
                   </Button>
                 </Box>

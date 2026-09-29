@@ -46,13 +46,6 @@ export const Hero: React.FC = () => {
         </h1>
       </div>
 
-      {/* Bottom-Right Corner: Editorial Manifesto with Emotional Poise */}
-      <div className="ve-hero-bottom-right">
-        <p className="ve-manifesto-text">
-          Where calm luxury meets aviation precision — effortless departures, concourse stillness, and serene comfort across every terminal.
-        </p>
-      </div>
-
       {/* Floating Seam Bridge: Minimalist Apple macOS Style Bottom Dock */}
       <div className="ve-seam-bridge">
         <div className="ve-macos-dock apple-liquid-glass">

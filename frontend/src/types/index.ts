@@ -42,6 +42,14 @@ export interface Flight {
   standCode?: string;
 }
 
+export interface PagedResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
 export interface FlightCreatePayload {
   flightNumber: string;
   airlineCode: string;

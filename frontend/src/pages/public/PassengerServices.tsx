@@ -39,6 +39,7 @@ import {
 import { aocsDataStore } from '../../services/aocsDataStore';
 import { LostFoundRecord } from '../../types';
 import bannerLounge from '../../assets/banners/vip-dining-lounge.jpg';
+import { lostFoundApi, LostFoundItemData } from '../../api/lostFoundApi';
 
 const facilitiesList = [
   { icon: <Wifi size={20} color="#0284C7" />, title: 'High-Speed 5G Wi-Fi', desc: 'Unlimited complimentary high-speed internet throughout Central Terminal and Concourses A, B, and C.' },
@@ -87,7 +88,48 @@ export const PassengerServices: React.FC = () => {
   });
 
   useEffect(() => {
-    setLostFoundList(aocsDataStore.getLostFound());
+    let isMounted = true;
+
+    // First load from local mock store
+    const initialLocal = aocsDataStore.getLostFound();
+    setLostFoundList(initialLocal);
+
+    // Then attempt to enrich with live backend database items
+    lostFoundApi.getAll({ size: 50 })
+      .then((res: any) => {
+        if (!isMounted) return;
+        const items = Array.isArray(res) ? res : res?.content || [];
+        if (items.length > 0) {
+          const mappedBackend: LostFoundRecord[] = items.map((it: LostFoundItemData) => ({
+            id: it.referenceCode || `LF-2026-${String(it.itemId).padStart(4, '0')}`,
+            title: it.itemName,
+            category: (it.category as any) || 'OTHER',
+            color: it.colorAndDescription ? it.colorAndDescription.split('-')[0].trim() : 'Standard',
+            locationFound: it.foundLocationDetail || it.foundLocationType || 'Central Terminal',
+            flightNumber: it.flightNumber,
+            reportedDate: it.createdAt ? new Date(it.createdAt).toLocaleDateString() : 'Today',
+            status: (it.status as any) || 'NEW_REPORT',
+            storageVaultLocation: it.storageVaultLocation || 'Central Vault Locker',
+            description: it.colorAndDescription || 'Reported to Central Lost & Found',
+            reportedBy: it.claimantName || 'Passenger (Portal)',
+            contactNumber: it.claimantContactPhone || 'N/A',
+          }));
+
+          // Merge backend items with local items, avoiding duplicates
+          setLostFoundList((prev) => {
+            const combined = [...mappedBackend];
+            for (const p of prev) {
+              if (!combined.some((c) => c.id === p.id)) {
+                combined.push(p);
+              }
+            }
+            return combined;
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn('Backend lost & found API fallback to local data store:', err);
+      });
 
     const unsubscribe = aocsDataStore.subscribe((event) => {
       if (event.type.includes('LOST') || event.type === 'REFRESH') {
@@ -95,7 +137,10 @@ export const PassengerServices: React.FC = () => {
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const toggleFaq = (index: number) => {
@@ -106,14 +151,14 @@ export const PassengerServices: React.FC = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmitReport = (e: React.FormEvent) => {
+  const handleSubmitReport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.reportedBy || !formData.contactNumber) {
       alert('Please provide the Item Name, your Full Name, and Contact Number.');
       return;
     }
 
-    const created = aocsDataStore.reportLostItem({
+    const localCreated = aocsDataStore.reportLostItem({
       title: formData.title.trim(),
       category: formData.category,
       color: formData.color.trim() || 'Unspecified',
@@ -125,8 +170,30 @@ export const PassengerServices: React.FC = () => {
       contactNumber: formData.contactNumber.trim(),
     });
 
-    setSubmittedRecord(created);
-    setLostFoundList(aocsDataStore.getLostFound());
+    // Also persist to Spring Boot backend database if online
+    try {
+      const backendCreated = await lostFoundApi.reportFound({
+        itemName: formData.title.trim(),
+        category: formData.category,
+        colorAndDescription: `${formData.color.trim() || 'Standard'} - ${formData.description.trim() || 'No additional description'}`,
+        foundLocationType: 'TERMINAL_CONCOURSE',
+        foundLocationDetail: formData.locationFound.trim() || 'Central Terminal Concourse',
+        flightNumber: formData.flightNumber.trim() ? formData.flightNumber.trim().toUpperCase() : undefined,
+        finderType: 'PASSENGER',
+        loggedByUserId: 1,
+        claimantName: `${formData.reportedBy.trim()} (Public Portal)`,
+        claimantContactPhone: formData.contactNumber.trim(),
+        storageVaultLocation: 'Central Security Locker 02',
+      });
+      if (backendCreated?.referenceCode) {
+        localCreated.id = backendCreated.referenceCode;
+      }
+    } catch (err) {
+      console.warn('Backend lost & found reporting sync fallback:', err);
+    }
+
+    setSubmittedRecord(localCreated);
+    setLostFoundList((prev) => [localCreated, ...prev.filter((p) => p.id !== localCreated.id)]);
     // Reset form
     setFormData({
       title: '',

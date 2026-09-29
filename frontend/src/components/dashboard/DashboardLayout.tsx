@@ -264,12 +264,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
   const [notificationsList, setNotificationsList] = useState<OperationalNotification[]>(() =>
     aocsDataStore.getNotifications()
   );
+  const [isLiveData, setIsLiveData] = useState<boolean>(() => aocsDataStore.isLiveDataActive());
 
-  // Subscribe to real-time notification changes
+  // Subscribe to real-time notification + live/demo data-source changes
   useEffect(() => {
     const syncNotifications = () => {
       setUnreadNotificationCount(aocsDataStore.getUnreadNotificationCount());
       setNotificationsList(aocsDataStore.getNotifications());
+      setIsLiveData(aocsDataStore.isLiveDataActive());
     };
     const unsub = aocsDataStore.subscribe(syncNotifications);
     return unsub;
@@ -380,8 +382,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
         item.type.toLowerCase().includes(searchQuery.toLowerCase())
       );
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast.success('Operational session terminated.');
     navigate('/login');
   };
@@ -939,6 +941,26 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
             overflowX: 'hidden',
           }}
         >
+          {!isLiveData && (
+            <Box
+              sx={{
+                mb: 2,
+                py: 0.9,
+                px: 1.8,
+                borderRadius: '10px',
+                backgroundColor: '#FFFBEB',
+                border: '1px solid #FDE68A',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <AlertTriangle size={15} color="#B45309" />
+              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: '#92400E' }}>
+                Demo / local data — live backend unreachable, showing seeded operational data.
+              </Typography>
+            </Box>
+          )}
           {children}
         </Box>
       </Box>

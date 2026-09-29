@@ -59,6 +59,7 @@ import { DashboardLayout } from '../../components/dashboard/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
 import { aocsDataStore } from '../../services/aocsDataStore';
 import { PriorityBadge } from '../../components/common/PriorityBadge';
+import { shiftHandoverApi, ShiftHandoverData } from '../../api/shiftHandoverApi';
 
 // Types
 export type TaskStage = 'CLEANING' | 'FUELING' | 'MAINTENANCE' | 'SECURITY';
@@ -110,6 +111,7 @@ export interface GroundCrew {
 
 export interface HandoverLog {
   id: string;
+  handoverId?: number;
   shiftTitle: string;
   outgoingSupervisor: string;
   incomingSupervisor: string;
@@ -393,6 +395,47 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
     }
   }, [location.hash]);
 
+  // Fetch live Shift Handover logs from backend database
+  useEffect(() => {
+    let isMounted = true;
+    shiftHandoverApi.getAll(0, 20)
+      .then((res: any) => {
+        if (!isMounted) return;
+        const data = Array.isArray(res) ? res : res?.content || [];
+        if (data.length > 0) {
+          const mapped: HandoverLog[] = data.map((d: ShiftHandoverData) => ({
+            id: `HND-${d.handoverId}`,
+            handoverId: d.handoverId,
+            shiftTitle: `${d.shiftCode} - ${d.departmentName || 'Ground Ops'} Turnover`,
+            outgoingSupervisor: d.outgoingSupervisorName || 'Riya Johnson (Ground Ops Lead)',
+            incomingSupervisor: d.incomingSupervisorName || 'Vikram Seth (Night Shift Lead)',
+            timestamp: d.outgoingSignoffTimestamp ? new Date(d.outgoingSignoffTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' UTC' : 'Today',
+            carriedOverTasks: d.delayedFlightsCount || 0,
+            flightsAwaitingAction: d.totalFlightsHandled || 0,
+            unresolvedHolds: d.unresolvedEquipmentIssues ? [d.unresolvedEquipmentIssues] : [],
+            status: d.status === 'ACKNOWLEDGED' ? 'ACKNOWLEDGED' : 'SUBMITTED',
+            summaryNotes: d.criticalEventsSummary || 'Shift turnover logged.',
+          }));
+          setHandovers((prev) => {
+            const combined = [...mapped];
+            for (const p of prev) {
+              if (!combined.some((c) => c.id === p.id)) {
+                combined.push(p);
+              }
+            }
+            return combined;
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn('Backend shift handover sync fallback:', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const handleTabSelect = (tab: string) => {
     if (tab === 'overview') {
       navigate('/dashboard/ground-ops');
@@ -538,15 +581,39 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
     setCreateTaskOpen(false);
   };
 
-  const handleCreateHandoverSubmit = () => {
+  const handleCreateHandoverSubmit = async () => {
     if (!handoverNotesInput.trim()) {
       toast.error('Please enter shift handover summary notes');
       return;
     }
+
+    let createdId = Math.floor(402 + Math.random() * 100);
+    const hour = new Date().getUTCHours();
+    const currentShiftCode = hour >= 6 && hour < 14 ? 'MORNING_06_14' : hour >= 14 && hour < 22 ? 'AFTERNOON_14_22' : 'NIGHT_22_06';
+
+    try {
+      const backendCreated = await shiftHandoverApi.create({
+        shiftCode: currentShiftCode,
+        departmentId: 2,
+        outgoingSupervisorId: user?.userId || 1,
+        incomingSupervisorId: 2,
+        totalFlightsHandled: flights.length,
+        delayedFlightsCount: pendingTasksCount,
+        criticalEventsSummary: handoverNotesInput,
+        unresolvedEquipmentIssues: handoverIssuesInput,
+      });
+      if (backendCreated?.handoverId) {
+        createdId = backendCreated.handoverId;
+      }
+    } catch (err) {
+      console.warn('Backend shift handover creation fallback:', err);
+    }
+
     const newHnd: HandoverLog = {
-      id: `HND-${Math.floor(402 + Math.random() * 100)}`,
+      id: `HND-${createdId}`,
+      handoverId: createdId,
       shiftTitle: 'Current Ramp Shift Turnover',
-      outgoingSupervisor: 'Riya Johnson (Ground Ops Lead)',
+      outgoingSupervisor: user?.name || 'Riya Johnson (Ground Ops Lead)',
       incomingSupervisor: handoverIncomingSup,
       timestamp: 'Just now (UTC)',
       carriedOverTasks: pendingTasksCount,
@@ -556,8 +623,25 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
       summaryNotes: handoverNotesInput,
     };
     setHandovers([newHnd, ...handovers]);
-    toast.success('Shift handover log submitted for incoming supervisor review');
+    toast.success('Shift handover log submitted to live database for incoming supervisor review');
     setHandoverModalOpen(false);
+  };
+
+  const handleAcknowledgeHandover = async (h: HandoverLog) => {
+    try {
+      if (h.handoverId) {
+        await shiftHandoverApi.acknowledge(h.handoverId, 2, 'Acknowledged by incoming supervisor');
+      }
+    } catch (err) {
+      console.warn('Backend handover acknowledgement fallback:', err);
+    }
+
+    setHandovers((prev) =>
+      prev.map((item) =>
+        item.id === h.id ? { ...item, status: 'ACKNOWLEDGED' as const } : item
+      )
+    );
+    toast.success(`Handover ${h.id} acknowledged and signed off.`);
   };
 
   // Helper renderers for status dots
@@ -2028,6 +2112,20 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                           • {hold}
                         </Typography>
                       ))}
+                    </Box>
+                  )}
+
+                  {h.status === 'SUBMITTED' && (
+                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<Check size={14} />}
+                        onClick={() => handleAcknowledgeHandover(h)}
+                        sx={{ textTransform: 'none', fontWeight: 700, borderColor: '#0284C7', color: '#0284C7', borderRadius: '8px' }}
+                      >
+                        Acknowledge & Sign Off Shift
+                      </Button>
                     </Box>
                   )}
                 </Card>

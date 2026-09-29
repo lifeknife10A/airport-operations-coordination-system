@@ -55,11 +55,16 @@ import {
   AlertCircle,
   X,
   Users,
+  FileText,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { DashboardLayout } from '../../components/dashboard/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
 import { aocsDataStore } from '../../services/aocsDataStore';
+import { exportFlightMovementCSV, exportGateUtilizationPDF } from '../../utils/exportReports';
+import { flightApi } from '../../api/flightApi';
+import { Flight as BackendFlight } from '../../types';
+import { ChevronLeft } from 'lucide-react';
 
 // Types
 export interface OperationalFlight {
@@ -82,6 +87,28 @@ export interface OperationalFlight {
   delayMinutes?: number;
   delayReason?: string;
 }
+
+// Maps a raw backend Flight (from /api/flights/paged) into the enriched shape this dashboard
+// renders. Operational fields that don't exist on the backend yet (passengers, fuelKg, crew,
+// turnaroundProgress) get the same placeholder derivation the full-list store sync already used.
+const mapFlightDtoToOperational = (sf: BackendFlight): OperationalFlight => ({
+  id: `FL-${sf.flightId}`,
+  flightNumber: sf.flightNumber,
+  airline: sf.airlineName,
+  aircraft: sf.aircraftType,
+  route: `${sf.originAirportCode} → ${sf.destinationAirportCode}`,
+  origin: sf.originAirportName,
+  destination: sf.destinationAirportName,
+  gate: sf.gateCode || 'Unassigned',
+  scheduledTime: sf.scheduledTime,
+  estimatedTime: sf.estimatedTime || sf.scheduledTime,
+  status: (sf.status as OperationalFlight['status']) || 'SCHEDULED',
+  turnaroundProgress: sf.status === 'READY' ? 100 : sf.status === 'BOARDING' ? 80 : 45,
+  turnaroundStage: 'Turnaround Active',
+  passengers: 180,
+  fuelKg: 25000,
+  crew: 'Capt. / First Officer',
+});
 
 export interface TurnaroundStep {
   id: string;
@@ -376,6 +403,18 @@ export const AOCCControllerDashboard: React.FC = () => {
   const [flightSearch, setFlightSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
+  // Flight Operations Board pagination (10 rows/page, fetched straight from the backend's
+  // LIMIT/OFFSET endpoint) -- separate from `flights` above, which stays the full mock+store
+  // list feeding KPI counts, the turnaround/gate/delay pickers, and the dedicated Flights tab.
+  // Deliberately not merged: this table's rows come straight from the server per page, so they
+  // won't reflect an optimistic local mutation made elsewhere (delay dialog, gate reassignment)
+  // until the page is refetched -- acceptable for a first pass, revisit if that's confusing.
+  const [tablePage, setTablePage] = useState(0);
+  const [tablePageFlights, setTablePageFlights] = useState<OperationalFlight[]>([]);
+  const [tableTotalPages, setTableTotalPages] = useState(1);
+  const [tableTotalElements, setTableTotalElements] = useState(0);
+  const [tableLoading, setTableLoading] = useState(false);
+
   // Dynamic Turnaround Tasks for selected flight
   const [turnaroundTasks, setTurnaroundTasks] = useState<TurnaroundStep[]>([
     { id: 't1', title: 'Arrival & Chocks On Stand', status: 'COMPLETED', timestamp: '22:15 UTC', notes: 'Aircraft marshaled, ground power plugged in.', department: 'Ramp Ops' },
@@ -469,12 +508,19 @@ export const AOCCControllerDashboard: React.FC = () => {
       const storeGates = aocsDataStore.getGates();
       if (storeGates && storeGates.length > 0) {
         setGates(
-          storeGates.map((sg) => ({
-            gate: sg.gateCode,
-            concourse: `Concourse ${sg.gateCode.charAt(0) || 'A'}`,
-            flight: sg.assignedFlightNumber || null,
-            status: (sg.status as any) || 'AVAILABLE',
-          }))
+          // Defensive: the live backend's gate payload doesn't actually carry gateCode/status
+          // (it sends gateNumber, with no status field at all -- a pre-existing data-contract
+          // mismatch against this file's Gate type, not something new). Guarding here just stops
+          // a hard crash; it doesn't fix the underlying mismatch.
+          storeGates.map((sg) => {
+            const code = sg.gateCode || 'A0';
+            return {
+              gate: code,
+              concourse: `Concourse ${code.charAt(0) || 'A'}`,
+              flight: sg.assignedFlightNumber || null,
+              status: (sg.status as any) || 'AVAILABLE',
+            };
+          })
         );
       }
     };
@@ -485,6 +531,31 @@ export const AOCCControllerDashboard: React.FC = () => {
     });
     return () => unsub();
   }, []);
+
+  // Flight Operations Board: fetch exactly one page (10 rows) from the server on mount and on
+  // every page change. Never loads the full flights table into the browser regardless of how
+  // many thousand rows exist in aocs_db.
+  useEffect(() => {
+    let cancelled = false;
+    setTableLoading(true);
+    flightApi
+      .getSaphireHubFlightsPaged(tablePage, 10)
+      .then((res) => {
+        if (cancelled) return;
+        setTablePageFlights(res.content.map(mapFlightDtoToOperational));
+        setTableTotalPages(Math.max(1, res.totalPages));
+        setTableTotalElements(res.totalElements);
+      })
+      .catch(() => {
+        if (!cancelled) toast.error('Could not load this page of flights from the server.');
+      })
+      .finally(() => {
+        if (!cancelled) setTableLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tablePage]);
 
   const handleAdvanceTask = () => {
     const currentInProgressIdx = turnaroundTasks.findIndex((t) => t.status === 'IN_PROGRESS');
@@ -574,8 +645,9 @@ export const AOCCControllerDashboard: React.FC = () => {
     setReassignModalOpen(false);
   };
 
-  // Filtered flights
-  const filteredFlights = flights.filter((f) => {
+  // Filtered flights -- filters the current server-fetched page only (10 rows), not the whole
+  // aocs_db table. A flight on a different page won't show up here until you page to it.
+  const filteredFlights = tablePageFlights.filter((f) => {
     const matchesSearch =
       f.flightNumber.toLowerCase().includes(flightSearch.toLowerCase()) ||
       f.route.toLowerCase().includes(flightSearch.toLowerCase()) ||
@@ -665,6 +737,26 @@ export const AOCCControllerDashboard: React.FC = () => {
                   </Button>
                 ))}
               </Box>
+
+              <Button
+                variant="outlined"
+                startIcon={<FileText size={15} />}
+                onClick={exportFlightMovementCSV}
+                sx={{
+                  borderColor: '#CBD5E1',
+                  color: '#0F2942',
+                  fontFamily: "'Outfit', sans-serif",
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  textTransform: 'none',
+                  borderRadius: '10px',
+                  px: 1.8,
+                  py: 0.85,
+                  '&:hover': { borderColor: '#0284C7', bgcolor: '#F0F9FF' },
+                }}
+              >
+                Export Flights CSV
+              </Button>
 
               <Button
                 variant="contained"
@@ -932,7 +1024,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                   Flight Operations Board
                 </Typography>
                 <Typography sx={{ fontSize: '0.8rem', color: '#64748B' }}>
-                  Click a flight to inspect its real-time Turnaround Progress below
+                  Click a flight to inspect its real-time Turnaround Progress below · search and filters apply to the current page only
                 </Typography>
               </Box>
 
@@ -1131,6 +1223,55 @@ export const AOCCControllerDashboard: React.FC = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+
+            {/* Pagination: 10 rows/page fetched from the server, never the whole flights table */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                mt: 1.5,
+                px: 0.5,
+              }}
+            >
+              <Typography sx={{ fontSize: '0.78rem', color: '#64748B' }}>
+                {tableLoading
+                  ? 'Loading…'
+                  : tableTotalElements > 0
+                  ? `Page ${tablePage + 1} of ${tableTotalPages} · ${tableTotalElements.toLocaleString()} flights total`
+                  : 'No flights found'}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                <IconButton
+                  size="small"
+                  disabled={tablePage === 0 || tableLoading}
+                  onClick={() => setTablePage((p) => Math.max(0, p - 1))}
+                  aria-label="Previous page"
+                  sx={{
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '8px',
+                    color: '#334155',
+                    '&:hover': { borderColor: '#0284C7', color: '#0284C7', backgroundColor: '#F0F9FF' },
+                  }}
+                >
+                  <ChevronLeft size={18} />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  disabled={tablePage + 1 >= tableTotalPages || tableLoading}
+                  onClick={() => setTablePage((p) => Math.min(tableTotalPages - 1, p + 1))}
+                  aria-label="Next page"
+                  sx={{
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '8px',
+                    color: '#334155',
+                    '&:hover': { borderColor: '#0284C7', color: '#0284C7', backgroundColor: '#F0F9FF' },
+                  }}
+                >
+                  <ChevronRight size={18} />
+                </IconButton>
+              </Box>
+            </Box>
           </Card>
 
           {/* ========================================================================= */}
@@ -2015,7 +2156,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                         <Chip label={`+${d.delayMinutes} min`} size="small" sx={{ fontWeight: 800, bgcolor: '#FEF2F2', color: '#DC2626' }} />
                       </TableCell>
                       <TableCell>
-                        <Chip label={d.reasonCategory} size="small" sx={{ fontWeight: 700, fontSize: '0.68rem', bgcolor: '#F1F5F9' }} />
+                        <Chip label={d.reasonCategory.replace(/_/g, ' ')} size="small" sx={{ fontWeight: 700, fontSize: '0.68rem', bgcolor: '#F1F5F9' }} />
                       </TableCell>
                       <TableCell sx={{ fontSize: '0.8rem', color: '#334155' }}>{d.description}</TableCell>
                       <TableCell sx={{ fontSize: '0.74rem', color: '#64748B' }}>{d.loggedBy} ({d.loggedAt})</TableCell>
