@@ -6,7 +6,7 @@ tasks, baggage handling, border control, billing, security audit, and more).
 
 - **Backend**: Spring Boot 3.2.5 / Java 17, PostgreSQL, Flyway migrations, JWT auth with
   server-side session revocation, Spring Security RBAC.
-- **Frontend**: React 19 + TypeScript + Vite + MUI.
+- **Frontend**: React 19 + TypeScript + Vite + MUI (pnpm).
 
 This README covers everything needed to clone the repo and run the full stack locally, exactly
 as it runs in development.
@@ -19,7 +19,8 @@ as it runs in development.
 |---|---|---|
 | **Java** | **17** (exactly) | The backend is pinned to Java 17. If your default `java`/`JAVA_HOME` points at a newer JDK (common with Homebrew), you must point it at a JDK 17 install for every Maven command — see [Troubleshooting](#troubleshooting). |
 | **Node.js** | 20+ | Tested with Node 25. |
-| **PostgreSQL** | 16+ | Tested with Postgres 18 (Postgres.app on macOS). The schema and data are plain SQL with no version-specific features. |
+| **pnpm** | 9+ | The frontend's only package manager (`corepack enable` or `npm i -g pnpm`). `start.sh` installs dependencies for you on first run. |
+| **PostgreSQL** | 16+ | Verified on 16 (the Docker image) and 18 (Postgres.app). The migrations disable triggers while loading data, so the database user must be a superuser (the default `postgres` user is). |
 | **Maven** | Not required | The repo includes the Maven wrapper (`backend/mvnw`) — use that if you don't have Maven installed system-wide. |
 
 No separate seed/import step is needed: the database schema **and** a ~158,000-row demo dataset
@@ -40,15 +41,14 @@ cd "Mini Project"
 #    (adjust for your own Postgres install/credentials)
 createdb aocs_db
 
-# 3. Copy the env template (optional for local dev — see Environment variables below)
-cp .env.example .env
-
-# 4. Run everything with one script
+# 3. Run everything with one script (installs frontend deps on first run)
 ./start.sh
 ```
 
-`start.sh` starts the Spring Boot backend (port 8080) and the Vite frontend dev server (port
-3000), and waits for the backend to come up before starting the frontend. On first run, the
+`start.sh` finds a JDK 17, starts the Spring Boot backend (port 8080), waits for it to report
+healthy, then starts the Vite frontend dev server (port 3000). It stops with a clear error (and
+the log tail) instead of reporting success if something fails, and refuses to start if ports
+8080/3000 are already in use. On first run, the
 backend applies all Flyway migrations automatically — this takes a minute or two the first time
 (it's loading ~158k rows), then seconds on every subsequent start.
 
@@ -69,8 +69,8 @@ If you'd rather not use `start.sh`:
 JAVA_HOME=<path to a JDK 17 install> ./mvnw spring-boot:run
 
 # Frontend (from frontend/, in a separate terminal)
-npm install
-npm run dev
+pnpm install --frozen-lockfile
+pnpm run dev
 ```
 
 ---
@@ -80,7 +80,7 @@ npm run dev
 The seed data creates ~500 staff users across every role (Airport Operations Manager, Ground
 Handling Supervisor, Ramp Agent, Baggage Handler, Gate Agent, Check-in Agent, Security Officer,
 Immigration Officer, Airline Billing Clerk, System Administrator). Every seeded user shares the
-same demo password:
+same demo password (**demo data only: change or remove these accounts before any real deployment**):
 
 - **Username**: any seeded username, e.g. `david.rodriguez1` (format is generally
   `first.lastN@saphire.in` or `first.lastN` as a bare username — the login form accepts either)
@@ -109,7 +109,8 @@ docker compose up --build
 - Frontend: http://localhost:3000
 - Backend: http://localhost:8080
 
-This is a local/dev compose file (it runs the backend's dev-friendly default profile, not
+Verified end to end against the `postgres:16-alpine` image: all migrations apply, the API serves
+the 5,000 flights, and the nginx-served frontend proxies `/api` to the backend. This is a local/dev compose file (it runs the backend's dev-friendly default profile, not
 `--prod`). See the comments in `docker-compose.yml` and `backend/src/main/resources/
 application-prod.properties` for what a real deployment needs beyond this (`DB_URL`,
 `DB_USERNAME`, `DB_PASSWORD`, `AOCS_JWT_SECRET`, `CORS_ALLOWED_ORIGINS`, and
@@ -119,12 +120,41 @@ application-prod.properties` for what a real deployment needs beyond this (`DB_U
 
 ## Environment variables
 
-See `.env.example`. For local (non-Docker) dev, the backend's `application.properties` has sane
-fallback defaults for everything (DB credentials, JWT secret), so a `.env` file isn't strictly
-required to get running. Before deploying anywhere real, override at minimum:
+See `.env.example`. For local (non-Docker) dev the backend has fallback defaults for the database
+(`postgres`/`postgres` on `localhost:5432/aocs_db`), so no `.env` file is required.
 
-- `DB_PASSWORD` — the committed fallback is a known local-dev value, not a secret.
-- `AOCS_JWT_SECRET` — same; any previously-committed value must be treated as compromised.
+- `AOCS_JWT_SECRET` — signing key for login tokens. **There is deliberately no default**: if it is
+  unset the backend generates a random key for that run (logged as a warning), which is safe but
+  means everyone has to log in again after a restart. Set it to a long random value (32+
+  characters) for any shared or deployed run; the `prod` profile refuses to start without it.
+- `DB_USERNAME` / `DB_PASSWORD` / `SPRING_DATASOURCE_URL` — override the database connection.
+
+---
+
+## Security model (short version)
+
+- Login issues a token tied to a server-side session (`auth_sessions`); logging out or logging in
+  elsewhere revokes it immediately. One active session per user.
+- The user's **role is read from the database on every request**, never trusted from the token,
+  and the frontend re-verifies the stored session with `GET /api/auth/me` on page load.
+- Role checks (`@PreAuthorize`) guard every write endpoint and the sensitive lookups/exports;
+  unauthenticated callers can only use the public passenger endpoints (flights, gates, tasks
+  board, lost-and-found search, inquiry submission) and get redacted data.
+- Failed-login lockout per username and per IP; passwords are bcrypt-hashed and never serialized.
+
+---
+
+## Database migrations
+
+Flyway migrations live **only** in `backend/src/main/resources/db/migration/` (V1–V17) and build
+everything from an empty database: schema, constraints, and the ~158k-row demo dataset.
+
+- `V16__complete_production_dataset_sync.sql` truncates the tables it fills, then loads the dataset.
+  That is correct on a fresh database; on a database that already had V1–V15 applied, rows created
+  through the app before upgrading are replaced by the snapshot.
+- Flyway's checksum validation is switched off (`spring.flyway.validate-on-migrate=false`) because
+  earlier migrations were edited after being applied on the original development database. A new
+  database is unaffected.
 
 ---
 
@@ -135,12 +165,14 @@ cd backend
 ./mvnw test
 ```
 
-80 backend tests cover auth/session handling, RBAC, gate-assignment race conditions, login
-lockout, turnaround task state transitions, and more.
+83 backend unit tests cover auth/session handling, gate-assignment locking, login lockout,
+turnaround task and flight state transitions, and more. They use mocks and do not touch a
+database; CI additionally boots the app against an empty Postgres 16 to prove the migrations.
 
 ```bash
 cd frontend
 npx tsc --noEmit -p tsconfig.app.json   # typecheck
+pnpm run build                          # typecheck + production build
 ```
 
 ---
@@ -165,8 +197,20 @@ have it configured to start automatically).
 (`rm -rf backend/target && ./mvnw spring-boot:run`). This happens if a previous build's compiled
 classes linger after switching Java versions or branches.
 
-**Port 8080 or 3000 already in use**: another backend/frontend instance (yours or a previous
-session's) is still running. `lsof -ti :8080 | xargs kill -9` (same for `:3000`).
+**`start.sh` says a port is already in use**: an earlier backend/frontend is still running.
+`lsof -ti :8080 | xargs kill` (same for `:3000`), then run it again.
+
+---
+
+## Known limitations
+
+- Several staff dashboards still present seeded/`localStorage` demo data for some panels instead
+  of live API data (the flight board, flight tracker, gate assignment, flight status, task status,
+  shift handover, lost-and-found and check-in screens are wired to the backend; a write the
+  server rejects is rolled back with an error message).
+- Account suspension (`PUT /api/users/{id}/status`) is not persisted: the `users` table has no
+  status column.
+- Seeded flight dates are fixed (July–September 2026) rather than relative to today.
 
 ---
 

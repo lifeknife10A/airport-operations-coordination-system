@@ -1,10 +1,9 @@
 name: CI
 
-# No CI existed at all before this -- every change reached the repo with nothing but a developer's
-# own local run (or none) verifying it. This runs the backend test suite against a real Postgres
-# (not mocks, which is exactly how the flight-status and delay-log constraint mismatches slipped
-# through originally), typechecks and builds the frontend, and builds both Docker images to catch
-# a broken Dockerfile before it's someone's deploy-day surprise.
+# Backend: unit tests, then a real boot against a Postgres 16 service so the whole Flyway chain
+# (schema + the ~158k-row demo dataset) is applied from an empty database -- the unit tests never
+# touch a database, so only this step catches a broken migration. Frontend: typecheck + build.
+# Both Docker images are built to catch a broken Dockerfile.
 
 on:
   push:
@@ -39,17 +38,29 @@ jobs:
           cache: maven
           cache-dependency-path: backend/pom.xml
 
-      - name: Run test suite (real Postgres, not mocks)
+      - name: Unit tests
         working-directory: backend
         run: ./mvnw -B test
-        env:
-          # The default fallbacks in application.properties are fine for CI -- this is exactly
-          # the throwaway database the "postgres" service above just created.
-          DB_PASSWORD: postgres
 
       - name: Package (proves the Docker build's own package step still works)
         working-directory: backend
         run: ./mvnw -B -q clean package -DskipTests
+
+      - name: Boot test - apply every migration to an empty Postgres 16 and start the app
+        working-directory: backend
+        env:
+          DB_PASSWORD: postgres
+        run: |
+          java -jar target/aocs-backend-*.jar > boot.log 2>&1 &
+          for i in $(seq 1 90); do
+            if curl -fsS http://localhost:8080/actuator/health | grep -q '"status":"UP"'; then
+              echo "backend UP after ~$((i*3))s"
+              curl -fsS "http://localhost:8080/api/flights/paged?size=1" | grep -q '"totalElements":5000'
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "backend did not become healthy"; tail -n 80 boot.log; exit 1
 
       - name: Build backend Docker image
         working-directory: backend
