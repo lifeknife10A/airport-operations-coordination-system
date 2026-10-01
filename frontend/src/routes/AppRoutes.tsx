@@ -8,6 +8,7 @@ import CargoInformation from '../pages/public/CargoInformation';
 import AirportInformation from '../pages/public/AirportInformation';
 import Contact from '../pages/public/Contact';
 import Login from '../pages/auth/Login';
+import ProtectedRoute from '../components/auth/ProtectedRoute';
 
 import SystemAdminDashboard from '../pages/dashboards/SystemAdminDashboard';
 import AOCCControllerDashboard from '../pages/dashboards/AOCCControllerDashboard';
@@ -31,15 +32,15 @@ const AppRoutes: React.FC = () => {
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/login" element={<Login />} />
 
-                {/* 8 Top-Level Role Dashboard Routes */}
-                <Route path="/dashboard/system-admin" element={<SystemAdminDashboard />} />
-                <Route path="/dashboard/aocc" element={<AOCCControllerDashboard />} />
-                <Route path="/dashboard/ground-ops" element={<GroundOpsSupervisorDashboard />} />
-                <Route path="/dashboard/department" element={<DepartmentDashboard />} />
-                <Route path="/dashboard/airside-ops" element={<AirsideOpsDashboard />} />
-                <Route path="/dashboard/logistics" element={<LogisticsDashboard />} />
-                <Route path="/dashboard/passenger-security" element={<PassengerSecurityOpsDashboard />} />
-                <Route path="/dashboard/check-in" element={<PassengerCheckInDashboard />} />
+                {/* Role dashboards: each is only reachable by the roles mapped to it in auth/roleRoutes.ts */}
+                <Route path="/dashboard/system-admin" element={<ProtectedRoute dashboard="system-admin"><SystemAdminDashboard /></ProtectedRoute>} />
+                <Route path="/dashboard/aocc" element={<ProtectedRoute dashboard="aocc"><AOCCControllerDashboard /></ProtectedRoute>} />
+                <Route path="/dashboard/ground-ops" element={<ProtectedRoute dashboard="ground-ops"><GroundOpsSupervisorDashboard /></ProtectedRoute>} />
+                <Route path="/dashboard/department" element={<ProtectedRoute dashboard="department"><DepartmentDashboard /></ProtectedRoute>} />
+                <Route path="/dashboard/airside-ops" element={<ProtectedRoute dashboard="airside-ops"><AirsideOpsDashboard /></ProtectedRoute>} />
+                <Route path="/dashboard/logistics" element={<ProtectedRoute dashboard="logistics"><LogisticsDashboard /></ProtectedRoute>} />
+                <Route path="/dashboard/passenger-security" element={<ProtectedRoute dashboard="passenger-security"><PassengerSecurityOpsDashboard /></ProtectedRoute>} />
+                <Route path="/dashboard/check-in" element={<ProtectedRoute dashboard="check-in"><PassengerCheckInDashboard /></ProtectedRoute>} />
             </Routes>
         </BrowserRouter>
     );

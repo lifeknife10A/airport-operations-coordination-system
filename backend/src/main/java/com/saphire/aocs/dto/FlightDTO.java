@@ -31,6 +31,7 @@ public class FlightDTO {
     
     private Long aircraftId;
     private String aircraftRegistration;
+    private String aircraftType;
     
     private Long gateId;
     private String gateNumber;

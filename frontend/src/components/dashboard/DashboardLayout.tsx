@@ -50,6 +50,7 @@ import {
 } from 'lucide-react';
 import { SaphireLogo } from '../common/SaphireLogo';
 import { useAuth } from '../../context/AuthContext';
+import { dashboardSlugFor } from '../../auth/roleRoutes';
 import { getUserInitials } from '../../utils/userUtils';
 import toast from 'react-hot-toast';
 import { aocsDataStore, OperationalNotification } from '../../services/aocsDataStore';
@@ -197,19 +198,6 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
   },
 };
 
-const ROLE_TO_DASHBOARD: Record<string, string> = {
-  'SYSTEM_ADMINISTRATOR': 'system-admin',
-  'AIRPORT_OPERATIONS_MANAGER': 'aocc',
-  'GROUND_HANDLING_SUPERVISOR': 'ground-ops',
-  'RAMP_AGENT': 'ground-ops',
-  'AIRLINE_BILLING_CLERK': 'department',
-  'GATE_AGENT': 'airside-ops',
-  'BAGGAGE_HANDLER': 'logistics',
-  'SECURITY_OFFICER': 'passenger-security',
-  'IMMIGRATION_OFFICER': 'passenger-security',
-  'CHECKIN_AGENT': 'check-in',
-};
-
 const SEARCHABLE_ITEMS = [
   { type: 'FLIGHT', title: 'SPH-102 · London Heathrow (LHR)', sub: 'Boarding · Gate B12 · Concourse B', link: '/dashboard/system-admin#flights' },
   { type: 'FLIGHT', title: 'SPH-204 · Dubai International (DXB)', sub: 'Scheduled · Gate A04 · Concourse A', link: '/dashboard/system-admin#flights' },
@@ -290,7 +278,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
       return;
     }
 
-    const expectedDashboard = ROLE_TO_DASHBOARD[user.roleName] || 'system-admin';
+    const expectedDashboard = dashboardSlugFor(user.roleName);
+    if (!expectedDashboard) {
+      navigate('/login');
+      return;
+    }
     if (expectedDashboard !== activeRole) {
       toast.error(`Access Denied: Your account (${user.roleName.replace(/_/g, ' ')}) is restricted to your assigned workspace.`);
       navigate(`/dashboard/${expectedDashboard}`);

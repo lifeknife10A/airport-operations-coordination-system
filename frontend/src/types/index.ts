@@ -37,7 +37,7 @@ export interface Flight {
   scheduledTime: string;
   estimatedTime?: string;
   actualTime?: string;
-  status: 'SCHEDULED' | 'LANDED' | 'ON_BLOCK' | 'SERVICING' | 'READY' | 'BOARDING' | 'AIRBORNE' | 'DEPARTED' | 'DELAYED';
+  status: 'SCHEDULED' | 'LANDED' | 'ON_BLOCK' | 'SERVICING' | 'READY' | 'BOARDING' | 'AIRBORNE' | 'DEPARTED' | 'DELAYED' | 'CANCELLED';
   gateCode?: string;
   standCode?: string;
 }
@@ -68,7 +68,7 @@ export interface TurnaroundTask {
   flightNumber: string;
   taskType: string; // CLEANING, REFUELING, MAINTENANCE, CATERING, BOARDING, SECURITY
   taskName: string;
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'DELAYED';
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'DELAYED' | 'BLOCKED';
   assignedUserId?: number;
   assignedUserName?: string;
   departmentName?: string;

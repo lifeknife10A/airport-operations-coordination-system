@@ -241,6 +241,8 @@ public class FlightService {
                 .airlineName(flight.getAirline() != null ? flight.getAirline().getAirlineName() : null)
                 .aircraftId(flight.getAircraft() != null ? flight.getAircraft().getAircraftId() : null)
                 .aircraftRegistration(flight.getAircraft() != null ? flight.getAircraft().getRegistrationNumber() : null)
+                .aircraftType(flight.getAircraft() != null && flight.getAircraft().getAircraftType() != null
+                        ? flight.getAircraft().getAircraftType().getModelName() : null)
                 .gateId(flight.getGate() != null ? flight.getGate().getGateId() : null)
                 .gateNumber(flight.getGate() != null ? flight.getGate().getGateNumber() : null)
                 .standId(flight.getStand() != null ? flight.getStand().getStandId() : null)

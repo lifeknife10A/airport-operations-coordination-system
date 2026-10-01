@@ -18,6 +18,7 @@ import {
 } from '../types';
 import { flightApi } from '../api/flightApi';
 import { gateApi } from '../api/gateApi';
+import toast from 'react-hot-toast';
 import { taskApi } from '../api/taskApi';
 import { baggageApi } from '../api/baggageApi';
 import { billingApi } from '../api/billingApi';
@@ -337,6 +338,12 @@ const SEED_NOTIFICATIONS: OperationalNotification[] = [
 // SINGLETON REACTIVE STORE
 // ============================================================================
 
+// Pulls the most useful message out of a failed axios call (backend ProblemDetail `detail`).
+const describeApiError = (e: unknown): string => {
+  const err = e as { response?: { data?: { detail?: string; message?: string } }; message?: string };
+  return err?.response?.data?.detail || err?.response?.data?.message || err?.message || 'request failed';
+};
+
 class AocsDataStore {
   private flights: Flight[] = [];
   private gates: Gate[] = [];
@@ -412,7 +419,7 @@ private async initRemoteSync() {
     const [remoteFlights, remoteGates, remoteTasks] = await Promise.all([
       flightApi.getSaphireHubFlights(),
       gateApi.getAllGates(),
-      (taskApi as any).getAllTasks ? (taskApi as any).getAllTasks() : Promise.resolve([]),
+      taskApi.getAllTasks(),
     ]);
     if (remoteFlights?.length) this.flights = remoteFlights;
     if (remoteGates?.length) this.gates = remoteGates;
@@ -520,6 +527,8 @@ public async assignGate(flightNumber: string, gateCode: string, source: string =
   const flight = this.flights.find((f) => f.flightNumber === flightNumber);
   const targetGate = this.gates.find((g) => g.gateCode === gateCode);
   if (!flight) return false;
+  const previousFlights = this.flights;
+  const previousGates = this.gates;
 
   // Free previous gate (if any) and occupy new one
   this.gates = this.gates.map((g) => {
@@ -546,8 +555,16 @@ public async assignGate(flightNumber: string, gateCode: string, source: string =
       await gateApi.assignGateToFlight({ flightId: flightObj.flightId, gateId: gateObj.gateId });
     }
   } catch (e) {
+    // The server refused (overlap, validation, permissions, offline): undo the optimistic change
+    // and say so, instead of leaving the UI showing an assignment that was never saved.
     console.error('Backend gate assignment failed', e);
-    // Optional: roll back local state here
+    this.flights = previousFlights;
+    this.gates = previousGates;
+    this.persist('saphire_flights', this.flights);
+    this.persist('saphire_gates', this.gates);
+    toast.error(`Gate ${gateCode} was NOT assigned to ${flightNumber}: ${describeApiError(e)}`);
+    this.emit('REFRESH', { source: 'GateAssignRollback' }, source);
+    return false;
   }
 
   this.logAuditEvent('GATE_ASSIGNMENT', `Gate ${gateCode} assigned to Flight ${flightNumber}`, source);
@@ -562,16 +579,20 @@ public async updateFlightStatus(flightNumber: string, status: Flight['status'], 
   const flight = this.flights.find((f) => f.flightNumber === flightNumber);
   if (!flight) return false;
 
-  // Optimistic local update
+  // Optimistic local update, undone below if the server rejects it
+  const previousFlights = this.flights;
   this.flights = this.flights.map((f) => (f.flightNumber === flightNumber ? { ...f, status } : f));
   this.persist('saphire_flights', this.flights);
 
-  // Remote sync – fire and ignore errors
   try {
     await flightApi.updateFlightStatus(flight.flightId, status);
   } catch (e) {
     console.error('Backend flight status update failed', e);
-    // Optional: roll back local state here
+    this.flights = previousFlights;
+    this.persist('saphire_flights', this.flights);
+    toast.error(`${flightNumber} status was NOT changed to ${status}: ${describeApiError(e)}`);
+    this.emit('REFRESH', { source: 'FlightStatusRollback' }, source);
+    return false;
   }
 
   this.logAuditEvent('FLIGHT_STATUS_UPDATE', `Flight ${flightNumber} status transitioned to ${status}`, source);
@@ -584,6 +605,7 @@ public async updateFlightStatus(flightNumber: string, status: Flight['status'], 
     const task = this.tasks.find((t) => t.taskId === taskId);
     if (!task) return false;
 
+    const previousTasks = this.tasks;
     this.tasks = this.tasks.map((t) =>
       t.taskId === taskId
         ? {
@@ -594,6 +616,16 @@ public async updateFlightStatus(flightNumber: string, status: Flight['status'], 
         : t
     );
     this.persist('saphire_tasks', this.tasks);
+
+    // Save to the backend; if it refuses, put the task back and tell the user.
+    taskApi.updateTaskStatus(taskId, status).catch((e) => {
+      console.error('Backend task status update failed', e);
+      this.tasks = previousTasks;
+      this.persist('saphire_tasks', this.tasks);
+      toast.error(`Task #${taskId} was NOT updated to ${status}: ${describeApiError(e)}`);
+      this.emit('REFRESH', { source: 'TaskStatusRollback' }, source);
+    });
+
 
     this.logAuditEvent(
       'TASK_STATUS_CHANGE',
@@ -629,7 +661,9 @@ public async updateFlightStatus(flightNumber: string, status: Flight['status'], 
     const cleaningCleared = !cleaning || cleaning.status === 'COMPLETED';
     const maintenanceCleared = !maintenance || maintenance.status === 'COMPLETED';
     const fuelingCleared = !fueling || fueling.status === 'COMPLETED';
-    const allCleared = securityCleared && cleaningCleared && maintenanceCleared && fuelingCleared;
+    // A flight with no turnaround tasks on record has nothing proving it is ready, so it is not
+    // treated as cleared (it used to be: every missing task counted as complete).
+    const allCleared = tasks.length > 0 && securityCleared && cleaningCleared && maintenanceCleared && fuelingCleared;
 
     return {
       securityCleared,

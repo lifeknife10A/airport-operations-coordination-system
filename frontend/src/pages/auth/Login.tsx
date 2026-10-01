@@ -27,12 +27,13 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import { dashboardPathFor } from '../../auth/roleRoutes';
 import { SaphireLogo } from '../../components/common/SaphireLogo';
 import bannerLogin from '../../assets/banners/banner-login.jpg';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,37 +65,10 @@ export const Login: React.FC = () => {
     try {
       const user = await login(cleanEmail, cleanPassword);
 
-      // Determine destination dashboard route based on user's authorized role
-      let targetPath = '/dashboard/system-admin';
-      switch (user.roleName) {
-        case 'SYSTEM_ADMINISTRATOR':
-          targetPath = '/dashboard/system-admin';
-          break;
-        case 'AIRPORT_OPERATIONS_MANAGER':
-          targetPath = '/dashboard/aocc';
-          break;
-        case 'GROUND_HANDLING_SUPERVISOR':
-        case 'RAMP_AGENT':
-          targetPath = '/dashboard/ground-ops';
-          break;
-        case 'AIRLINE_BILLING_CLERK':
-          targetPath = '/dashboard/department';
-          break;
-        case 'GATE_AGENT':
-          targetPath = '/dashboard/airside-ops';
-          break;
-        case 'BAGGAGE_HANDLER':
-          targetPath = '/dashboard/logistics';
-          break;
-        case 'SECURITY_OFFICER':
-        case 'IMMIGRATION_OFFICER':
-          targetPath = '/dashboard/passenger-security';
-          break;
-        case 'CHECKIN_AGENT':
-          targetPath = '/dashboard/check-in';
-          break;
-        default:
-          targetPath = '/dashboard/system-admin';
+      const targetPath = dashboardPathFor(user.roleName);
+      if (!targetPath) {
+        await logout();
+        throw new Error(`Your role (${user.roleName}) has no dashboard assigned. Contact an administrator.`);
       }
 
       toast.success(`Access Granted: ${user.name}`);
