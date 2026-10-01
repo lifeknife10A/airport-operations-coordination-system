@@ -20,13 +20,12 @@ import java.util.Set;
  * the live Flyway migration needs to update the flight_status CHECK constraint to match this
  * exact set of names before this compiles against a real database.
  *
- * DELAYED is deliberately NOT a state here. A flight is still fundamentally BOARDING or
- * SERVICING even while running late — you already model "is this delayed, and why" as a
- * separate concern via the DELAY_LOGS weak entity. Folding "current stage" and "running late"
- * into one mutually-exclusive column is what let ReportService's "ON_BLOCK" filter (line 29 of
- * the original) reference a value the documented CHECK constraint didn't even allow. If the
- * frontend needs a "delayed" badge, derive it from `estimatedDepartureTime` vs.
- * `scheduledDepartureTime` (or the presence of a DELAY_LOGS row), not from this enum.
+ * DELAYED IS a state here (an earlier version excluded it on purpose). The database CHECK
+ * constraint allows it, 167 seeded flights are already DELAYED and the dashboards filter and
+ * badge on it, so leaving it out of this enum made every one of those flights un-updatable
+ * (parsing their current status threw a 400). "Why is it late" still lives in DELAY_LOGS; this
+ * only records that the flight is currently running late. A delayed flight resumes into any
+ * normal stage (or is cancelled).
  */
 public enum FlightStatus {
     SCHEDULED,
@@ -37,6 +36,7 @@ public enum FlightStatus {
     BOARDING,
     AIRBORNE,
     DEPARTED,
+    DELAYED,
     CANCELLED;
 
     /**
@@ -53,12 +53,17 @@ public enum FlightStatus {
             BOARDING,  Set.of(AIRBORNE),
             AIRBORNE,  Set.of(DEPARTED),
             DEPARTED,  Set.of(),                    // terminal
+            DELAYED,   Set.of(SCHEDULED, LANDED, ON_BLOCK, SERVICING, READY, BOARDING, AIRBORNE),
             CANCELLED, Set.of()                     // terminal
     );
 
     public boolean canTransitionTo(FlightStatus target) {
         if (target == CANCELLED) {
             return this != DEPARTED && this != CANCELLED;
+        }
+        if (target == DELAYED) {
+            // Can run late at any stage before it is actually in the air.
+            return this != AIRBORNE && this != DEPARTED && this != CANCELLED && this != DELAYED;
         }
         return ALLOWED.getOrDefault(this, Set.of()).contains(target);
     }
