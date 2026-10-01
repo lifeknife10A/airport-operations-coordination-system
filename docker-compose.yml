@@ -1,0 +1,60 @@
+# Brings up the whole stack: Postgres with the Flyway migrations applied by the backend on boot,
+# the Spring Boot API, and the built frontend served by nginx.
+#
+# This is a local/dev compose file, not a production manifest -- it runs the backend with the
+# default profile (the same dev-friendly fallback secrets used outside Docker), not --prod.
+# `.env` (see `.env.example`) lets you override the Postgres password and JWT secret even for
+# this file without editing it; for an actual deployment use application-prod.properties's
+# required env vars instead (DB_URL/DB_USERNAME/DB_PASSWORD/AOCS_JWT_SECRET/
+# CORS_ALLOWED_ORIGINS) and set SPRING_PROFILES_ACTIVE=prod on the backend service.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: aocs_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - aocs_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aocs_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      # application.properties builds the JDBC URL from a fixed "localhost" host, which is wrong
+      # inside a container network -- override the whole property directly to reach the compose
+      # service by its name instead.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/aocs_db
+      AOCS_JWT_SECRET: ${AOCS_JWT_SECRET:-44390917d5dd7e26a878da200e4ab2296ebce395110e0fa3064167bf47f36624}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+
+volumes:
+  aocs_pgdata:

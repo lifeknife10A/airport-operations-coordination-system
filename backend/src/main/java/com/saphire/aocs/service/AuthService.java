@@ -7,6 +7,7 @@ import com.saphire.aocs.exception.UnauthorizedException;
 import com.saphire.aocs.repository.UserRepository;
 import com.saphire.aocs.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
  * migration script to BCrypt-hash whatever placeholder credentials are currently in the seed
  * data — before this will run against real data.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -38,26 +40,36 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final SessionService sessionService;
 
-    @Transactional(readOnly = true)
+    // Not readOnly anymore: a successful login now also writes an auth_sessions row (and revokes
+    // any prior active session for this user -- single-session-per-user enforcement).
+    @Transactional
     public LoginResponseDTO login(LoginDTO dto) {
         // dto.username/password are already guaranteed non-blank by @NotBlank + the fixed
         // GlobalExceptionHandler (see exception/GlobalExceptionHandler.java) — no need to
         // hand-roll that check here the way the original did.
-        User user = userRepository.findByUsername(dto.getUsername())
-                .orElseThrow(() -> new UnauthorizedException(GENERIC_FAILURE));
+        User user = userRepository.findByUsernameOrEmail(dto.getUsername(), dto.getUsername())
+                .orElseThrow(() -> {
+                    log.warn("Failed login: unknown user '{}'", dto.getUsername());
+                    return new UnauthorizedException(GENERIC_FAILURE);
+                });
 
         if (!passwordEncoder.matches(dto.getPassword(), user.getPasswordHash())) {
+            log.warn("Failed login: wrong password for user '{}' (id {})", user.getUsername(), user.getUserId());
             throw new UnauthorizedException(GENERIC_FAILURE);
         }
 
         String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
-        String token = jwtService.issueToken(user.getUserId(), user.getUsername(), roleName);
+        var session = sessionService.createSession(user.getUserId(), jwtService.getExpiryMs());
+        String token = jwtService.issueToken(user.getUserId(), user.getUsername(), roleName, session.getSessionId());
+        log.info("Login: user '{}' (id {}, role {}) session {}", user.getUsername(), user.getUserId(), roleName, session.getSessionId());
 
         return LoginResponseDTO.builder()
                 .token(token)
                 .userId(user.getUserId())
                 .username(user.getUsername())
+                .email(user.getEmail())
                 .name(user.getName())
                 .roleId(user.getRole() != null ? user.getRole().getRoleId() : null)
                 .roleName(roleName)

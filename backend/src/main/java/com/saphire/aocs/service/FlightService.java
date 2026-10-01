@@ -2,12 +2,18 @@ package com.saphire.aocs.service;
 
 import com.saphire.aocs.dto.FlightCreateDTO;
 import com.saphire.aocs.dto.FlightDTO;
+import com.saphire.aocs.dto.PagedResponseDTO;
 import com.saphire.aocs.entity.*;
 import com.saphire.aocs.exception.BadRequestException;
 import com.saphire.aocs.exception.ConflictException;
 import com.saphire.aocs.exception.ResourceNotFoundException;
 import com.saphire.aocs.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +46,7 @@ import java.time.ZonedDateTime;
  * consistently: null id -> null association (fine, it's optional), non-null id that doesn't
  * resolve -> 404 (previously: silently ignored).
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FlightService {
@@ -54,11 +61,44 @@ public class FlightService {
     private final StandRepository standRepository;
     private final DepartmentRepository departmentRepository;
 
+    private static final int MAX_PAGE_SIZE = 100;
+
     @Transactional(readOnly = true)
     public List<FlightDTO> getSaphireHubFlights() {
         return flightRepository.findAllSaphireHubFlightsWithAllDetails().stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Real SQL-level pagination (LIMIT/OFFSET) -- unlike getSaphireHubFlights() above, this never
+     * loads more than `size` rows into memory regardless of how many flights exist in total.
+     * page is clamped to >= 0 and size to [1, MAX_PAGE_SIZE] so a bad/malicious query param can't
+     * force an unbounded fetch.
+     */
+    @Transactional(readOnly = true)
+    public PagedResponseDTO<FlightDTO> getSaphireHubFlightsPaged(int page, int size) {
+        return getSaphireHubFlightsPaged(page, size, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponseDTO<FlightDTO> getSaphireHubFlightsPaged(int page, int size, String query) {
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(Math.max(1, size), MAX_PAGE_SIZE);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "flightId"));
+
+        String trimmedQuery = query == null ? null : query.trim();
+        Page<Flight> result = (trimmedQuery == null || trimmedQuery.isEmpty())
+                ? flightRepository.findAllSaphireHubFlightsWithAllDetails(pageable)
+                : flightRepository.searchSaphireHubFlights(trimmedQuery, pageable);
+
+        return PagedResponseDTO.<FlightDTO>builder()
+                .content(result.getContent().stream().map(this::mapToDTO).collect(Collectors.toList()))
+                .page(result.getNumber())
+                .size(result.getSize())
+                .totalElements(result.getTotalElements())
+                .totalPages(result.getTotalPages())
+                .build();
     }
 
     @Transactional(readOnly = true)
@@ -133,6 +173,7 @@ public class FlightService {
                             + current + " to " + target);
         }
 
+        log.info("Flight {} (id {}) status {} -> {}", flight.getFlightNumber(), flightId, current, target);
         flight.setFlightStatus(target.name());
         ZonedDateTime now = ZonedDateTime.now();
 

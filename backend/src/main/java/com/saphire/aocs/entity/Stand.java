@@ -25,6 +25,12 @@ public class Stand {
     @Column(name = "has_jetbridge", nullable = false)
     private Boolean hasJetbridge;
 
+    @Column(name = "concourse", length = 30)
+    private String concourse;
+
+    @Column(name = "terminal", length = 50)
+    private String terminal;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "assigned_gate_id")
     private Gate assignedGate;

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/gates")
+@RequestMapping({"/api/gates", "/api/v1/gates", "/api/airside/gates", "/api/v1/airside/gates"})
 @RequiredArgsConstructor
 public class GateController {
 

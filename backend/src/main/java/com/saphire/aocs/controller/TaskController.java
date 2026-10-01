@@ -13,11 +13,16 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/tasks")
+@RequestMapping({"/api/tasks", "/api/v1/tasks"})
 @RequiredArgsConstructor
 public class TaskController {
 
     private final TurnaroundTaskService turnaroundTaskService;
+
+    @GetMapping
+    public ResponseEntity<List<TaskDTO>> getAllTasks(@RequestParam(required = false) String status) {
+        return ResponseEntity.ok(turnaroundTaskService.getAllTasks(status));
+    }
 
     @GetMapping("/flight/{flightId}")
     public ResponseEntity<List<TaskDTO>> getTasksByFlight(@PathVariable Long flightId) {

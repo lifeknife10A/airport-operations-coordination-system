@@ -2,10 +2,24 @@
 *.tmp
 node_modules/
 target/
+dist/
 .idea/
 .vscode/
+logs/
+frontend/.playwright-cli/
+
+# Local secrets (see .env.example) -- never commit real credentials.
+.env
+.env.*
+!.env.example
 
 # Draw.io Auto-Generated Temporary Backup Files
 *.bkp
 .$*.drawio.bkp
 .*.drawio.bkp
+
+# Agent workspace files
+.agents/
+.claude/
+.codex/
+skills-lock.json

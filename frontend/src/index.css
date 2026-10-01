@@ -20,30 +20,129 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #070b14;
+  background: #FAF9F6;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #CBD5E1;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #1E3A5F;
 }
 
-/* Glassmorphism utility animations */
+/* Green status beacon utility animation */
 @keyframes pulseGlow {
-  0% { box-shadow: 0 0 10px rgba(6, 182, 212, 0.2); }
-  50% { box-shadow: 0 0 20px rgba(6, 182, 212, 0.4); }
-  100% { box-shadow: 0 0 10px rgba(6, 182, 212, 0.2); }
+  0% { box-shadow: 0 0 8px rgba(16, 185, 129, 0.3); }
+  50% { box-shadow: 0 0 16px rgba(16, 185, 129, 0.6); }
+  100% { box-shadow: 0 0 8px rgba(16, 185, 129, 0.3); }
+}
+
+/* HCI Fluid Slide Motion Keyframes */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInSmooth {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes subtleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Motion utility classes - neutralized per user preference */
+.motion-slide-up,
+.motion-slide-down,
+.motion-slide-left,
+.motion-slide-right,
+.motion-fade-in {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+.motion-delay-100,
+.motion-delay-150,
+.motion-delay-200,
+.motion-delay-300,
+.motion-delay-400,
+.motion-delay-500 {
+  animation-delay: 0s !important;
+}
+
+/* Interactive elevated card hover dynamics */
+.motion-elevate-card {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.28s ease;
+}
+
+.motion-elevate-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px -8px rgba(15, 41, 66, 0.12), 0 4px 12px rgba(15, 41, 66, 0.05);
+}
+
+/* Smooth table row interactive highlight */
+.motion-row {
+  transition: background-color 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.motion-row:hover {
+  background-color: rgba(2, 132, 199, 0.04) !important;
+  transform: translateX(3px);
 }
 
 @theme inline {
@@ -168,4 +267,81 @@ html, body, #root {
   html {
     @apply font-sans;
   }
+}
+
+/* Apple-inspired Liquid Glass Architecture - Tastefully Translucent */
+.apple-liquid-glass {
+  position: relative;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.48) 0%,
+    rgba(240, 246, 252, 0.32) 100%
+  );
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1.5px solid rgba(255, 255, 255, 0.65);
+  border-radius: 28px;
+  box-shadow: 
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 2px 0 rgba(15, 41, 66, 0.04),
+    inset 0 0 20px rgba(255, 255, 255, 0.25),
+    0 24px 60px -12px rgba(15, 41, 66, 0.12),
+    0 8px 24px -4px rgba(15, 41, 66, 0.05);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgba(255, 255, 255, 0.45) 0%,
+    transparent 65%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.apple-liquid-glass > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Liquid Glass Footer */
+.apple-liquid-glass-footer {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.68) 0%,
+    rgba(245, 248, 252, 0.52) 100%
+  );
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 
+    inset 0 2px 3px 0 rgba(255, 255, 255, 0.9),
+    inset 0 0 24px rgba(255, 255, 255, 0.3),
+    0 -20px 50px rgba(15, 41, 66, 0.04);
+  overflow: hidden;
+}
+
+.apple-liquid-glass-footer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgba(255, 255, 255, 0.55) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.apple-liquid-glass-footer > * {
+  position: relative;
+  z-index: 1;
 }

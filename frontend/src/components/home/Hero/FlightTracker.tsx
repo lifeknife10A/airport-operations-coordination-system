@@ -17,7 +17,7 @@ export const FlightTracker: React.FC = () => {
   return (
     <div id="flight-tracker" className="tracker-positioner">
       <SpotlightCard
-        spotlightColor="rgba(76, 81, 226, 0.25)"
+        spotlightColor="rgba(196, 62, 58, 0.15)"
         className="tracker-card dark-theme"
       >
         <div className="tracker-tabs">
@@ -26,7 +26,7 @@ export const FlightTracker: React.FC = () => {
             className={`tab-btn ${activeTab === 'flight' ? 'active' : ''}`}
             onClick={() => setActiveTab('flight')}
           >
-            <Plane size={16} />
+            <Plane size={15} />
             Flight Status
           </button>
           <button
@@ -34,7 +34,7 @@ export const FlightTracker: React.FC = () => {
             className={`tab-btn ${activeTab === 'route' ? 'active' : ''}`}
             onClick={() => setActiveTab('route')}
           >
-            <MapPin size={16} />
+            <MapPin size={15} />
             Gate & Terminal
           </button>
           <button
@@ -42,14 +42,14 @@ export const FlightTracker: React.FC = () => {
             className={`tab-btn ${activeTab === 'cargo' ? 'active' : ''}`}
             onClick={() => setActiveTab('cargo')}
           >
-            <Package size={16} />
+            <Package size={15} />
             Cargo AWB
           </button>
         </div>
 
         <form className="tracker-form" onSubmit={handleSearch}>
           <div className="input-wrapper">
-            <Search className="search-icon" size={20} />
+            <Search className="search-icon" size={18} />
             <input
               type="text"
               className="tracker-input"
@@ -65,8 +65,8 @@ export const FlightTracker: React.FC = () => {
             />
           </div>
           <button type="submit" className="tracker-button">
-            Search Telemetry
-            <ArrowRight size={18} />
+            Track Flight
+            <ArrowRight size={16} />
           </button>
         </form>
 

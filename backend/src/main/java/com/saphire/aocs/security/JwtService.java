@@ -28,16 +28,23 @@ public class JwtService {
         this.expiryMs = expiryMs;
     }
 
-    public String issueToken(Long userId, String username, String roleName) {
+    public String issueToken(Long userId, String username, String roleName, java.util.UUID sessionId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expiryMs);
         return Jwts.builder()
                 .subject(username)
-                .claims(Map.of("userId", userId, "role", roleName == null ? "" : roleName))
+                .claims(Map.of(
+                        "userId", userId,
+                        "role", roleName == null ? "" : roleName,
+                        "sid", sessionId.toString()))
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(key)
                 .compact();
+    }
+
+    public long getExpiryMs() {
+        return expiryMs;
     }
 
     public Claims parse(String token) {

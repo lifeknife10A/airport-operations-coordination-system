@@ -14,6 +14,9 @@ import java.util.List;
 public class GateResponseDTO {
     private Long gateId;
     private String gateNumber;
+    private String concourse;
+    private String terminal;
+    private Double maxWingspanMeters;
     private List<StandInfo> stands;
     private List<FlightDTO> activeFlights;
 

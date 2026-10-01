@@ -1,9 +1,20 @@
 import axiosClient from './axiosClient';
-import { Flight, FlightCreatePayload } from '../types';
+import { Flight, FlightCreatePayload, PagedResponse } from '../types';
 
 export const flightApi = {
   getSaphireHubFlights: async (): Promise<Flight[]> => {
     const response = await axiosClient.get<Flight[]>('/flights');
+    return response.data;
+  },
+
+  getSaphireHubFlightsPaged: async (
+    page: number,
+    size: number = 10,
+    query?: string
+  ): Promise<PagedResponse<Flight>> => {
+    const response = await axiosClient.get<PagedResponse<Flight>>('/flights/paged', {
+      params: { page, size, query: query || undefined },
+    });
     return response.data;
   },
 

@@ -2,6 +2,7 @@ package com.saphire.aocs.service;
 
 import com.saphire.aocs.dto.LoginDTO;
 import com.saphire.aocs.dto.LoginResponseDTO;
+import com.saphire.aocs.entity.AuthSession;
 import com.saphire.aocs.entity.Department;
 import com.saphire.aocs.entity.Role;
 import com.saphire.aocs.entity.User;
@@ -17,10 +18,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -40,6 +43,14 @@ class AuthServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtService jwtService;
+    @Mock private SessionService sessionService;
+
+    private final UUID sessionId = UUID.randomUUID();
+
+    private void stubSession() {
+        when(sessionService.createSession(any(), anyLong()))
+                .thenReturn(AuthSession.builder().sessionId(sessionId).userId(1L).build());
+    }
 
     @InjectMocks private AuthService authService;
 
@@ -57,7 +68,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("a wrong password is rejected (the original accepted anything)")
     void wrongPassword_ShouldThrowUnauthorized() {
-        when(userRepository.findByUsername("krishna.s")).thenReturn(Optional.of(adminUser()));
+        when(userRepository.findByUsernameOrEmail("krishna.s", "krishna.s")).thenReturn(Optional.of(adminUser()));
         when(passwordEncoder.matches(eq("wrong-password"), anyString())).thenReturn(false);
 
         LoginDTO dto = LoginDTO.builder().username("krishna.s").password("wrong-password").build();
@@ -66,13 +77,14 @@ class AuthServiceTest {
                 .isInstanceOf(UnauthorizedException.class);
 
         // No token may be minted on a failed authentication.
-        verify(jwtService, never()).issueToken(any(), anyString(), anyString());
+        verify(jwtService, never()).issueToken(any(), anyString(), anyString(), any());
+        verify(sessionService, never()).createSession(any(), anyLong());
     }
 
     @Test
     @DisplayName("an empty password is rejected")
     void emptyPassword_ShouldThrowUnauthorized() {
-        when(userRepository.findByUsername("krishna.s")).thenReturn(Optional.of(adminUser()));
+        when(userRepository.findByUsernameOrEmail("krishna.s", "krishna.s")).thenReturn(Optional.of(adminUser()));
         when(passwordEncoder.matches(eq(""), anyString())).thenReturn(false);
 
         LoginDTO dto = LoginDTO.builder().username("krishna.s").password("").build();
@@ -88,14 +100,14 @@ class AuthServiceTest {
         // for an unknown user, versus a different outcome for a known one. That difference is a
         // free username oracle: an attacker sprays candidate usernames and reads the status code
         // to learn which accounts exist, then focuses password guessing on those.
-        when(userRepository.findByUsername("does.not.exist")).thenReturn(Optional.empty());
+        when(userRepository.findByUsernameOrEmail("does.not.exist", "does.not.exist")).thenReturn(Optional.empty());
 
         Throwable unknownUser = org.junit.jupiter.api.Assertions.assertThrows(
                 UnauthorizedException.class,
                 () -> authService.login(LoginDTO.builder().username("does.not.exist").password("anything").build()));
 
         reset(userRepository);
-        when(userRepository.findByUsername("krishna.s")).thenReturn(Optional.of(adminUser()));
+        when(userRepository.findByUsernameOrEmail("krishna.s", "krishna.s")).thenReturn(Optional.of(adminUser()));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
         Throwable badPassword = org.junit.jupiter.api.Assertions.assertThrows(
@@ -111,9 +123,10 @@ class AuthServiceTest {
     @Test
     @DisplayName("correct credentials issue a token and return the user profile")
     void validCredentials_ShouldIssueToken() {
-        when(userRepository.findByUsername("krishna.s")).thenReturn(Optional.of(adminUser()));
+        when(userRepository.findByUsernameOrEmail("krishna.s", "krishna.s")).thenReturn(Optional.of(adminUser()));
         when(passwordEncoder.matches(eq("correct-password"), anyString())).thenReturn(true);
-        when(jwtService.issueToken(1L, "krishna.s", "ROLE_ADMIN")).thenReturn("header.payload.signature");
+        stubSession();
+        when(jwtService.issueToken(1L, "krishna.s", "ROLE_ADMIN", sessionId)).thenReturn("header.payload.signature");
 
         LoginDTO dto = LoginDTO.builder().username("krishna.s").password("correct-password").build();
         LoginResponseDTO response = authService.login(dto);
@@ -130,9 +143,10 @@ class AuthServiceTest {
     @Test
     @DisplayName("the raw password hash never leaks into the response")
     void response_ShouldNotExposePasswordHash() {
-        when(userRepository.findByUsername("krishna.s")).thenReturn(Optional.of(adminUser()));
+        when(userRepository.findByUsernameOrEmail("krishna.s", "krishna.s")).thenReturn(Optional.of(adminUser()));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        when(jwtService.issueToken(any(), anyString(), anyString())).thenReturn("token");
+        stubSession();
+        when(jwtService.issueToken(any(), anyString(), anyString(), any())).thenReturn("token");
 
         LoginResponseDTO response = authService.login(
                 LoginDTO.builder().username("krishna.s").password("correct-password").build());
@@ -150,14 +164,30 @@ class AuthServiceTest {
                 .passwordHash("$2a$10$hash").role(null).department(null)
                 .build();
 
-        when(userRepository.findByUsername("temp.contractor")).thenReturn(Optional.of(noRole));
+        when(userRepository.findByUsernameOrEmail("temp.contractor", "temp.contractor")).thenReturn(Optional.of(noRole));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        when(jwtService.issueToken(9L, "temp.contractor", null)).thenReturn("token");
+        when(sessionService.createSession(any(), anyLong()))
+                .thenReturn(AuthSession.builder().sessionId(sessionId).userId(9L).build());
+        when(jwtService.issueToken(9L, "temp.contractor", null, sessionId)).thenReturn("token");
 
         LoginResponseDTO response = authService.login(
                 LoginDTO.builder().username("temp.contractor").password("pw").build());
 
         assertThat(response.getRoleName()).isNull();
         assertThat(response.getToken()).isEqualTo("token");
+    }
+
+    @Test
+    @DisplayName("a successful login opens a server-side session and puts its id in the token")
+    void validCredentials_ShouldCreateSessionAndEmbedItsId() {
+        when(userRepository.findByUsernameOrEmail("krishna.s", "krishna.s")).thenReturn(Optional.of(adminUser()));
+        when(passwordEncoder.matches(eq("correct-password"), anyString())).thenReturn(true);
+        stubSession();
+        when(jwtService.issueToken(1L, "krishna.s", "ROLE_ADMIN", sessionId)).thenReturn("tok");
+
+        authService.login(LoginDTO.builder().username("krishna.s").password("correct-password").build());
+
+        verify(sessionService).createSession(eq(1L), anyLong());
+        verify(jwtService).issueToken(1L, "krishna.s", "ROLE_ADMIN", sessionId);
     }
 }

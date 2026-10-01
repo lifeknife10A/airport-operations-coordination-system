@@ -1,60 +1,178 @@
 import React from 'react';
-import './Footer.css';
-import { Globe, Heart } from 'lucide-react';
+import { Box, Container, Typography, Link } from '@mui/material';
+import { Globe, ShieldCheck } from 'lucide-react';
+import { SaphireLogo } from '../common/SaphireLogo';
+import bannerFooter from '../../assets/banners/banner-footer.jpg';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="main-footer">
-      <div className="footer-container">
-        <div className="footer-col brand-col">
-          <div className="footer-brand">
-            <img src="/saphire_logo_transparent.png" alt="Saphire Logo" className="footer-logo" />
-            <span className="brand-name">SAPHIRE AOCS</span>
-          </div>
-          <p className="brand-tagline">
-            Next-Generation Airport Operations Coordination System powering global air traffic hub synchronization.
-          </p>
-        </div>
+    <Box
+      component="footer"
+      sx={{
+        position: 'relative',
+        backgroundImage: `linear-gradient(180deg, rgba(15, 41, 66, 0.42) 0%, rgba(15, 41, 66, 0.70) 100%), url(${bannerFooter})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center bottom',
+        py: { xs: 3, md: 4 },
+        px: { xs: 2, md: 3 },
+        overflow: 'hidden',
+      }}
+    >
+      <Container maxWidth="xl">
+        <Box
+          className="apple-liquid-glass"
+          sx={{
+            p: { xs: 3, md: 4 },
+            borderRadius: '24px',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: '2fr 1fr 1fr 1fr' },
+              gap: { xs: 3, md: 5 },
+              mb: 3.5,
+            }}
+          >
+            {/* Brand & Sapphire Identity */}
+            <Box>
+              <Box sx={{ mb: 1.8 }}>
+                <SaphireLogo size={40} variant="full" title="SAPHIRE AIRPORT" subtitle="ICAO: VASP • IATA: SPH" />
+              </Box>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: '0.88rem',
+                  lineHeight: 1.65,
+                  color: '#0F172A',
+                  fontWeight: 500,
+                  maxWidth: '390px',
+                }}
+              >
+                Saphire International Airport is a premier civil aviation gateway connecting millions of global travelers with serene terminal experiences, precision flight guidance, and round-the-clock passenger care.
+              </Typography>
+            </Box>
 
-        <div className="footer-col">
-          <h4 className="footer-heading">Public Services</h4>
-          <ul className="footer-links">
-            <li><a href="/tracker">Flight Telemetry Tracker</a></li>
-            <li><a href="/schedule">Schedules & Gates</a></li>
-            <li><a href="/passenger-services">Passenger Assistance</a></li>
-            <li><a href="/cargo">Air Cargo Express</a></li>
-          </ul>
-        </div>
+            {/* Passenger Travel */}
+            <Box>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontWeight: 800,
+                  fontSize: '0.90rem',
+                  color: '#0F2942',
+                  mb: 1.8,
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                Passenger Travel
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+                <Link href="/tracker" sx={{ color: '#1E293B', fontWeight: 500, textDecoration: 'none', fontSize: '0.86rem', fontFamily: "'Inter', sans-serif", transition: 'color 0.15s ease', '&:hover': { color: '#0284C7', fontWeight: 600 } }}>
+                  Flight Status Tracker
+                </Link>
+                <Link href="/schedule" sx={{ color: '#1E293B', fontWeight: 500, textDecoration: 'none', fontSize: '0.86rem', fontFamily: "'Inter', sans-serif", transition: 'color 0.15s ease', '&:hover': { color: '#0284C7', fontWeight: 600 } }}>
+                  Master Timetable
+                </Link>
+                <Link href="/passenger-services#facilities" sx={{ color: '#1E293B', fontWeight: 500, textDecoration: 'none', fontSize: '0.86rem', fontFamily: "'Inter', sans-serif", transition: 'color 0.15s ease', '&:hover': { color: '#0284C7', fontWeight: 600 } }}>
+                  Terminal Facilities
+                </Link>
+                <Link href="/passenger-services#lounges" sx={{ color: '#1E293B', fontWeight: 500, textDecoration: 'none', fontSize: '0.86rem', fontFamily: "'Inter', sans-serif", transition: 'color 0.15s ease', '&:hover': { color: '#0284C7', fontWeight: 600 } }}>
+                  Executive Lounges &amp; VIP
+                </Link>
+              </Box>
+            </Box>
 
-        <div className="footer-col">
-          <h4 className="footer-heading">Operations Portal</h4>
-          <ul className="footer-links">
-            <li><a href="/login">Staff SSO Login</a></li>
-            <li><a href="/gate-allocation">Gate & Apron Allocation</a></li>
-            <li><a href="/refueling">Refueling Control</a></li>
-            <li><a href="/audit-log">Security & Audit Logs</a></li>
-          </ul>
-        </div>
+            {/* Ground & Airside Hub */}
+            <Box>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontWeight: 800,
+                  fontSize: '0.90rem',
+                  color: '#0F2942',
+                  mb: 1.8,
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                Concourses &amp; Logistics
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+                <Link href="/airport#terminals" sx={{ color: '#1E293B', fontWeight: 500, textDecoration: 'none', fontSize: '0.86rem', fontFamily: "'Inter', sans-serif", transition: 'color 0.15s ease', '&:hover': { color: '#0284C7', fontWeight: 600 } }}>
+                  Central Terminal &amp; Concourses
+                </Link>
+                <Link href="/airport#transport" sx={{ color: '#1E293B', fontWeight: 500, textDecoration: 'none', fontSize: '0.86rem', fontFamily: "'Inter', sans-serif", transition: 'color 0.15s ease', '&:hover': { color: '#0284C7', fontWeight: 600 } }}>
+                  Ground Express &amp; Valet
+                </Link>
+                <Link href="/cargo" sx={{ color: '#1E293B', fontWeight: 500, textDecoration: 'none', fontSize: '0.86rem', fontFamily: "'Inter', sans-serif", transition: 'color 0.15s ease', '&:hover': { color: '#0284C7', fontWeight: 600 } }}>
+                  Air Freight &amp; Cargo Hub
+                </Link>
+                <Link href="/login" sx={{ color: '#1E293B', fontWeight: 500, textDecoration: 'none', fontSize: '0.86rem', fontFamily: "'Inter', sans-serif", transition: 'color 0.15s ease', '&:hover': { color: '#0284C7', fontWeight: 600 } }}>
+                  Airside Staff Login
+                </Link>
+              </Box>
+            </Box>
 
-        <div className="footer-col">
-          <h4 className="footer-heading">Global Network</h4>
-          <p className="footer-text">
-            Operating across 14 international hub terminals worldwide with 24/7 dedicated dispatch support.
-          </p>
-          <div className="support-badge">
-            <Globe size={16} />
-            <span>24/7 Control Center Support</span>
-          </div>
-        </div>
-      </div>
+            {/* Assistance & Emergency */}
+            <Box>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontWeight: 800,
+                  fontSize: '0.90rem',
+                  color: '#0F2942',
+                  mb: 1.8,
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                Guest Assistance
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+                <Link href="/contact#emergency" sx={{ color: '#1E293B', fontWeight: 500, textDecoration: 'none', fontSize: '0.86rem', fontFamily: "'Inter', sans-serif", transition: 'color 0.15s ease', '&:hover': { color: '#0284C7', fontWeight: 600 } }}>
+                  24/7 Tower Hotline
+                </Link>
+                <Link href="/passenger-services#lost-found" sx={{ color: '#1E293B', fontWeight: 500, textDecoration: 'none', fontSize: '0.86rem', fontFamily: "'Inter', sans-serif", transition: 'color 0.15s ease', '&:hover': { color: '#0284C7', fontWeight: 600 } }}>
+                  Lost Property Bureau
+                </Link>
+                <Link href="/contact#form" sx={{ color: '#1E293B', fontWeight: 500, textDecoration: 'none', fontSize: '0.86rem', fontFamily: "'Inter', sans-serif", transition: 'color 0.15s ease', '&:hover': { color: '#0284C7', fontWeight: 600 } }}>
+                  Feedback &amp; Inquiries
+                </Link>
+                <Link href="/passenger-services#faq" sx={{ color: '#1E293B', fontWeight: 500, textDecoration: 'none', fontSize: '0.86rem', fontFamily: "'Inter', sans-serif", transition: 'color 0.15s ease', '&:hover': { color: '#0284C7', fontWeight: 600 } }}>
+                  Travel FAQs
+                </Link>
+              </Box>
+            </Box>
+          </Box>
 
-      <div className="footer-bottom">
-        <p>© 2026 Saphire International Airlines. All Rights Reserved. Airport Operations Coordination System.</p>
-        <p className="credit">
-          Crafted with <Heart size={14} color="#EF4444" style={{ display: 'inline', margin: '0 4px' }} /> for Software Engineering Operations
-        </p>
-      </div>
-    </footer>
+          {/* Clean High-Contrast Legal & Identity Strip */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between',
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              gap: 2,
+              pt: 2.5,
+              borderTop: '1px solid rgba(15, 41, 66, 0.12)',
+            }}
+          >
+            <Typography sx={{ fontFamily: "'Inter', sans-serif", fontSize: '0.82rem', fontWeight: 600, color: '#1E293B' }}>
+              © {new Date().getFullYear()} Saphire International Airport Authority. All rights reserved.
+            </Typography>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem', fontWeight: 700, color: '#0284C7' }}>
+                ICAO: VASP • IATA: SPH
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 
