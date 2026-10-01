@@ -55,6 +55,24 @@ import { runwayApi, RunwayTelemetryData } from '../../api/runwayApi';
 export type GateStatus = 'OCCUPIED' | 'AVAILABLE' | 'STANDBY' | 'MAINTENANCE';
 export type RunwayStatus = 'ACTIVE_CAT_III' | 'DEPARTURE_ONLY' | 'AVAILABLE' | 'SWEEP';
 
+// The backend names runway modes differently from this screen; translate at the boundary.
+const RUNWAY_STATUS_TO_BACKEND: Record<RunwayStatus, string> = {
+  ACTIVE_CAT_III: 'ACTIVE_CAT_III',
+  DEPARTURE_ONLY: 'DEPARTURE_ONLY',
+  AVAILABLE: 'ARRIVALS_ONLY',
+  SWEEP: 'SWEEP_FOD_INSPECTION',
+};
+const runwayStatusFromBackend = (raw: string | undefined, fallback: RunwayStatus): RunwayStatus => {
+  switch (raw) {
+    case 'ACTIVE_CAT_III': return 'ACTIVE_CAT_III';
+    case 'DEPARTURE_ONLY': return 'DEPARTURE_ONLY';
+    case 'ARRIVALS_ONLY': return 'AVAILABLE';
+    case 'SWEEP_FOD_INSPECTION':
+    case 'CLOSED_MAINTENANCE': return 'SWEEP';
+    default: return fallback;
+  }
+};
+
 export interface GateInfo {
   id: string;
   gateNumber: string;
@@ -274,7 +292,7 @@ export const AirsideOpsDashboard: React.FC = () => {
             if (!telemetry) return r;
             return {
               ...r,
-              status: (telemetry.operationalStatus as RunwayStatus) || r.status,
+              status: runwayStatusFromBackend(telemetry.operationalStatus, r.status),
               surfaceCondition: `DRY (Friction ${telemetry.surfaceFriction?.toFixed(2) || '0.84'})`,
               wind: telemetry.headwindVector || r.wind,
               crosswind: telemetry.crosswindVector || r.crosswind,
@@ -327,12 +345,14 @@ export const AirsideOpsDashboard: React.FC = () => {
 
     try {
       await runwayApi.updateStatus(rwyIdNum, {
-        operationalStatus: nextStatus,
+        operationalStatus: RUNWAY_STATUS_TO_BACKEND[nextStatus],
         surfaceFriction: nextStatus === 'SWEEP' ? 0.72 : 0.85,
         visualRangeMeters: 1200,
       });
     } catch (err) {
-      console.warn('Backend runway update fallback:', err);
+      console.error('Backend runway update failed', err);
+      toast.error(`Runway ${rwy.runwayCode} was NOT changed: the server rejected the update.`);
+      return;
     }
 
     setRunways((prev) =>

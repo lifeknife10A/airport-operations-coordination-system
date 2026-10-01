@@ -27,7 +27,9 @@ export interface LostFoundItemData {
 
 export const lostFoundApi = {
   getAll: async (params?: { status?: string; category?: string; search?: string; page?: number; size?: number }) => {
-    const response = await axiosClient.get('/lost-found', { params });
+    // The backend's search parameter is called `query`.
+    const { search, ...rest } = params ?? {};
+    const response = await axiosClient.get('/lost-found', { params: { ...rest, query: search || undefined } });
     return response.data;
   },
 
@@ -36,6 +38,7 @@ export const lostFoundApi = {
     return response.data;
   },
 
+  // terminalId is required by the backend; loggedByUserId is ignored there (taken from the login).
   reportFound: async (payload: Partial<LostFoundItemData>): Promise<LostFoundItemData> => {
     const response = await axiosClient.post<LostFoundItemData>('/lost-found', payload);
     return response.data;
@@ -47,12 +50,7 @@ export const lostFoundApi = {
     claimantContactPhone?: string;
     claimVerificationNotes: string;
   }): Promise<LostFoundItemData> => {
-    const response = await axiosClient.put<LostFoundItemData>(`/lost-found/${id}/claim`, payload);
-    return response.data;
-  },
-
-  releaseItem: async (id: number, payload: { releasedByUserId: number; verificationNotes?: string }): Promise<LostFoundItemData> => {
-    const response = await axiosClient.put<LostFoundItemData>(`/lost-found/${id}/release`, payload);
+    const response = await axiosClient.post<LostFoundItemData>(`/lost-found/${id}/claim`, payload);
     return response.data;
   },
 };

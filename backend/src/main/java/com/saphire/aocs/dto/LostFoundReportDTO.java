@@ -9,18 +9,22 @@ public class LostFoundReportDTO {
     private String itemName;
 
     @NotBlank(message = "Category is required")
+    @jakarta.validation.constraints.Pattern(regexp = "ELECTRONICS|BAGGAGE|DOCUMENTS|CLOTHING|JEWELRY|VALUABLES|KEYS|OTHER", message = "Unknown category")
     private String category;
 
     @NotBlank(message = "Color and description are required")
     private String colorAndDescription;
 
     @NotBlank(message = "Found location type is required")
+    @jakarta.validation.constraints.Pattern(regexp = "SECURITY_CHECKPOINT|GATE_SEATING|DUTY_FREE|AIRCRAFT_CABIN|BAGGAGE_RECLAIM|CONCOURSE|RESTROOM|LOUNGE|OTHER", message = "Unknown found-location type")
     private String foundLocationType;
 
     @NotBlank(message = "Found location detail is required")
     private String foundLocationDetail;
 
     @NotNull(message = "Terminal ID is required")
+    @jakarta.validation.constraints.Min(value = 1, message = "Terminal ID must be 1 or 2")
+    @jakarta.validation.constraints.Max(value = 2, message = "Terminal ID must be 1 or 2")
     private Integer terminalId;
 
     private Long flightId;
@@ -28,6 +32,7 @@ public class LostFoundReportDTO {
     private String storageVaultLocation;
 
     @NotBlank(message = "Finder type is required")
+    @jakarta.validation.constraints.Pattern(regexp = "PASSENGER|SECURITY_OFFICER|CABIN_CLEANER|GATE_AGENT|GROUND_HANDLER|DUTY_FREE_STAFF", message = "Unknown finder type")
     private String finderType;
 
     private Long loggedByUserId;
