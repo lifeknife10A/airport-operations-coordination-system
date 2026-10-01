@@ -18,6 +18,8 @@ public interface BoardingPassRepository extends JpaRepository<BoardingPass, Long
 
     Optional<BoardingPass> findByPassengerPassengerId(Long passengerId);
 
+    boolean existsByFlightFlightIdAndSeatNumber(Long flightId, String seatNumber);
+
     List<BoardingPass> findByFlightFlightId(Long flightId);
 
     @Query("SELECT bp.seatNumber FROM BoardingPass bp WHERE bp.flight.flightId = :flightId")

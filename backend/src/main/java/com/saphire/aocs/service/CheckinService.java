@@ -33,8 +33,20 @@ public class CheckinService {
 
         List<Passenger> results = passengerRepository.searchPassenger(cleanQuery);
         Passenger passenger;
-        if (!results.isEmpty()) {
+        if (results.size() == 1) {
             passenger = results.get(0);
+        } else if (results.size() > 1) {
+            // A partial name matches many people. Quietly picking the first one could check in the
+            // wrong passenger, so prefer an exact PNR/passport hit and otherwise ask for one.
+            List<Passenger> exact = results.stream()
+                    .filter(p -> cleanQuery.equalsIgnoreCase(p.getPnrCode())
+                            || (p.getTraveler() != null && cleanQuery.equalsIgnoreCase(p.getTraveler().getPassportNumber())))
+                    .toList();
+            if (exact.size() != 1) {
+                throw new ConflictException(results.size() + " passengers match '" + cleanQuery
+                        + "'. Search by PNR code or passport number to select one.");
+            }
+            passenger = exact.get(0);
         } else {
             try {
                 Long id = Long.parseLong(cleanQuery);
@@ -131,6 +143,11 @@ public class CheckinService {
 
         Flight flight = passenger.getFlight();
         Traveler traveler = passenger.getTraveler();
+
+        String seat = dto.getSeatNumber().toUpperCase();
+        if (boardingPassRepository.existsByFlightFlightIdAndSeatNumber(flight.getFlightId(), seat)) {
+            throw new ConflictException("Seat " + seat + " on flight " + flight.getFlightNumber() + " is already taken");
+        }
 
         Integer nextSeq = boardingPassRepository.findMaxSequenceNumberByFlightId(flight.getFlightId()) + 1;
         String ticketNumber = "ETKT-2026-" + String.format("%06d", (int) (Math.random() * 900000) + 100000);

@@ -81,8 +81,36 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest req) {
+        // Only a duplicate (23505) or a still-referenced/missing parent row (23503) is a genuine
+        // conflict with existing data. NOT NULL (23502) and CHECK (23514) failures mean the
+        // request itself is invalid, which is a 400, not a 409.
+        String sqlState = ex.getRootCause() instanceof java.sql.SQLException sql ? sql.getSQLState() : null;
+        if ("23502".equals(sqlState) || "23514".equals(sqlState)) {
+            return build(HttpStatus.BAD_REQUEST, "invalid-data",
+                    "The request contains a value the database does not accept", req, ex, true);
+        }
         return build(HttpStatus.CONFLICT, "data-integrity-violation",
                 "The request conflicts with an existing record or violates a data rule", req, ex, true);
+    }
+
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ProblemDetail handleNoResource(Exception ex, HttpServletRequest req) {
+        return build(HttpStatus.NOT_FOUND, "not-found", "No such resource", req, ex, false);
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ProblemDetail handleMethodNotAllowed(Exception ex, HttpServletRequest req) {
+        return build(HttpStatus.METHOD_NOT_ALLOWED, "method-not-allowed", "That HTTP method is not supported here", req, ex, false);
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+    public ProblemDetail handleUnsupportedMedia(Exception ex, HttpServletRequest req) {
+        return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "unsupported-media-type", "Unsupported content type", req, ex, false);
+    }
+
+    @ExceptionHandler(org.springframework.data.mapping.PropertyReferenceException.class)
+    public ProblemDetail handleBadSort(Exception ex, HttpServletRequest req) {
+        return build(HttpStatus.BAD_REQUEST, "malformed-request", "Unknown sort or filter property", req, ex, false);
     }
 
     @ExceptionHandler(Exception.class)
