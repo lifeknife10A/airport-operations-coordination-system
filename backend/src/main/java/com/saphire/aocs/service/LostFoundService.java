@@ -68,18 +68,20 @@ public class LostFoundService {
     }
 
     @Transactional
-    public LostFoundResponseDTO reportItem(LostFoundReportDTO dto) {
-        long totalItems = lostFoundRepository.count() + 1;
-        String refCode = String.format("LF-2026-%04d", totalItems);
+    public LostFoundResponseDTO reportItem(LostFoundReportDTO dto, String staffUsername) {
+        String refCode = generateUniqueReferenceCode();
 
         Flight flight = null;
         if (dto.getFlightId() != null) {
             flight = flightRepository.findById(dto.getFlightId()).orElse(null);
         }
 
-        Long userId = dto.getLoggedByUserId() != null ? dto.getLoggedByUserId() : 1L;
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Logging user not found with ID: " + userId));
+        // Who logged the item comes from the login, never from the request body. Public (anonymous)
+        // reports are filed under the default intake account.
+        User user = (staffUsername != null
+                ? userRepository.findByUsername(staffUsername)
+                : userRepository.findById(DEFAULT_INTAKE_USER_ID))
+                .orElseThrow(() -> new ResourceNotFoundException("Logging user not found"));
 
         String vaultLoc = dto.getStorageVaultLocation() != null && !dto.getStorageVaultLocation().trim().isEmpty()
                 ? dto.getStorageVaultLocation().trim()
@@ -119,7 +121,7 @@ public class LostFoundService {
     }
 
     @Transactional
-    public LostFoundResponseDTO claimItem(Long itemId, LostFoundClaimDTO dto) {
+    public LostFoundResponseDTO claimItem(Long itemId, LostFoundClaimDTO dto, String releasingUsername) {
         LostFoundItem item = lostFoundRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Lost property record not found with ID: " + itemId));
 
@@ -128,8 +130,7 @@ public class LostFoundService {
             traveler = travelerRepository.findById(dto.getClaimantTravelerId()).orElse(null);
         }
 
-        Long releaseUserId = dto.getReleasedByUserId() != null ? dto.getReleasedByUserId() : 1L;
-        User releaseUser = userRepository.findById(releaseUserId).orElse(null);
+        User releaseUser = userRepository.findByUsername(releasingUsername).orElse(null);
 
         item.setStatus("CLAIMED_RETURNED");
         item.setClaimantTraveler(traveler);
@@ -142,6 +143,35 @@ public class LostFoundService {
 
         LostFoundItem saved = lostFoundRepository.save(item);
         return toDTO(saved);
+    }
+
+    private static final long DEFAULT_INTAKE_USER_ID = 1L;
+    private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
+
+    // Random, not count()+1: that collided under concurrent reports and made every code guessable.
+    private String generateUniqueReferenceCode() {
+        for (int attempt = 0; attempt < 20; attempt++) {
+            String code = "LF-2026-" + (100000 + RANDOM.nextInt(900000));
+            if (!lostFoundRepository.existsByReferenceCode(code)) {
+                return code;
+            }
+        }
+        throw new IllegalStateException("Could not allocate a unique lost-and-found reference code");
+    }
+
+    /** Copy for anonymous callers: item details only, no claimant contact data or staff identities. */
+    public static LostFoundResponseDTO redactForPublic(LostFoundResponseDTO d) {
+        d.setClaimantTravelerId(null);
+        d.setClaimantName(null);
+        d.setClaimantContactEmail(null);
+        d.setClaimantContactPhone(null);
+        d.setClaimVerificationNotes(null);
+        d.setClaimedTimestamp(null);
+        d.setLoggedByUserId(null);
+        d.setLoggedByUserName(null);
+        d.setReleasedByUserId(null);
+        d.setReleasedByUserName(null);
+        return d;
     }
 
     public LostFoundResponseDTO toDTO(LostFoundItem item) {

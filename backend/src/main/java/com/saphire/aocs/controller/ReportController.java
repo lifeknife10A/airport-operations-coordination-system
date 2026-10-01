@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,6 +25,7 @@ public class ReportController {
         return ResponseEntity.ok(reportService.getSummaryReport());
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER')")
     @GetMapping({"/flight-movements/csv", "/export/flights-csv"})
     public ResponseEntity<byte[]> getFlightMovementsCsv() {
         byte[] bytes = reportExportService.exportFlightsCsv();
@@ -33,6 +35,7 @@ public class ReportController {
                 .body(bytes);
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER')")
     @GetMapping({"/gate-utilization/pdf", "/export/gates-pdf"})
     public ResponseEntity<byte[]> getGateUtilizationPdf() {
         byte[] bytes = reportExportService.exportGatesSummaryText();
@@ -42,6 +45,7 @@ public class ReportController {
                 .body(bytes);
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER', 'AIRLINE_BILLING_CLERK')")
     @GetMapping({"/airline-billing/excel", "/export/billing-excel"})
     public ResponseEntity<byte[]> getAirlineBillingExcel() {
         byte[] bytes = reportExportService.exportBillingInvoicesCsv();

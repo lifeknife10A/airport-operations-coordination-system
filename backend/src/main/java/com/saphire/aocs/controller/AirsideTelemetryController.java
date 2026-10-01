@@ -6,6 +6,7 @@ import com.saphire.aocs.service.AirsideTelemetryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,6 +28,7 @@ public class AirsideTelemetryController {
         return ResponseEntity.ok(airsideTelemetryService.getRunwayById(id));
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER', 'GATE_AGENT')")
     @PutMapping("/{id}/status")
     public ResponseEntity<RunwayTelemetryDTO> updateRunwayStatus(
             @PathVariable Long id,

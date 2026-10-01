@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -61,6 +62,7 @@ public class InquiryController {
         return ResponseEntity.ok(inquiryService.searchInquiries(status, category, department, search, pageable));
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER', 'CHECKIN_AGENT', 'GATE_AGENT')")
     @PutMapping("/{id}/status")
     public ResponseEntity<InquiryResponseDTO> updateStatus(
             @PathVariable Long id,

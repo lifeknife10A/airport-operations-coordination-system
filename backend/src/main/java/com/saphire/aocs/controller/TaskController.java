@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,12 +30,14 @@ public class TaskController {
         return ResponseEntity.ok(turnaroundTaskService.getTasksByFlight(flightId));
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER', 'GROUND_HANDLING_SUPERVISOR')")
     @PostMapping
     public ResponseEntity<TaskDTO> createTask(@Valid @RequestBody TaskCreateDTO dto) {
         TaskDTO created = turnaroundTaskService.createTask(dto);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER', 'GROUND_HANDLING_SUPERVISOR', 'RAMP_AGENT')")
     @PutMapping("/{taskId}/status")
     public ResponseEntity<TaskDTO> updateTaskStatus(
             @PathVariable Long taskId,
@@ -43,6 +46,7 @@ public class TaskController {
         return ResponseEntity.ok(updated);
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER', 'GROUND_HANDLING_SUPERVISOR')")
     @PutMapping("/{taskId}/assign")
     public ResponseEntity<TaskDTO> assignTaskUser(
             @PathVariable Long taskId,

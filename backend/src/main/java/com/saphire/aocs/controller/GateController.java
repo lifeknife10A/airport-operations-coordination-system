@@ -7,6 +7,7 @@ import com.saphire.aocs.service.GateService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,7 @@ public class GateController {
         return ResponseEntity.ok(gateService.getAllGates());
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER', 'GATE_AGENT', 'GROUND_HANDLING_SUPERVISOR')")
     @PutMapping("/assign")
     public ResponseEntity<FlightDTO> assignGateToFlight(@Valid @RequestBody GateAssignmentDTO dto) {
         FlightDTO updatedFlight = gateService.assignGateToFlight(dto);

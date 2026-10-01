@@ -13,6 +13,8 @@ import java.util.Optional;
 
 @Repository
 public interface LostFoundRepository extends JpaRepository<LostFoundItem, Long> {
+    boolean existsByReferenceCode(String referenceCode);
+
 
     Optional<LostFoundItem> findByReferenceCode(String referenceCode);
 

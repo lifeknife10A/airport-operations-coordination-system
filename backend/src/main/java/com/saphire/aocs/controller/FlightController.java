@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -42,12 +43,14 @@ public class FlightController {
         return ResponseEntity.ok(flightService.getFlightById(id));
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER')")
     @PostMapping
     public ResponseEntity<FlightDTO> createFlight(@Valid @RequestBody FlightCreateDTO dto) {
         FlightDTO created = flightService.createFlight(dto);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER', 'GROUND_HANDLING_SUPERVISOR', 'RAMP_AGENT', 'GATE_AGENT')")
     @PutMapping("/{id}/status")
     public ResponseEntity<FlightDTO> updateFlightStatus(
             @PathVariable Long id,

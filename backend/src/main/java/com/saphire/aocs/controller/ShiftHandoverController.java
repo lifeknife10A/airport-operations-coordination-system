@@ -12,6 +12,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,12 +40,14 @@ public class ShiftHandoverController {
         return ResponseEntity.ok(shiftHandoverService.getById(id));
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER', 'GROUND_HANDLING_SUPERVISOR')")
     @PostMapping
     public ResponseEntity<ShiftHandoverDTO> submitHandover(@Valid @RequestBody ShiftHandoverCreateDTO dto) {
         ShiftHandoverDTO created = shiftHandoverService.createHandover(dto);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER', 'GROUND_HANDLING_SUPERVISOR')")
     @PutMapping("/{id}/acknowledge")
     public ResponseEntity<ShiftHandoverDTO> acknowledgeHandover(
             @PathVariable Long id,
