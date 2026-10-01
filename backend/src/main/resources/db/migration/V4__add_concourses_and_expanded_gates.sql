@@ -15,6 +15,30 @@ ALTER TABLE stands ADD COLUMN IF NOT EXISTS terminal VARCHAR(50) DEFAULT 'Centra
 -- 3. Add Concourse to Checkin Counters Table
 ALTER TABLE checkin_counters ADD COLUMN IF NOT EXISTS concourse VARCHAR(30) DEFAULT 'Concourse A';
 
+-- V2's gate/stand seed rows insert explicit gate_id/stand_id values (1, 2, 3, ...) and never call
+-- nextval(), so on a fresh database the gates_gate_id_seq/stands_stand_id_seq sequences are still
+-- at their starting position by the time this migration runs. The implicit-ID inserts below would
+-- then collide with gate_id/stand_id 1 (duplicate key on gates_pkey) -- this resync (the same
+-- logic V13 applies globally, pulled forward here since V4 needs it before V13 ever runs) fixes
+-- that before any insert below executes.
+DO $$
+DECLARE
+    seq RECORD;
+BEGIN
+    FOR seq IN
+        SELECT table_name, column_name, pg_get_serial_sequence(table_name, column_name) as seq_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name IN ('gates', 'stands')
+          AND column_default LIKE 'nextval%'
+    LOOP
+        IF seq.seq_name IS NOT NULL THEN
+            EXECUTE format('SELECT setval(%L, COALESCE((SELECT MAX(%I) FROM %I), 1) + 1)',
+                           seq.seq_name, seq.column_name, seq.table_name);
+        END IF;
+    END LOOP;
+END $$;
+
 -- 4. Seed / Upsert Authoritative Gates for Concourses A, B, and C
 -- Concourse A: Domestic Pier (A01 - A14)
 INSERT INTO gates (gate_number, concourse, terminal, max_wingspan_meters) VALUES
