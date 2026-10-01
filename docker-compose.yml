@@ -15,7 +15,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - aocs_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -37,7 +37,7 @@ services:
       # inside a container network -- override the whole property directly to reach the compose
       # service by its name instead.
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/aocs_db
-      AOCS_JWT_SECRET: ${AOCS_JWT_SECRET:-44390917d5dd7e26a878da200e4ab2296ebce395110e0fa3064167bf47f36624}
+      AOCS_JWT_SECRET: ${AOCS_JWT_SECRET:-}
     ports:
       - "8080:8080"
     healthcheck:

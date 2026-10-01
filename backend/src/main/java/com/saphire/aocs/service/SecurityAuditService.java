@@ -31,6 +31,14 @@ public class SecurityAuditService {
         return auditLogRepository.findAll();
     }
 
+    /** Writes an audit entry attributed to the authenticated caller, never to a client-supplied id. */
+    @Transactional
+    public AuditLog logActionAs(String username, String action, String changePayload) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+        return logAction(user.getUserId(), action, changePayload);
+    }
+
     @Transactional
     public AuditLog logAction(Long userId, String action, String changePayload) {
         User user = userRepository.findById(userId)

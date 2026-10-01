@@ -18,9 +18,21 @@ public class JwtService {
     private final long expiryMs;
 
     public JwtService(
-            @Value("${aocs.jwt.secret}") String secret,
+            @Value("${aocs.jwt.secret:}") String secret,
             @Value("${aocs.jwt.expiration-ms:86400000}") long expiryMs) {
-        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        byte[] keyBytes;
+        if (secret == null || secret.isBlank()) {
+            // No secret configured: generate a random one for this run instead of falling back to
+            // a value committed to a public repo (anyone could forge tokens with that). The cost
+            // is that tokens stop validating after a restart, so users log in again. Real
+            // deployments set AOCS_JWT_SECRET (required, no default, under the prod profile).
+            keyBytes = new byte[48];
+            new java.security.SecureRandom().nextBytes(keyBytes);
+            org.slf4j.LoggerFactory.getLogger(JwtService.class).warn(
+                    "aocs.jwt.secret is not set -- using a random per-run secret; sessions will not survive a restart");
+        } else {
+            keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        }
         if (keyBytes.length < 32) {
             throw new IllegalStateException("aocs.jwt.secret must be at least 32 bytes for HS256 algorithm (got " + keyBytes.length + ")");
         }

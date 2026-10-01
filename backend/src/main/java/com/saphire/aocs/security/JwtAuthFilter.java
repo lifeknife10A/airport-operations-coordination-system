@@ -1,5 +1,8 @@
 package com.saphire.aocs.security;
 
+import com.saphire.aocs.entity.AuthSession;
+import com.saphire.aocs.entity.User;
+import com.saphire.aocs.repository.UserRepository;
 import com.saphire.aocs.service.SessionService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -16,6 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -38,10 +42,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final SessionService sessionService;
+    private final UserRepository userRepository;
 
-    public JwtAuthFilter(JwtService jwtService, SessionService sessionService) {
+    public JwtAuthFilter(JwtService jwtService, SessionService sessionService, UserRepository userRepository) {
         this.jwtService = jwtService;
         this.sessionService = sessionService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -55,15 +61,23 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 Claims claims = jwtService.parse(header.substring(7));
                 UUID sessionId = UUID.fromString(String.valueOf(claims.get("sid")));
 
-                if (sessionService.isSessionActive(sessionId)) {
-                    String role = String.valueOf(claims.get("role"));
+                // The role is deliberately NOT read from the token: anything signed with a leaked or
+                // guessed secret could claim any role. The signed token only proves "this session
+                // id was issued"; who the user is and what role they hold right now come from the
+                // database, so a role change or removed user takes effect on the next request.
+                Optional<AuthSession> session = sessionService.findActiveSession(sessionId);
+                Optional<User> user = session.flatMap(s -> userRepository.findById(s.getUserId()));
+
+                if (user.isPresent() && user.get().getRole() != null) {
+                    String role = user.get().getRole().getRoleName();
                     String springRole = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+                    String username = user.get().getUsername();
 
                     var authorities = List.of(new SimpleGrantedAuthority(springRole));
-                    var authToken = new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities);
+                    var authToken = new UsernamePasswordAuthenticationToken(username, null, authorities);
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                     request.setAttribute("sessionId", sessionId);
-                    request.setAttribute(RequestLoggingFilter.USER_ATTRIBUTE, claims.getSubject());
+                    request.setAttribute(RequestLoggingFilter.USER_ATTRIBUTE, username);
                 } else {
                     // Signature/expiry check passed but the session was logged out or superseded
                     // by a newer login elsewhere -- treat exactly like an invalid token.

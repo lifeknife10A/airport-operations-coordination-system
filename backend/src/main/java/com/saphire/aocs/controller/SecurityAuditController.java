@@ -1,12 +1,13 @@
 package com.saphire.aocs.controller;
 
 import com.saphire.aocs.dto.AuditActionDTO;
-import com.saphire.aocs.entity.AuditLog;
+import com.saphire.aocs.dto.AuditLogDTO;
 import com.saphire.aocs.service.SecurityAuditService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,13 +27,14 @@ public class SecurityAuditController {
 
     @GetMapping("/logs")
     @PreAuthorize("hasRole('SYSTEM_ADMINISTRATOR')")
-    public ResponseEntity<List<AuditLog>> getAuditLogs() {
-        return ResponseEntity.ok(auditService.getAllAuditLogs());
+    public ResponseEntity<List<AuditLogDTO>> getAuditLogs() {
+        return ResponseEntity.ok(auditService.getAllAuditLogs().stream().map(AuditLogDTO::from).toList());
     }
 
     @PostMapping("/log-action")
-    public ResponseEntity<AuditLog> logAction(@Valid @RequestBody AuditActionDTO dto) {
-        AuditLog log = auditService.logAction(dto.getUserId(), dto.getAction(), dto.getChangePayload());
-        return new ResponseEntity<>(log, HttpStatus.CREATED);
+    public ResponseEntity<AuditLogDTO> logAction(@Valid @RequestBody AuditActionDTO dto, Authentication auth) {
+        // Attributed to whoever is authenticated, not to a userId from the request body.
+        var log = auditService.logActionAs(auth.getName(), dto.getAction(), dto.getChangePayload());
+        return new ResponseEntity<>(AuditLogDTO.from(log), HttpStatus.CREATED);
     }
 }

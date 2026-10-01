@@ -1,5 +1,6 @@
 package com.saphire.aocs.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,6 +26,7 @@ public class User {
     @Column(name = "name", length = 100, nullable = false)
     private String name;
 
+    @JsonIgnore
     @Column(name = "password_hash", length = 255)
     private String passwordHash;
 

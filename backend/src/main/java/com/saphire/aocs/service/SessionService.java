@@ -45,11 +45,15 @@ public class SessionService {
     }
 
     @Transactional(readOnly = true)
-    public boolean isSessionActive(UUID sessionId) {
-        if (sessionId == null) return false;
+    public java.util.Optional<AuthSession> findActiveSession(UUID sessionId) {
+        if (sessionId == null) return java.util.Optional.empty();
         return authSessionRepository.findBySessionIdAndRevokedAtIsNull(sessionId)
-                .filter(s -> s.getExpiresAt().isAfter(ZonedDateTime.now()))
-                .isPresent();
+                .filter(s -> s.getExpiresAt().isAfter(ZonedDateTime.now()));
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isSessionActive(UUID sessionId) {
+        return findActiveSession(sessionId).isPresent();
     }
 
     @Transactional
