@@ -1,126 +1,127 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# SAPHIRE AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)
-# Master Unified Startup Script (Frontend + Spring Boot Backend + PostgreSQL Link)
+# Saphire AOCS - one-command local startup (Spring Boot backend + Vite frontend)
+#
+# Prerequisites: JDK 17, Node 20+, pnpm (or `corepack enable`), and a running PostgreSQL with an
+# empty database named aocs_db (`createdb aocs_db`). The backend's Flyway migrations build the
+# schema and load the demo dataset on first boot, so no other setup is needed.
+#
+# Usage: ./start.sh        Ctrl+C stops both servers.
 # ==============================================================================
+set -uo pipefail
 
-set -e
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKEND_DIR="$ROOT/backend"
+FRONTEND_DIR="$ROOT/frontend"
+LOGS_DIR="$ROOT/logs"
+BACKEND_WAIT_SECONDS="${BACKEND_WAIT_SECONDS:-180}"   # first boot loads ~158k rows
+mkdir -p "$LOGS_DIR"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKEND_DIR="${SCRIPT_DIR}/backend"
-FRONTEND_DIR="${SCRIPT_DIR}/frontend"
-LOGS_DIR="${SCRIPT_DIR}/logs"
+say()  { printf '%s\n' "$*"; }
+fail() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 
-mkdir -p "${LOGS_DIR}"
-
-# ANSI Color Codes
-CYAN='\033[0;36m'
-GREEN='\033[0;32m'
-GOLD='\033[0;33m'
-RED='\033[0;31m'
-BOLD='\033[1m'
-NC='\033[0m' # No Color
-
-echo -e "${CYAN}${BOLD}"
-echo "=========================================================================="
-echo "          ✈️  SAPHIRE AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS)        "
-echo "=========================================================================="
-echo -e "${NC}"
-
-# 1. Check PostgreSQL Status
-echo -e "${GOLD}[1/4] Checking PostgreSQL 18 Database...${NC}"
-if lsof -Pi :5432 -sTCP:LISTEN -t >/dev/null ; then
-    echo -e "${GREEN}  ✓ PostgreSQL is active on port 5432 (aocs_db)${NC}"
-else
-    echo -e "${RED}  ✗ Warning: PostgreSQL is not detected on port 5432.${NC}"
-    echo -e "    Please start PostgreSQL service before proceeding."
-fi
-
-# 2. Kill any stale processes on Ports 8080 and 3000
-echo -e "${GOLD}[2/4] Clearing ports 8080 (Backend) & 3000 (Frontend)...${NC}"
-PID_8080=$(lsof -ti :8080 || true)
-if [ -n "$PID_8080" ]; then
-    echo -e "  → Terminating existing process on port 8080 (PID: $PID_8080)"
-    kill -9 $PID_8080 2>/dev/null || true
-fi
-
-PID_3000=$(lsof -ti :3000 || true)
-if [ -n "$PID_3000" ]; then
-    echo -e "  → Terminating existing process on port 3000 (PID: $PID_3000)"
-    kill -9 $PID_3000 2>/dev/null || true
-fi
-
-# Cleanup Handler for Graceful Exit (Ctrl+C)
-cleanup() {
-    echo ""
-    echo -e "${GOLD}Shutting down Saphire AOCS services...${NC}"
-    if [ -n "${BACKEND_PID}" ]; then
-        echo -e "  → Stopping Spring Boot Backend (PID: ${BACKEND_PID})..."
-        kill ${BACKEND_PID} 2>/dev/null || true
-    fi
-    if [ -n "${FRONTEND_PID}" ]; then
-        echo -e "  → Stopping React Frontend (PID: ${FRONTEND_PID})..."
-        kill ${FRONTEND_PID} 2>/dev/null || true
-    fi
-    # Also release ports in case subprocesses lingered
-    lsof -ti :8080 | xargs kill -9 2>/dev/null || true
-    lsof -ti :3000 | xargs kill -9 2>/dev/null || true
-    echo -e "${GREEN}✓ All services stopped cleanly.${NC}"
-    exit 0
+# --- Java 17 -------------------------------------------------------------------
+# The backend is built for Java 17; a newer default JDK (common with Homebrew) breaks the Lombok
+# compile step. Prefer an explicit JDK 17 when JAVA_HOME isn't already pointing at one.
+java_major() { "$1" -version 2>&1 | sed -n 's/.*version "\([0-9]*\).*/\1/p' | head -1; }
+pick_java17() {
+  # `java_home -v 17` means "17 or newer" on macOS (it happily returns JDK 25), so check the real
+  # major version of each candidate instead of trusting it.
+  local c
+  for c in "${JAVA_HOME:-}" \
+           "$(/usr/libexec/java_home -v 17 2>/dev/null)" \
+           /opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home \
+           /usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home \
+           /Library/Java/JavaVirtualMachines/*17*/Contents/Home \
+           /usr/lib/jvm/java-17-openjdk-* /usr/lib/jvm/temurin-17-*; do
+    [ -n "$c" ] && [ -x "$c/bin/java" ] && [ "$(java_major "$c/bin/java")" = "17" ] && { printf '%s' "$c"; return 0; }
+  done
+  return 1
 }
-trap cleanup SIGINT SIGTERM EXIT
+if J17="$(pick_java17)"; then export JAVA_HOME="$J17"; fi
+command -v java >/dev/null 2>&1 || [ -x "${JAVA_HOME:-/nonexistent}/bin/java" ] || fail "Java not found. Install JDK 17 and/or set JAVA_HOME."
+JAVA_BIN="${JAVA_HOME:+$JAVA_HOME/bin/}java"
+[ "$(java_major "$JAVA_BIN")" = "17" ] || say "WARNING: Java $(java_major "$JAVA_BIN") detected; the backend expects Java 17 (set JAVA_HOME to a JDK 17)."
 
-# 3. Start Spring Boot Backend
-echo -e "${GOLD}[3/4] Launching Spring Boot Backend (Port 8080)...${NC}"
-cd "${BACKEND_DIR}"
-export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
-mvn spring-boot:run -Dmaven.test.skip=true > "${LOGS_DIR}/backend.log" 2>&1 &
-BACKEND_PID=$!
-echo -e "  → Backend process spawned (PID: ${BACKEND_PID})"
-echo -e "  → Waiting for Spring Boot & PostgreSQL JPA connection..."
-
-# Wait up to 30 seconds for backend to become healthy
-MAX_WAIT=30
-COUNT=0
-BACKEND_UP=false
-while [ $COUNT -lt $MAX_WAIT ]; do
-    if curl -s http://localhost:8080/api/flights >/dev/null 2>&1; then
-        BACKEND_UP=true
-        break
-    fi
-    sleep 1
-    COUNT=$((COUNT + 1))
-    printf "."
-done
-echo ""
-
-if [ "$BACKEND_UP" = true ]; then
-    echo -e "${GREEN}  ✓ Spring Boot Backend is LIVE on http://localhost:8080${NC}"
-    echo -e "${GREEN}  ✓ Database connected: jdbc:postgresql://localhost:5432/aocs_db${NC}"
-else
-    echo -e "${RED}  ✗ Backend took longer than expected to initialize. Check logs at: ${LOGS_DIR}/backend.log${NC}"
+# --- Tooling -------------------------------------------------------------------
+command -v node >/dev/null 2>&1 || fail "Node.js not found (need 20+)."
+if ! command -v pnpm >/dev/null 2>&1; then
+  command -v corepack >/dev/null 2>&1 && corepack enable >/dev/null 2>&1
+  command -v pnpm >/dev/null 2>&1 || fail "pnpm not found. Install it (npm i -g pnpm) or run 'corepack enable'."
 fi
 
-# 4. Start React Frontend with pnpm
-echo -e "${GOLD}[4/4] Launching React / Vite Frontend (Port 3000)...${NC}"
-cd "${FRONTEND_DIR}"
-pnpm run dev -- --host &
+# --- PostgreSQL ----------------------------------------------------------------
+if command -v pg_isready >/dev/null 2>&1; then
+  pg_isready -h localhost -p 5432 >/dev/null 2>&1 || fail "PostgreSQL is not accepting connections on localhost:5432. Start it first (Postgres.app needs its server started, not just the app opened)."
+elif ! (exec 3<>/dev/tcp/127.0.0.1/5432) 2>/dev/null; then
+  fail "Nothing is listening on localhost:5432. Start PostgreSQL first."
+fi
+
+# --- Ports ---------------------------------------------------------------------
+for port in 8080 3000; do
+  if lsof -ti ":$port" >/dev/null 2>&1; then
+    fail "Port $port is already in use (an earlier run, or another program). Stop it first, e.g.:  lsof -ti :$port | xargs kill"
+  fi
+done
+
+BACKEND_PID=""; FRONTEND_PID=""
+cleanup() {
+  trap - EXIT INT TERM
+  say ""; say "Stopping Saphire AOCS..."
+  [ -n "$FRONTEND_PID" ] && kill "$FRONTEND_PID" 2>/dev/null
+  [ -n "$BACKEND_PID" ]  && kill "$BACKEND_PID"  2>/dev/null
+  # mvn spawns the actual app as a child process; make sure nothing keeps the ports.
+  lsof -ti :8080 2>/dev/null | xargs kill 2>/dev/null
+  lsof -ti :3000 2>/dev/null | xargs kill 2>/dev/null
+  say "Stopped."
+}
+trap cleanup EXIT INT TERM
+
+# --- Backend -------------------------------------------------------------------
+say "[1/2] Starting backend on :8080 (log: logs/backend.log)"
+say "      First boot applies the database migrations and loads the demo data; this can take a couple of minutes."
+( cd "$BACKEND_DIR" && chmod +x mvnw && ./mvnw -q spring-boot:run -Dmaven.test.skip=true >"$LOGS_DIR/backend.log" 2>&1 ) &
+BACKEND_PID=$!
+
+waited=0
+until curl -fsS http://localhost:8080/actuator/health 2>/dev/null | grep -q '"status":"UP"'; do
+  if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
+    say ""; tail -n 40 "$LOGS_DIR/backend.log"
+    fail "Backend exited during startup. See the log excerpt above (full log: logs/backend.log)."
+  fi
+  if [ "$waited" -ge "$BACKEND_WAIT_SECONDS" ]; then
+    tail -n 40 "$LOGS_DIR/backend.log"
+    fail "Backend not healthy after ${BACKEND_WAIT_SECONDS}s. See logs/backend.log (raise BACKEND_WAIT_SECONDS if it's still migrating)."
+  fi
+  sleep 2; waited=$((waited + 2)); printf '.'
+done
+say ""; say "      Backend is UP."
+
+# --- Frontend ------------------------------------------------------------------
+say "[2/2] Starting frontend on :3000"
+if [ ! -d "$FRONTEND_DIR/node_modules" ]; then
+  say "      Installing frontend dependencies (first run)..."
+  ( cd "$FRONTEND_DIR" && pnpm install --frozen-lockfile ) || fail "pnpm install failed."
+fi
+( cd "$FRONTEND_DIR" && pnpm run dev -- --host >"$LOGS_DIR/frontend.log" 2>&1 ) &
 FRONTEND_PID=$!
-echo -e "  → Frontend process spawned (PID: ${FRONTEND_PID})"
 
-# Wait 2 seconds for Vite to bind
-sleep 2
+waited=0
+until curl -fsS -o /dev/null http://localhost:3000/ 2>/dev/null; do
+  if ! kill -0 "$FRONTEND_PID" 2>/dev/null; then
+    tail -n 30 "$LOGS_DIR/frontend.log"; fail "Frontend exited during startup (log: logs/frontend.log)."
+  fi
+  [ "$waited" -ge 60 ] && { tail -n 30 "$LOGS_DIR/frontend.log"; fail "Frontend not responding after 60s."; }
+  sleep 1; waited=$((waited + 1))
+done
 
-echo -e "\n${CYAN}${BOLD}==========================================================================${NC}"
-echo -e "${GREEN}${BOLD}  ✈️  SAPHIRE AOCS SYSTEM IS FULLY OPERATIONAL!${NC}"
-echo -e "${CYAN}${BOLD}==========================================================================${NC}"
-echo -e "${BOLD}  🌐 Public Portal:${NC}     ${CYAN}http://localhost:3000${NC}"
-echo -e "${BOLD}  🔐 Staff Login:${NC}       ${CYAN}http://localhost:3000/login${NC}"
-echo -e "${BOLD}  ⚡ Backend API:${NC}       ${CYAN}http://localhost:8080/api/flights${NC}"
-echo -e "${BOLD}  🗄️  PostgreSQL DB:${NC}     ${CYAN}localhost:5432 (aocs_db - 38 Tables / 158k+ Records)${NC}"
-echo -e "${BOLD}  📄 Backend Log:${NC}       ${CYAN}${LOGS_DIR}/backend.log${NC}"
-echo -e "${CYAN}==========================================================================${NC}"
-echo -e "${GOLD}Press [Ctrl+C] anytime to stop all servers and shutdown.${NC}\n"
-
-# Keep the script running and wait for background jobs
-wait ${FRONTEND_PID} ${BACKEND_PID}
+say ""
+say "=============================================================="
+say " Saphire AOCS is running"
+say "   Public portal : http://localhost:3000"
+say "   Staff login   : http://localhost:3000/login"
+say "   API           : http://localhost:8080/api/flights"
+say "   API docs      : http://localhost:8080/swagger-ui.html"
+say " Press Ctrl+C to stop."
+say "=============================================================="
+wait "$FRONTEND_PID" "$BACKEND_PID"

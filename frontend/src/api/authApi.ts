@@ -7,6 +7,12 @@ export const authApi = {
     return response.data;
   },
 
+  // Server's view of who is signed in (role read from the database).
+  me: async (): Promise<Omit<LoginResponse, 'token'>> => {
+    const response = await axiosClient.get<Omit<LoginResponse, 'token'>>('/auth/me');
+    return response.data;
+  },
+
   logout: async (): Promise<void> => {
     await axiosClient.post('/auth/logout');
   },

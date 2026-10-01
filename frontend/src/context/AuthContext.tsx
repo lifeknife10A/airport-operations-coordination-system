@@ -1,10 +1,12 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, LoginResponse } from '../types';
 import { authApi } from '../api/authApi';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  // True while a stored session is being re-checked with the server on page load.
+  isVerifying: boolean;
   login: (identifier: string, passkey: string) => Promise<User>;
   logout: () => Promise<void>;
 }
@@ -23,6 +25,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     }
   });
+
+  const [isVerifying, setIsVerifying] = useState<boolean>(() => !!localStorage.getItem('aocs_token'));
+
+  // A stored session is only a hint. Re-ask the server who this token belongs to and take the
+  // role from its answer, so editing aocs_user.roleName in localStorage changes nothing; a dead
+  // or revoked session signs the user out.
+  useEffect(() => {
+    if (!localStorage.getItem('aocs_token')) {
+      setIsVerifying(false);
+      return;
+    }
+    let cancelled = false;
+    authApi
+      .me()
+      .then((me) => {
+        if (cancelled) return;
+        setUser((prev) => {
+          const token = localStorage.getItem('aocs_token') ?? prev?.token ?? '';
+          const verified: User = { ...me, token } as User;
+          localStorage.setItem('aocs_user', JSON.stringify(verified));
+          return verified;
+        });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        const status = err?.response?.status;
+        if (status === 401 || status === 403) {
+          localStorage.removeItem('aocs_token');
+          localStorage.removeItem('aocs_user');
+          setUser(null);
+        }
+        // Network/5xx: keep what we have; every API call is still checked server-side.
+      })
+      .finally(() => {
+        if (!cancelled) setIsVerifying(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const login = async (identifier: string, passkey: string): Promise<User> => {
     const cleanId = identifier.trim().toLowerCase();
@@ -90,6 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         isAuthenticated: !!user,
+        isVerifying,
         login,
         logout,
       }}

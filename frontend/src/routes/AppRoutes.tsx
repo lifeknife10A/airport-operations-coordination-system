@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from '../pages/public/Home';
 import FlightTracker from '../pages/public/FlightTracker';
@@ -10,18 +10,19 @@ import Contact from '../pages/public/Contact';
 import Login from '../pages/auth/Login';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 
-import SystemAdminDashboard from '../pages/dashboards/SystemAdminDashboard';
-import AOCCControllerDashboard from '../pages/dashboards/AOCCControllerDashboard';
-import GroundOpsSupervisorDashboard from '../pages/dashboards/GroundOpsSupervisorDashboard';
-import DepartmentDashboard from '../pages/dashboards/DepartmentDashboard';
-import AirsideOpsDashboard from '../pages/dashboards/AirsideOpsDashboard';
-import LogisticsDashboard from '../pages/dashboards/LogisticsDashboard';
-import PassengerSecurityOpsDashboard from '../pages/dashboards/PassengerSecurityOpsDashboard';
-import PassengerCheckInDashboard from '../pages/dashboards/PassengerCheckInDashboard';
+const SystemAdminDashboard = lazy(() => import('../pages/dashboards/SystemAdminDashboard'));
+const AOCCControllerDashboard = lazy(() => import('../pages/dashboards/AOCCControllerDashboard'));
+const GroundOpsSupervisorDashboard = lazy(() => import('../pages/dashboards/GroundOpsSupervisorDashboard'));
+const DepartmentDashboard = lazy(() => import('../pages/dashboards/DepartmentDashboard'));
+const AirsideOpsDashboard = lazy(() => import('../pages/dashboards/AirsideOpsDashboard'));
+const LogisticsDashboard = lazy(() => import('../pages/dashboards/LogisticsDashboard'));
+const PassengerSecurityOpsDashboard = lazy(() => import('../pages/dashboards/PassengerSecurityOpsDashboard'));
+const PassengerCheckInDashboard = lazy(() => import('../pages/dashboards/PassengerCheckInDashboard'));
 
 const AppRoutes: React.FC = () => {
     return (
         <BrowserRouter>
+            <Suspense fallback={<div style={{ padding: 32, fontFamily: 'sans-serif' }}>Loading…</div>}>
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/tracker" element={<FlightTracker />} />
@@ -42,6 +43,7 @@ const AppRoutes: React.FC = () => {
                 <Route path="/dashboard/passenger-security" element={<ProtectedRoute dashboard="passenger-security"><PassengerSecurityOpsDashboard /></ProtectedRoute>} />
                 <Route path="/dashboard/check-in" element={<ProtectedRoute dashboard="check-in"><PassengerCheckInDashboard /></ProtectedRoute>} />
             </Routes>
+            </Suspense>
         </BrowserRouter>
     );
 };

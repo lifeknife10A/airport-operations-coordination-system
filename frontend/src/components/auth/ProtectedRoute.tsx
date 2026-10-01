@@ -12,7 +12,11 @@ interface ProtectedRouteProps {
 // the backend re-checks the session and role on every request, so editing localStorage here
 // cannot grant any API access.
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ dashboard, children }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isVerifying } = useAuth();
+
+  if (isVerifying) {
+    return <div style={{ padding: 32, fontFamily: 'sans-serif' }}>Verifying session…</div>;
+  }
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;

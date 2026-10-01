@@ -5,7 +5,9 @@ import com.saphire.aocs.dto.LoginResponseDTO;
 import com.saphire.aocs.exception.UnauthorizedException;
 import com.saphire.aocs.service.AuthService;
 import com.saphire.aocs.service.LoginAttemptService;
+import com.saphire.aocs.repository.UserRepository;
 import com.saphire.aocs.service.SessionService;
+import org.springframework.security.core.Authentication;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ public class AuthController {
     private final AuthService authService;
     private final SessionService sessionService;
     private final LoginAttemptService loginAttempts;
+    private final UserRepository userRepository;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginDTO dto, HttpServletRequest request) {
@@ -35,6 +38,25 @@ public class AuthController {
             loginAttempts.recordFailure(dto.getUsername(), ip);
             throw ex;
         }
+    }
+
+    // Who the server believes the caller is right now (role read from the database, not from
+    // anything the client stored). The frontend uses this on load so a hand-edited localStorage
+    // role can't change which dashboard is shown. No token field: the caller already has one.
+    @GetMapping("/me")
+    public ResponseEntity<LoginResponseDTO> me(Authentication auth) {
+        var user = userRepository.findByUsername(auth.getName())
+                .orElseThrow(() -> new UnauthorizedException("Session user no longer exists"));
+        return ResponseEntity.ok(LoginResponseDTO.builder()
+                .userId(user.getUserId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .name(user.getName())
+                .roleId(user.getRole().getRoleId())
+                .roleName(user.getRole().getRoleName())
+                .departmentId(user.getDepartment().getDepartmentId())
+                .departmentName(user.getDepartment().getDepartmentName())
+                .build());
     }
 
     // Real, server-side logout: revokes the auth_sessions row behind this token so it stops
