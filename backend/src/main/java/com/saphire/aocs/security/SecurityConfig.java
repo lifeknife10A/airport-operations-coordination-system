@@ -1,5 +1,6 @@
 package com.saphire.aocs.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -36,6 +37,8 @@ import java.util.List;
  *  - Inquiry lookup by ticket number -- same idea as a package-tracking number: knowing the
  *    specific ticket is the access control, not a login.
  *
+ *  - GET /actuator/health -- container/orchestrator liveness checks, not a staff login flow.
+ *
  * Everything else (all mutations, billing, border control, check-in/PNR, audit logs, user
  * management, shift handover, runway telemetry, incidents, reports) requires authentication.
  *
@@ -57,6 +60,13 @@ import java.util.List;
 @EnableMethodSecurity // enables @PreAuthorize on controller/service methods
 public class SecurityConfig {
 
+    // Was a hardcoded http://localhost:* / 127.0.0.1:* list -- fine for this machine, but it meant
+    // a real deployed frontend on any other origin would be silently CORS-blocked with nothing in
+    // the response to explain why. Now reads from aocs.cors.allowed-origins (comma-separated),
+    // defaulting to the same localhost patterns so local dev is unaffected.
+    @Value("${aocs.cors.allowed-origins:http://localhost:*,http://127.0.0.1:*}")
+    private List<String> allowedOrigins;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -71,6 +81,19 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/v1/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/logout", "/api/v1/auth/logout").permitAll()
+
+                // Standard practice to leave health checks open: container orchestrators (Docker's
+                // own HEALTHCHECK, Kubernetes liveness/readiness probes, a load balancer) need to
+                // reach this without a staff login, and the exposure is already capped to just
+                // `health` (management.endpoints.web.exposure.include), not the full actuator
+                // surface -- everything else under /actuator/** still requires authentication.
+                .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
+
+                // The generated API contract and its UI. Doesn't leak anything the shipped
+                // frontend bundle doesn't already reveal (every endpoint path is in its JS), and
+                // gating it behind a staff login would defeat its purpose for anyone integrating
+                // against this API without already having an account.
+                .requestMatchers(HttpMethod.GET, "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
                 .requestMatchers(HttpMethod.GET, "/api/flights/**", "/api/v1/flights/**").permitAll()
                 .requestMatchers(HttpMethod.GET,
@@ -92,7 +115,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
+        config.setAllowedOriginPatterns(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

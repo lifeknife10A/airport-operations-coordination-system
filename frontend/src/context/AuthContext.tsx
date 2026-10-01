@@ -154,8 +154,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return userData;
     } catch (error: any) {
       // If backend responded with 401/400/403, it explicitly rejected the credentials!
-      if (error.response && (error.response.status === 401 || error.response.status === 400 || error.response.status === 403)) {
-        const errorMsg = error.response.data?.message || 'Invalid operational credentials. Access denied.';
+      // 429 = the backend has temporarily locked this account/IP after repeated failed logins. It
+      // must be treated as a rejection, not as "backend offline", or the demo fallback below would
+      // let the lockout be sidestepped in the UI. The backend's ProblemDetail carries its text in
+      // `detail` (older responses used `message`).
+      if (error.response && [400, 401, 403, 429].includes(error.response.status)) {
+        const errorMsg =
+          error.response.data?.detail ||
+          error.response.data?.message ||
+          'Invalid operational credentials. Access denied.';
         throw new Error(errorMsg);
       }
 

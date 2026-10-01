@@ -1,11 +1,13 @@
 package com.saphire.aocs.controller;
 
+import com.saphire.aocs.dto.AuditActionDTO;
 import com.saphire.aocs.entity.AuditLog;
 import com.saphire.aocs.service.SecurityAuditService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,12 +31,8 @@ public class SecurityAuditController {
     }
 
     @PostMapping("/log-action")
-    public ResponseEntity<AuditLog> logAction(@RequestBody Map<String, Object> payload) {
-        Long userId = Long.valueOf(payload.get("userId").toString());
-        String action = (String) payload.get("action");
-        String changePayload = (String) payload.get("changePayload");
-
-        AuditLog log = auditService.logAction(userId, action, changePayload);
+    public ResponseEntity<AuditLog> logAction(@Valid @RequestBody AuditActionDTO dto) {
+        AuditLog log = auditService.logAction(dto.getUserId(), dto.getAction(), dto.getChangePayload());
         return new ResponseEntity<>(log, HttpStatus.CREATED);
     }
 }

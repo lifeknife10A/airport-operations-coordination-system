@@ -63,9 +63,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     var authToken = new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities);
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                     request.setAttribute("sessionId", sessionId);
+                    request.setAttribute(RequestLoggingFilter.USER_ATTRIBUTE, claims.getSubject());
                 } else {
                     // Signature/expiry check passed but the session was logged out or superseded
                     // by a newer login elsewhere -- treat exactly like an invalid token.
+                    logger.debug("Rejected token for '" + claims.getSubject() + "': session " + sessionId + " is no longer active");
                     SecurityContextHolder.clearContext();
                 }
             } catch (JwtException | IllegalArgumentException ignored) {

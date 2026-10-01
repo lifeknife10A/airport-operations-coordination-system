@@ -37,6 +37,30 @@ public interface FlightRepository extends JpaRepository<Flight, Long> {
     )
     Page<Flight> findAllSaphireHubFlightsWithAllDetails(Pageable pageable);
 
+    /**
+     * Same filter/eager-fetch/pagination contract as findAllSaphireHubFlightsWithAllDetails(Pageable)
+     * above, plus a free-text match against flight number, airline name, gate number, or either
+     * airport's IATA code -- covers what the public Flight Tracker search box lets travelers type
+     * (flight number, carrier, or route).
+     */
+    @Query(
+        value = "SELECT f FROM Flight f JOIN FETCH f.originAirport JOIN FETCH f.destinationAirport JOIN FETCH f.airline JOIN FETCH f.aircraft LEFT JOIN FETCH f.gate LEFT JOIN FETCH f.stand LEFT JOIN FETCH f.department "
+            + "WHERE (f.originAirport.airportId = 1 OR f.destinationAirport.airportId = 1) "
+            + "AND (LOWER(f.flightNumber) LIKE LOWER(CONCAT('%', :query, '%')) "
+            + "OR LOWER(f.airline.airlineName) LIKE LOWER(CONCAT('%', :query, '%')) "
+            + "OR LOWER(f.gate.gateNumber) LIKE LOWER(CONCAT('%', :query, '%')) "
+            + "OR LOWER(f.originAirport.iataCode) LIKE LOWER(CONCAT('%', :query, '%')) "
+            + "OR LOWER(f.destinationAirport.iataCode) LIKE LOWER(CONCAT('%', :query, '%')))",
+        countQuery = "SELECT COUNT(f) FROM Flight f "
+            + "WHERE (f.originAirport.airportId = 1 OR f.destinationAirport.airportId = 1) "
+            + "AND (LOWER(f.flightNumber) LIKE LOWER(CONCAT('%', :query, '%')) "
+            + "OR LOWER(f.airline.airlineName) LIKE LOWER(CONCAT('%', :query, '%')) "
+            + "OR LOWER(f.gate.gateNumber) LIKE LOWER(CONCAT('%', :query, '%')) "
+            + "OR LOWER(f.originAirport.iataCode) LIKE LOWER(CONCAT('%', :query, '%')) "
+            + "OR LOWER(f.destinationAirport.iataCode) LIKE LOWER(CONCAT('%', :query, '%')))"
+    )
+    Page<Flight> searchSaphireHubFlights(@org.springframework.data.repository.query.Param("query") String query, Pageable pageable);
+
     List<Flight> findByFlightStatus(String flightStatus);
 
     List<Flight> findByFlightNumberContainingIgnoreCase(String flightNumber);

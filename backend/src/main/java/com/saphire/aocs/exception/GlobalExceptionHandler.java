@@ -4,7 +4,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -46,6 +48,14 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.UNAUTHORIZED, "invalid-credentials", ex.getMessage(), req, ex, false);
     }
 
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ProblemDetail> handleTooManyRequests(TooManyRequestsException ex, HttpServletRequest req) {
+        ProblemDetail pd = build(HttpStatus.TOO_MANY_REQUESTS, "too-many-requests", ex.getMessage(), req, ex, false);
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()))
+                .body(pd);
+    }
+
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ProblemDetail handleAccessDenied(org.springframework.security.access.AccessDeniedException ex, HttpServletRequest req) {
         return build(HttpStatus.FORBIDDEN, "access-denied", "You do not have permission to perform this action", req, ex, false);
@@ -84,7 +94,12 @@ public class GlobalExceptionHandler {
 
     private ProblemDetail build(HttpStatus status, String type, String publicMessage,
                                  HttpServletRequest req, Exception ex, boolean isUnexpected) {
-        String correlationId = UUID.randomUUID().toString();
+        // Same id RequestLoggingFilter put in the MDC and the X-Correlation-Id response header, so
+        // the id in this error body matches every log line for the request.
+        String correlationId = org.slf4j.MDC.get("correlationId");
+        if (correlationId == null) {
+            correlationId = UUID.randomUUID().toString();
+        }
 
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, publicMessage);
         pd.setType(URI.create(PROBLEM_BASE_URI + type));

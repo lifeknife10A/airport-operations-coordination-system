@@ -16,6 +16,7 @@ import com.saphire.aocs.repository.FlightRepository;
 import com.saphire.aocs.repository.TaskRepository;
 import com.saphire.aocs.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,6 +60,7 @@ import java.util.stream.Collectors;
  * also had no `notes` field to round-trip it back to the caller -- add one if you want callers
  * to see what was recorded, not just write it blind.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TurnaroundTaskService {
@@ -71,11 +73,11 @@ public class TurnaroundTaskService {
     @Transactional(readOnly = true)
     public List<TaskDTO> getAllTasks(String status) {
         if (status != null && !status.isBlank()) {
-            return taskRepository.findByStatus(status.trim().toUpperCase()).stream()
+            return taskRepository.findByStatusWithAssociations(status.trim().toUpperCase()).stream()
                     .map(this::mapToDTO)
                     .collect(Collectors.toList());
         }
-        return taskRepository.findAll().stream()
+        return taskRepository.findAllWithAssociations().stream()
                 .limit(200)
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
@@ -86,7 +88,7 @@ public class TurnaroundTaskService {
         if (!flightRepository.existsById(flightId)) {
             throw new ResourceNotFoundException("Flight not found with ID: " + flightId);
         }
-        return taskRepository.findByFlight_FlightId(flightId).stream()
+        return taskRepository.findByFlightIdWithAssociations(flightId).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -129,6 +131,8 @@ public class TurnaroundTaskService {
                             + " (a task must pass through IN_PROGRESS before it can be COMPLETED)");
         }
 
+        log.info("Task {} ({}) on flight {} status {} -> {}", task.getTaskId(), task.getTaskName(),
+                task.getFlight() != null ? task.getFlight().getFlightNumber() : "?", task.getStatus(), target);
         task.setStatus(target.name());
 
         // Previously accepted and silently discarded -- see fix #3 above.
@@ -197,6 +201,8 @@ public class TurnaroundTaskService {
                 .build();
 
         delayLogRepository.save(log);
+        TurnaroundTaskService.log.warn("Delay logged: flight {} task {} late by {} min (code {})",
+                flightId, taskName, delayMinutes, log.getDelayCode());
     }
 
     /**

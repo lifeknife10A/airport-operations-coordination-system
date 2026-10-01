@@ -5,6 +5,7 @@ import com.saphire.aocs.service.CheckinService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,13 +28,13 @@ public class CheckinController {
     }
 
     @PostMapping("/issue-boarding-pass")
-    public ResponseEntity<BoardingPassResponseDTO> issueBoardingPass(@RequestBody IssueBoardingPassDTO dto) {
+    public ResponseEntity<BoardingPassResponseDTO> issueBoardingPass(@Valid @RequestBody IssueBoardingPassDTO dto) {
         BoardingPassResponseDTO issued = checkinService.issueBoardingPass(dto);
         return new ResponseEntity<>(issued, HttpStatus.CREATED);
     }
 
     @PostMapping("/tag-baggage")
-    public ResponseEntity<BagTagResponseDTO> tagBaggage(@RequestBody TagBaggageRequestDTO dto) {
+    public ResponseEntity<BagTagResponseDTO> tagBaggage(@Valid @RequestBody TagBaggageRequestDTO dto) {
         BagTagResponseDTO tagged = checkinService.tagBaggage(dto);
         return new ResponseEntity<>(tagged, HttpStatus.CREATED);
     }

@@ -1,5 +1,7 @@
 package com.saphire.aocs.controller;
 
+import com.saphire.aocs.dto.BaggageScanDTO;
+import com.saphire.aocs.dto.MishandledBaggageReportDTO;
 import com.saphire.aocs.entity.BagTag;
 import com.saphire.aocs.entity.BaggageScanEvent;
 import com.saphire.aocs.entity.MishandledBaggage;
@@ -7,6 +9,7 @@ import com.saphire.aocs.service.BaggageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,21 +33,15 @@ public class BaggageController {
     }
 
     @PostMapping("/scan")
-    public ResponseEntity<BaggageScanEvent> recordScan(@RequestBody Map<String, String> payload) {
-        String tagNumber = payload.get("tagNumber");
-        String location = payload.get("location");
-        BaggageScanEvent event = baggageService.addScanEvent(tagNumber, location);
+    public ResponseEntity<BaggageScanEvent> recordScan(@Valid @RequestBody BaggageScanDTO dto) {
+        BaggageScanEvent event = baggageService.addScanEvent(dto.getTagNumber(), dto.getLocation());
         return new ResponseEntity<>(event, HttpStatus.CREATED);
     }
 
     @PostMapping("/mishandled")
-    public ResponseEntity<MishandledBaggage> reportMishandledBag(@RequestBody Map<String, Object> payload) {
-        String claimNumber = (String) payload.get("claimNumber");
-        String incidentType = (String) payload.get("incidentType");
-        String tagNumber = (String) payload.get("tagNumber");
-        Long passengerId = Long.valueOf(payload.get("passengerId").toString());
-
-        MishandledBaggage report = baggageService.createMishandledReport(claimNumber, incidentType, tagNumber, passengerId);
+    public ResponseEntity<MishandledBaggage> reportMishandledBag(@Valid @RequestBody MishandledBaggageReportDTO dto) {
+        MishandledBaggage report = baggageService.createMishandledReport(
+                dto.getClaimNumber(), dto.getIncidentType(), dto.getTagNumber(), dto.getPassengerId());
         return new ResponseEntity<>(report, HttpStatus.CREATED);
     }
 

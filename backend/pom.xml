@@ -23,10 +23,41 @@
     </properties>
 
     <dependencies>
+        <!-- No API documentation existed at all; generates a live OpenAPI contract from the
+             actual controllers/DTOs (so it can't drift the way a hand-written doc would) plus a
+             browsable UI at /swagger-ui.html. -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.5.0</version>
+        </dependency>
         <!-- Spring Boot Web Starter for REST APIs -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <!-- Was never actually on the classpath despite application.properties configuring
+                 management.endpoints.web.exposure.include, so that property did nothing. Needed
+                 for both the Docker HEALTHCHECK (GET /actuator/health) and, longer term, a real
+                 liveness/readiness signal for any orchestrator this ends up running under. -->
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <!-- Pre-existing bug, found while testing open-in-view (not caused by it): any
+                 controller returning a JPA entity whose association graph reaches an
+                 uninitialized lazy proxy fails with "HttpMessageConversionException: Type
+                 definition error: [... ByteBuddyInterceptor]"; Jackson has no idea how to
+                 serialize a raw Hibernate proxy object. Confirmed live on GET
+                 /api/border-control/passport/{n}, /api/baggage/mishandled,
+                 /api/baggage/track/{tag}, POST /api/border-control/clearance, POST
+                 /api/baggage/scan, GET /api/billing/invoices/{id}. Spring Boot auto-registers
+                 Hibernate6Module the moment it's on the classpath (Jackson's ServiceLoader
+                 discovery), which makes it unwrap/initialize proxies as part of serialization
+                 instead of choking on them; no extra @Bean needed. -->
+            <artifactId>jackson-datatype-hibernate6</artifactId>
         </dependency>
 
         <!-- Spring Data JPA for ORM & Repositories -->

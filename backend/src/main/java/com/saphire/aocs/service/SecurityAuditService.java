@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SecurityAuditService {
@@ -40,7 +42,9 @@ public class SecurityAuditService {
                 .changePayload(toJsonPayload(changePayload))
                 .createdAt(ZonedDateTime.now())
                 .build();
-        return auditLogRepository.save(log);
+        AuditLog saved = auditLogRepository.save(log);
+        SecurityAuditService.log.debug("Audit entry {} written for user {}: {}", saved.getLogId(), userId, action);
+        return saved;
     }
 
     /**

@@ -2,7 +2,9 @@ package com.saphire.aocs.controller;
 
 import com.saphire.aocs.dto.LoginDTO;
 import com.saphire.aocs.dto.LoginResponseDTO;
+import com.saphire.aocs.exception.UnauthorizedException;
 import com.saphire.aocs.service.AuthService;
+import com.saphire.aocs.service.LoginAttemptService;
 import com.saphire.aocs.service.SessionService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -19,11 +21,20 @@ public class AuthController {
 
     private final AuthService authService;
     private final SessionService sessionService;
+    private final LoginAttemptService loginAttempts;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginDTO dto) {
-        LoginResponseDTO response = authService.login(dto);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginDTO dto, HttpServletRequest request) {
+        String ip = request.getRemoteAddr();
+        loginAttempts.assertNotLocked(dto.getUsername(), ip);
+        try {
+            LoginResponseDTO response = authService.login(dto);
+            loginAttempts.recordSuccess(dto.getUsername());
+            return ResponseEntity.ok(response);
+        } catch (UnauthorizedException ex) {
+            loginAttempts.recordFailure(dto.getUsername(), ip);
+            throw ex;
+        }
     }
 
     // Real, server-side logout: revokes the auth_sessions row behind this token so it stops

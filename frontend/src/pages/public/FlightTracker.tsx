@@ -31,11 +31,15 @@ import {
   ArrowRight,
   ShieldCheck,
   Check,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import LiveFlightMatrix from '../../components/home/LiveFlightMatrix';
 import { SpotlightCard } from '../../components/reactbits';
 import { aocsDataStore } from '../../services/aocsDataStore';
+import { flightApi } from '../../api/flightApi';
 import { Flight, BagTag, BaggageScanEvent } from '../../types';
+import toast from 'react-hot-toast';
 import bannerTracker from '../../assets/banners/banner-tracker.jpg';
 
 interface FlightRecord {
@@ -85,12 +89,19 @@ export const FlightTracker: React.FC = () => {
   const flightParam = searchParams.get('flight') || '';
 
   const [trackerTab, setTrackerTab] = useState<'FLIGHTS' | 'BAGGAGE'>('FLIGHTS');
-  const [flights, setFlights] = useState<FlightRecord[]>(() =>
-    aocsDataStore.getFlights().map(mapFlightToRecord)
-  );
   const [searchQuery, setSearchQuery] = useState(flightParam);
+  const [debouncedQuery, setDebouncedQuery] = useState(flightParam);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [selectedFlight, setSelectedFlight] = useState<FlightRecord | null>(null);
+
+  // Server-side pagination: the hub has 6000+ flights, so only one page (10 rows) is ever
+  // loaded into memory at a time, same pattern as the staff AOCC dashboard's flight board.
+  const [page, setPage] = useState(0);
+  const [pageFlights, setPageFlights] = useState<FlightRecord[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const [tableLoading, setTableLoading] = useState(false);
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
   // Sync flightParam with searchQuery whenever URL changes
   useEffect(() => {
@@ -99,56 +110,69 @@ export const FlightTracker: React.FC = () => {
     }
   }, [flightParam]);
 
+  // Debounce the search box so every keystroke doesn't fire a request; also resets to page 0
+  // whenever the query actually changes so results start from the top.
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [searchQuery]);
+
   // Baggage Tracker State
   const [bagQuery, setBagQuery] = useState('BAG-AI203-8821');
   const [trackedBag, setTrackedBag] = useState<BagTag | undefined>(undefined);
   const [bagScans, setBagScans] = useState<BaggageScanEvent[]>([]);
 
+  // Fetch exactly one page (10 rows) of flights from the server for the current page/search term.
   useEffect(() => {
-    const refreshData = () => {
-      const allFlights = aocsDataStore.getFlights().map(mapFlightToRecord);
-      setFlights(allFlights);
-      setSelectedFlight((prev) => {
-        const query = flightParam || searchQuery;
-        if (query.trim()) {
-          const match = allFlights.find((f) =>
-            f.flightNo.toLowerCase().includes(query.toLowerCase()) ||
-            f.airline.toLowerCase().includes(query.toLowerCase()) ||
-            f.route.toLowerCase().includes(query.toLowerCase()) ||
-            f.destination.toLowerCase().includes(query.toLowerCase()) ||
-            f.gate.toLowerCase().includes(query.toLowerCase())
-          );
-          if (match) return match;
-        }
-        if (!prev && allFlights.length > 0) return allFlights[0];
-        if (prev) {
-          const updated = allFlights.find((f) => f.flightNo === prev.flightNo);
-          if (updated) return updated;
-        }
-        return prev || allFlights[0] || null;
+    let cancelled = false;
+    setTableLoading(true);
+    flightApi
+      .getSaphireHubFlightsPaged(page, 10, debouncedQuery)
+      .then((res) => {
+        if (cancelled) return;
+        const records = res.content.map(mapFlightToRecord);
+        setPageFlights(records);
+        setTotalPages(Math.max(1, res.totalPages));
+        setTotalElements(res.totalElements);
+        setSelectedFlight((prev) => {
+          if (prev) {
+            const updated = records.find((f) => f.flightNo === prev.flightNo);
+            if (updated) return updated;
+          }
+          return records[0] || null;
+        });
+      })
+      .catch(() => {
+        if (!cancelled) toast.error('Could not load this page of flights from the server.');
+      })
+      .finally(() => {
+        if (!cancelled) setTableLoading(false);
       });
+    return () => {
+      cancelled = true;
+    };
+  }, [page, debouncedQuery, refreshNonce]);
 
-      // Update baggage tracking
+  useEffect(() => {
+    const refreshBaggage = () => {
       const { bagTag, scanEvents } = aocsDataStore.trackBaggage(bagQuery);
       setTrackedBag(bagTag);
       setBagScans(scanEvents);
     };
 
-    refreshData();
+    refreshBaggage();
 
     const unsub = aocsDataStore.subscribe((event) => {
-      if (
-        event.type.includes('FLIGHT') ||
-        event.type.includes('GATE') ||
-        event.type.includes('BAGGAGE') ||
-        event.type === 'REFRESH'
-      ) {
-        refreshData();
+      if (event.type.includes('BAGGAGE') || event.type === 'REFRESH') {
+        refreshBaggage();
       }
     });
 
     return () => unsub();
-  }, [bagQuery, flightParam, searchQuery]);
+  }, [bagQuery]);
 
   const handleSelectBag = (tag: string) => {
     setBagQuery(tag);
@@ -157,19 +181,12 @@ export const FlightTracker: React.FC = () => {
     setBagScans(scanEvents);
   };
 
-  const filteredFlights = flights.filter((f) => {
-    const q = searchQuery.toLowerCase().trim();
-    const matchesQuery =
-      !q ||
-      f.flightNo.toLowerCase().includes(q) ||
-      f.airline.toLowerCase().includes(q) ||
-      f.route.toLowerCase().includes(q) ||
-      f.origin.toLowerCase().includes(q) ||
-      f.destination.toLowerCase().includes(q) ||
-      f.gate.toLowerCase().includes(q);
-    const matchesStatus = statusFilter === 'ALL' || f.status === statusFilter;
-    return matchesQuery && matchesStatus;
-  });
+  // Search is applied server-side (see the paged fetch effect above); the status pill filters
+  // only within the current 10-row page, same tradeoff the staff AOCC dashboard's board already
+  // makes -- a flight on a different page won't show up here until you page to it.
+  const filteredFlights = pageFlights.filter(
+    (f) => statusFilter === 'ALL' || f.status === statusFilter
+  );
 
   const getStatusBadge = (status: FlightRecord['status']) => {
     switch (status) {
@@ -399,7 +416,8 @@ export const FlightTracker: React.FC = () => {
 
             {/* Results & Selected Flight Detail Grid */}
             <Box id="results" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.8fr 1fr' }, gap: 4 }}>
-              {/* Flight Table */}
+              {/* Flight Table + Pagination */}
+              <Box>
               <TableContainer
                 component={Paper}
                 elevation={0}
@@ -424,7 +442,13 @@ export const FlightTracker: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {filteredFlights.length === 0 ? (
+                    {tableLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={5} align="center" sx={{ py: 4, color: '#64748B' }}>
+                          Loading flights…
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredFlights.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} align="center" sx={{ py: 4, color: '#64748B' }}>
                           No commercial flights match your search query.
@@ -463,6 +487,38 @@ export const FlightTracker: React.FC = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+
+              {/* Pagination: 10 flights per page across 6000+ hub flights */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1.5, px: 0.5 }}>
+                <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.78rem', color: '#64748B' }}>
+                  {tableLoading
+                    ? 'Loading…'
+                    : totalElements > 0
+                    ? `Page ${page + 1} of ${totalPages} · ${totalElements.toLocaleString()} flights total`
+                    : 'No flights found'}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  <Button
+                    size="small"
+                    disabled={page === 0 || tableLoading}
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    startIcon={<ChevronLeft size={16} />}
+                    sx={{ textTransform: 'none', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: '0.8rem', color: '#1E3A5F' }}
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    size="small"
+                    disabled={page + 1 >= totalPages || tableLoading}
+                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                    endIcon={<ChevronRight size={16} />}
+                    sx={{ textTransform: 'none', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: '0.8rem', color: '#1E3A5F' }}
+                  >
+                    Next
+                  </Button>
+                </Box>
+              </Box>
+              </Box>
 
               {/* Selected Flight Telemetry Card */}
               {selectedFlight ? (
@@ -522,9 +578,7 @@ export const FlightTracker: React.FC = () => {
                     fullWidth
                     variant="contained"
                     startIcon={<RefreshCw size={15} />}
-                    onClick={() => {
-                      setFlights(aocsDataStore.getFlights().map(mapFlightToRecord));
-                    }}
+                    onClick={() => setRefreshNonce((n) => n + 1)}
                     sx={{
                       background: '#1E3A5F',
                       color: '#FFFFFF',

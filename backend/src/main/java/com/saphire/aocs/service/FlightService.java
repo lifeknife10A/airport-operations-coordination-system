@@ -9,6 +9,7 @@ import com.saphire.aocs.exception.ConflictException;
 import com.saphire.aocs.exception.ResourceNotFoundException;
 import com.saphire.aocs.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -45,6 +46,7 @@ import java.time.ZonedDateTime;
  * consistently: null id -> null association (fine, it's optional), non-null id that doesn't
  * resolve -> 404 (previously: silently ignored).
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FlightService {
@@ -76,11 +78,19 @@ public class FlightService {
      */
     @Transactional(readOnly = true)
     public PagedResponseDTO<FlightDTO> getSaphireHubFlightsPaged(int page, int size) {
+        return getSaphireHubFlightsPaged(page, size, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponseDTO<FlightDTO> getSaphireHubFlightsPaged(int page, int size, String query) {
         int safePage = Math.max(0, page);
         int safeSize = Math.min(Math.max(1, size), MAX_PAGE_SIZE);
         Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "flightId"));
 
-        Page<Flight> result = flightRepository.findAllSaphireHubFlightsWithAllDetails(pageable);
+        String trimmedQuery = query == null ? null : query.trim();
+        Page<Flight> result = (trimmedQuery == null || trimmedQuery.isEmpty())
+                ? flightRepository.findAllSaphireHubFlightsWithAllDetails(pageable)
+                : flightRepository.searchSaphireHubFlights(trimmedQuery, pageable);
 
         return PagedResponseDTO.<FlightDTO>builder()
                 .content(result.getContent().stream().map(this::mapToDTO).collect(Collectors.toList()))
@@ -163,6 +173,7 @@ public class FlightService {
                             + current + " to " + target);
         }
 
+        log.info("Flight {} (id {}) status {} -> {}", flight.getFlightNumber(), flightId, current, target);
         flight.setFlightStatus(target.name());
         ZonedDateTime now = ZonedDateTime.now();
 

@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,7 +40,7 @@ public class ShiftHandoverController {
     }
 
     @PostMapping
-    public ResponseEntity<ShiftHandoverDTO> submitHandover(@RequestBody ShiftHandoverCreateDTO dto) {
+    public ResponseEntity<ShiftHandoverDTO> submitHandover(@Valid @RequestBody ShiftHandoverCreateDTO dto) {
         ShiftHandoverDTO created = shiftHandoverService.createHandover(dto);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
@@ -47,7 +48,7 @@ public class ShiftHandoverController {
     @PutMapping("/{id}/acknowledge")
     public ResponseEntity<ShiftHandoverDTO> acknowledgeHandover(
             @PathVariable Long id,
-            @RequestBody ShiftHandoverAckDTO dto) {
+            @Valid @RequestBody ShiftHandoverAckDTO dto) {
         return ResponseEntity.ok(shiftHandoverService.acknowledgeHandover(id, dto));
     }
 }

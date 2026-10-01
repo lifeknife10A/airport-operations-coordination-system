@@ -15,6 +15,8 @@ public interface OperationalInquiryRepository extends JpaRepository<OperationalI
 
     Optional<OperationalInquiry> findByTicketNumber(String ticketNumber);
 
+    boolean existsByTicketNumber(String ticketNumber);
+
     Page<OperationalInquiry> findByStatus(String status, Pageable pageable);
 
     Page<OperationalInquiry> findByCategory(String category, Pageable pageable);

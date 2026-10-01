@@ -92,7 +92,7 @@ public class ReportExportService {
         // CSV Header
         writer.println("Invoice ID,Invoice Number,Airline Name,IATA,Billing Period Start,Billing Period End,Total Amount (USD),Status,Due Date");
 
-        List<AirlineBillingInvoice> invoices = invoiceRepository.findAll(PageRequest.of(0, 1000)).getContent();
+        List<AirlineBillingInvoice> invoices = invoiceRepository.findAllWithAirline(PageRequest.of(0, 1000)).getContent();
         for (AirlineBillingInvoice inv : invoices) {
             String airlineName = inv.getAirline() != null ? inv.getAirline().getAirlineName() : "Saphire Partner";
             String iata = inv.getAirline() != null ? inv.getAirline().getIataCode() : "--";

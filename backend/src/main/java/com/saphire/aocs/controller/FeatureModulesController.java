@@ -1,5 +1,6 @@
 package com.saphire.aocs.controller;
 
+import com.saphire.aocs.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,10 +9,23 @@ import org.springframework.web.bind.annotation.*;
 import java.time.ZonedDateTime;
 import java.util.*;
 
+// Every endpoint in this controller is backed by an in-memory List<Map<...>>, not a database
+// table: nothing here survives an app restart, and there's no Flyway migration or entity for any
+// of it despite the endpoints looking like real persisted resources. That's a pre-existing gap
+// bigger than input validation (these "features" were never actually wired to Postgres) --
+// flagged here rather than silently treated as real. What's added below is a minimal guard
+// (reject a null/empty body) since a proper typed DTO would have to invent a schema these mock
+// endpoints were never designed to enforce.
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class FeatureModulesController {
+
+    private static void requireNonEmpty(Map<String, ?> payload) {
+        if (payload == null || payload.isEmpty()) {
+            throw new BadRequestException("Request body must not be empty");
+        }
+    }
 
     // Feature 7: Aircraft Auxiliary Power (GPU/PCA) Utility Monitor
     private final List<Map<String, Object>> gpuLogs = Collections.synchronizedList(new ArrayList<>());
@@ -23,6 +37,7 @@ public class FeatureModulesController {
 
     @PostMapping("/utilities/gpu")
     public ResponseEntity<Map<String, Object>> logGpuUsage(@RequestBody Map<String, Object> payload) {
+        requireNonEmpty(payload);
         payload.put("loggedAt", ZonedDateTime.now().toString());
         payload.put("logId", gpuLogs.size() + 1L);
         gpuLogs.add(payload);
@@ -39,6 +54,7 @@ public class FeatureModulesController {
 
     @PostMapping("/incidents")
     public ResponseEntity<Map<String, Object>> createIncident(@RequestBody Map<String, Object> payload) {
+        requireNonEmpty(payload);
         payload.put("ticketId", "INC-" + (incidentTickets.size() + 101));
         payload.put("status", "OPEN");
         payload.put("createdAt", ZonedDateTime.now().toString());
@@ -48,6 +64,9 @@ public class FeatureModulesController {
 
     @PutMapping("/incidents/{ticketId}/status")
     public ResponseEntity<Map<String, Object>> updateIncidentStatus(@PathVariable String ticketId, @RequestBody Map<String, String> statusPayload) {
+        if (statusPayload == null || statusPayload.get("status") == null || statusPayload.get("status").isBlank()) {
+            throw new BadRequestException("status is required");
+        }
         for (Map<String, Object> ticket : incidentTickets) {
             if (ticketId.equalsIgnoreCase(String.valueOf(ticket.get("ticketId")))) {
                 ticket.put("status", statusPayload.get("status"));
@@ -68,6 +87,7 @@ public class FeatureModulesController {
 
     @PostMapping("/checkin-counters")
     public ResponseEntity<Map<String, Object>> allocateCheckinCounter(@RequestBody Map<String, Object> payload) {
+        requireNonEmpty(payload);
         payload.put("allocationId", counterAllocations.size() + 1L);
         payload.put("allocatedAt", ZonedDateTime.now().toString());
         counterAllocations.add(payload);
@@ -84,6 +104,7 @@ public class FeatureModulesController {
 
     @PostMapping("/handover-notes")
     public ResponseEntity<Map<String, Object>> postHandoverNote(@RequestBody Map<String, Object> payload) {
+        requireNonEmpty(payload);
         payload.put("noteId", handoverNotes.size() + 1L);
         payload.put("postedAt", ZonedDateTime.now().toString());
         handoverNotes.add(payload);

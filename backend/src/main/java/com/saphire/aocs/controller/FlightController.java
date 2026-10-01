@@ -32,8 +32,9 @@ public class FlightController {
     @GetMapping("/paged")
     public ResponseEntity<PagedResponseDTO<FlightDTO>> getSaphireHubFlightsPaged(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(flightService.getSaphireHubFlightsPaged(page, size));
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String query) {
+        return ResponseEntity.ok(flightService.getSaphireHubFlightsPaged(page, size, query));
     }
 
     @GetMapping("/{id}")

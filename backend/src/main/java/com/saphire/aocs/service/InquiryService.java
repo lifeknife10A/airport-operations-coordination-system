@@ -13,6 +13,9 @@ import com.saphire.aocs.repository.OperationalInquiryRepository;
 import com.saphire.aocs.repository.TravelerRepository;
 import com.saphire.aocs.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import com.saphire.aocs.dto.InquiryPublicStatusDTO;
+import java.security.SecureRandom;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InquiryService {
@@ -29,9 +33,17 @@ public class InquiryService {
     private final FlightRepository flightRepository;
     private final TravelerRepository travelerRepository;
 
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    /**
+     * @param staff true when the caller is a logged-in staff member. Anonymous submissions come from
+     *              the public contact form, so they may not choose their own priority or channel or
+     *              attach the ticket to an arbitrary traveler record -- those are forced to the
+     *              defaults / ignored.
+     */
     @Transactional
-    public InquiryResponseDTO createInquiry(InquiryCreateDTO dto) {
-        String ticketNumber = "INQ-2026-" + String.format("%05d", (int) (Math.random() * 90000) + 10000);
+    public InquiryResponseDTO createInquiry(InquiryCreateDTO dto, boolean staff) {
+        String ticketNumber = generateUniqueTicketNumber();
 
         Flight flight = null;
         if (dto.getLinkedFlightId() != null) {
@@ -39,9 +51,12 @@ public class InquiryService {
         }
 
         Traveler traveler = null;
-        if (dto.getLinkedTravelerId() != null) {
+        if (staff && dto.getLinkedTravelerId() != null) {
             traveler = travelerRepository.findById(dto.getLinkedTravelerId()).orElse(null);
         }
+
+        String priority = staff && dto.getPriority() != null ? dto.getPriority() : "NORMAL";
+        String sourceChannel = staff && dto.getSourceChannel() != null ? dto.getSourceChannel() : "WEB_PORTAL";
 
         OperationalInquiry inquiry = OperationalInquiry.builder()
                 .ticketNumber(ticketNumber)
@@ -50,16 +65,43 @@ public class InquiryService {
                 .phoneNumber(dto.getPhoneNumber())
                 .category(dto.getCategory() != null ? dto.getCategory() : "GENERAL_PASSENGER_ASSISTANCE")
                 .inquiryDetails(dto.getInquiryDetails())
-                .priority(dto.getPriority() != null ? dto.getPriority() : "NORMAL")
+                .priority(priority)
                 .status("OPEN")
-                .sourceChannel(dto.getSourceChannel() != null ? dto.getSourceChannel() : "WEB_PORTAL")
+                .sourceChannel(sourceChannel)
                 .assignedDepartment("PASSENGER_SERVICES")
                 .linkedFlight(flight)
                 .linkedTraveler(traveler)
                 .build();
 
         OperationalInquiry saved = inquiryRepository.save(inquiry);
+        log.info("Inquiry {} submitted ({}, category {}, priority {})", saved.getTicketNumber(),
+                staff ? "staff" : "public", saved.getCategory(), saved.getPriority());
         return mapToDTO(saved);
+    }
+
+    /** Random 5-digit suffix (as before) but from SecureRandom, re-drawn until it doesn't collide. */
+    private String generateUniqueTicketNumber() {
+        for (int attempt = 0; attempt < 20; attempt++) {
+            String candidate = "INQ-2026-" + String.format("%05d", 10000 + RANDOM.nextInt(90000));
+            if (!inquiryRepository.existsByTicketNumber(candidate)) {
+                return candidate;
+            }
+        }
+        throw new IllegalStateException("Could not allocate a unique inquiry ticket number");
+    }
+
+    @Transactional(readOnly = true)
+    public InquiryPublicStatusDTO getPublicStatusByTicketNumber(String ticketNumber) {
+        OperationalInquiry i = inquiryRepository.findByTicketNumber(ticketNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("Inquiry not found with ticket: " + ticketNumber));
+        return InquiryPublicStatusDTO.builder()
+                .ticketNumber(i.getTicketNumber())
+                .category(i.getCategory())
+                .status(i.getStatus())
+                .createdAt(i.getCreatedAt())
+                .updatedAt(i.getUpdatedAt())
+                .resolvedAt(i.getResolvedAt())
+                .build();
     }
 
     @Transactional(readOnly = true)

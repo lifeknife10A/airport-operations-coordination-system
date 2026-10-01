@@ -1,5 +1,6 @@
 package com.saphire.aocs.controller;
 
+import com.saphire.aocs.dto.InvoiceGenerateDTO;
 import com.saphire.aocs.entity.AirlineBillingInvoice;
 import com.saphire.aocs.entity.InvoiceLineItem;
 import com.saphire.aocs.service.AirlineBillingService;
@@ -7,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -41,14 +43,9 @@ public class AirlineBillingController {
     }
 
     @PostMapping("/generate-invoice")
-    public ResponseEntity<AirlineBillingInvoice> generateInvoice(@RequestBody Map<String, Object> payload) {
-        Long airlineId = Long.valueOf(payload.get("airlineId").toString());
-        LocalDate startDate = LocalDate.parse(payload.get("startDate").toString());
-        LocalDate endDate = LocalDate.parse(payload.get("endDate").toString());
-        BigDecimal amount = new BigDecimal(payload.get("totalAmountUsd").toString());
-        String invoiceNumber = (String) payload.get("invoiceNumber");
-
-        AirlineBillingInvoice invoice = billingService.generateInvoice(airlineId, startDate, endDate, amount, invoiceNumber);
+    public ResponseEntity<AirlineBillingInvoice> generateInvoice(@Valid @RequestBody InvoiceGenerateDTO dto) {
+        AirlineBillingInvoice invoice = billingService.generateInvoice(
+                dto.getAirlineId(), dto.getStartDate(), dto.getEndDate(), dto.getTotalAmountUsd(), dto.getInvoiceNumber());
         return new ResponseEntity<>(invoice, HttpStatus.CREATED);
     }
 }

@@ -42,7 +42,9 @@ public class LostFoundService {
 
     @Transactional(readOnly = true)
     public Page<LostFoundResponseDTO> searchItems(String query, String category, String status, int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page, size);
+        // Public endpoint: clamp so a caller can't ask for page -1 / size 0 (an unhandled 500) or
+        // size=99999 (the whole table in one response).
+        PageRequest pageRequest = PageRequest.of(Math.max(0, page), Math.min(Math.max(1, size), 100));
         String cleanQuery = (query != null && !query.trim().isEmpty()) ? query.trim() : null;
         String cleanCategory = (category != null && !category.trim().isEmpty()) ? category.trim() : null;
         String cleanStatus = (status != null && !status.trim().isEmpty()) ? status.trim() : null;

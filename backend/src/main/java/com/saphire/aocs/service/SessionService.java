@@ -3,6 +3,7 @@ package com.saphire.aocs.service;
 import com.saphire.aocs.entity.AuthSession;
 import com.saphire.aocs.repository.AuthSessionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import java.util.UUID;
  * "sid" claim (see JwtService); JwtAuthFilter re-checks this table on every request so a revoked
  * session stops working immediately instead of staying valid until the token's 24h expiry.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SessionService {
@@ -28,7 +30,10 @@ public class SessionService {
     @Transactional
     public AuthSession createSession(Long userId, long expiryMs) {
         ZonedDateTime now = ZonedDateTime.now();
-        authSessionRepository.revokeAllActiveForUser(userId, now, "SUPERSEDED_BY_NEW_LOGIN");
+        int superseded = authSessionRepository.revokeAllActiveForUser(userId, now, "SUPERSEDED_BY_NEW_LOGIN");
+        if (superseded > 0) {
+            log.info("User {} logged in again: revoked {} earlier active session(s)", userId, superseded);
+        }
 
         AuthSession session = AuthSession.builder()
                 .sessionId(UUID.randomUUID())
@@ -55,6 +60,7 @@ public class SessionService {
                     session.setRevokedAt(ZonedDateTime.now());
                     session.setRevokedReason("LOGOUT");
                     authSessionRepository.save(session);
+                    log.info("Logout: session {} of user {} revoked", sessionId, session.getUserId());
                 });
     }
 }

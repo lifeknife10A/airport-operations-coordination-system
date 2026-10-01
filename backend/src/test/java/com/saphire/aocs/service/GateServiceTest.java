@@ -66,8 +66,8 @@ class GateServiceTest {
         Flight existing = flight(202L, "SPH202", BASE.plusMinutes(30), BASE.plusMinutes(90), "ON_BLOCK");
         Gate gateA1 = gate(1L, "A1");
 
-        when(flightRepository.findById(101L)).thenReturn(Optional.of(incoming));
-        when(gateRepository.findById(1L)).thenReturn(Optional.of(gateA1));
+        when(flightRepository.findByIdForUpdate(101L)).thenReturn(Optional.of(incoming));
+        when(gateRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(gateA1));
         when(flightRepository.findByGate_GateId(1L)).thenReturn(List.of(existing));
 
         GateAssignmentDTO dto = GateAssignmentDTO.builder().flightId(101L).gateId(1L).build();
@@ -90,8 +90,8 @@ class GateServiceTest {
         Flight existing = flight(202L, "SPH202", BASE.plusHours(1), BASE.plusHours(2), "SCHEDULED");
         Gate gateA1 = gate(1L, "A1");
 
-        when(flightRepository.findById(101L)).thenReturn(Optional.of(incoming));
-        when(gateRepository.findById(1L)).thenReturn(Optional.of(gateA1));
+        when(flightRepository.findByIdForUpdate(101L)).thenReturn(Optional.of(incoming));
+        when(gateRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(gateA1));
         when(flightRepository.findByGate_GateId(1L)).thenReturn(List.of(existing));
         when(flightRepository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
         when(flightService.mapToDTO(any(Flight.class)))
@@ -112,8 +112,8 @@ class GateServiceTest {
         Flight incoming = flight(101L, "SPH101", BASE, BASE.plusHours(1), "SCHEDULED");
         Flight departed = flight(202L, "SPH202", BASE, BASE.plusHours(1), "DEPARTED");
 
-        when(flightRepository.findById(101L)).thenReturn(Optional.of(incoming));
-        when(gateRepository.findById(1L)).thenReturn(Optional.of(gate(1L, "A1")));
+        when(flightRepository.findByIdForUpdate(101L)).thenReturn(Optional.of(incoming));
+        when(gateRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(gate(1L, "A1")));
         when(flightRepository.findByGate_GateId(1L)).thenReturn(List.of(departed));
         when(flightRepository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
         when(flightService.mapToDTO(any(Flight.class))).thenReturn(FlightDTO.builder().flightId(101L).build());
@@ -130,8 +130,8 @@ class GateServiceTest {
         // simple idempotent re-confirmation would report the flight as clashing with itself.
         Flight incoming = flight(101L, "SPH101", BASE, BASE.plusHours(1), "ON_BLOCK");
 
-        when(flightRepository.findById(101L)).thenReturn(Optional.of(incoming));
-        when(gateRepository.findById(1L)).thenReturn(Optional.of(gate(1L, "A1")));
+        when(flightRepository.findByIdForUpdate(101L)).thenReturn(Optional.of(incoming));
+        when(gateRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(gate(1L, "A1")));
         when(flightRepository.findByGate_GateId(1L)).thenReturn(List.of(incoming));
         when(flightRepository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
         when(flightService.mapToDTO(any(Flight.class))).thenReturn(FlightDTO.builder().flightId(101L).build());
@@ -142,10 +142,31 @@ class GateServiceTest {
     }
 
     @Test
+    @DisplayName("takes row locks in gate -> flight order before checking for overlaps (prevents double-booking)")
+    void assign_ShouldLockGateThenFlightBeforeOverlapCheck() {
+        Flight incoming = flight(101L, "SPH101", BASE, BASE.plusHours(1), "SCHEDULED");
+        when(gateRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(gate(1L, "A1")));
+        when(flightRepository.findByIdForUpdate(101L)).thenReturn(Optional.of(incoming));
+        when(flightRepository.findByGate_GateId(1L)).thenReturn(List.of());
+        when(flightRepository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(flightService.mapToDTO(any(Flight.class))).thenReturn(FlightDTO.builder().flightId(101L).build());
+
+        gateService.assignGateToFlight(GateAssignmentDTO.builder().flightId(101L).gateId(1L).build());
+
+        org.mockito.InOrder order = org.mockito.Mockito.inOrder(gateRepository, flightRepository);
+        order.verify(gateRepository).findByIdForUpdate(1L);
+        order.verify(flightRepository).findByIdForUpdate(101L);
+        order.verify(flightRepository).findByGate_GateId(1L);
+        // A plain (unlocked) read of either row would reopen the race.
+        org.mockito.Mockito.verify(gateRepository, org.mockito.Mockito.never()).findById(any());
+        org.mockito.Mockito.verify(flightRepository, org.mockito.Mockito.never()).findById(any());
+    }
+
+    @Test
     @DisplayName("unknown gate id -> 404")
     void unknownGate_ShouldThrowNotFound() {
-        when(flightRepository.findById(101L)).thenReturn(Optional.of(flight(101L, "SPH101", BASE, BASE.plusHours(1), "SCHEDULED")));
-        when(gateRepository.findById(99L)).thenReturn(Optional.empty());
+        // The gate is locked (and so looked up) first, so a bad gate id fails before the flight is touched.
+        when(gateRepository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
 
         GateAssignmentDTO dto = GateAssignmentDTO.builder().flightId(101L).gateId(99L).build();
 
@@ -157,7 +178,8 @@ class GateServiceTest {
     @Test
     @DisplayName("unknown flight id -> 404")
     void unknownFlight_ShouldThrowNotFound() {
-        when(flightRepository.findById(999L)).thenReturn(Optional.empty());
+        when(gateRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(gate(1L, "A1")));
+        when(flightRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
 
         GateAssignmentDTO dto = GateAssignmentDTO.builder().flightId(999L).gateId(1L).build();
 

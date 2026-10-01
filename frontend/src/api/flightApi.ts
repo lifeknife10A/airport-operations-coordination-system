@@ -7,9 +7,13 @@ export const flightApi = {
     return response.data;
   },
 
-  getSaphireHubFlightsPaged: async (page: number, size: number = 10): Promise<PagedResponse<Flight>> => {
+  getSaphireHubFlightsPaged: async (
+    page: number,
+    size: number = 10,
+    query?: string
+  ): Promise<PagedResponse<Flight>> => {
     const response = await axiosClient.get<PagedResponse<Flight>>('/flights/paged', {
-      params: { page, size },
+      params: { page, size, query: query || undefined },
     });
     return response.data;
   },

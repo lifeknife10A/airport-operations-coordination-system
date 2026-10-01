@@ -5,6 +5,7 @@ import com.saphire.aocs.dto.RunwayTelemetryDTO;
 import com.saphire.aocs.service.AirsideTelemetryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,7 +30,7 @@ public class AirsideTelemetryController {
     @PutMapping("/{id}/status")
     public ResponseEntity<RunwayTelemetryDTO> updateRunwayStatus(
             @PathVariable Long id,
-            @RequestBody RunwayStatusUpdateDTO dto) {
+            @Valid @RequestBody RunwayStatusUpdateDTO dto) {
         return ResponseEntity.ok(airsideTelemetryService.updateRunwayStatus(id, dto));
     }
 }
