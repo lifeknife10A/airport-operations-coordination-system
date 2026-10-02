@@ -12,7 +12,7 @@ import lombok.*;
 @Builder
 public class MishandledBaggageReportDTO {
 
-    @NotBlank(message = "Claim number is required")
+    // Optional: the server generates a claim number when none is given.
     @Size(max = 50, message = "Claim number must be at most 50 characters")
     private String claimNumber;
 
@@ -22,6 +22,6 @@ public class MishandledBaggageReportDTO {
     @NotBlank(message = "Tag number is required")
     private String tagNumber;
 
-    @NotNull(message = "Passenger ID is required")
+    // Optional: defaults to the passenger the bag tag belongs to.
     private Long passengerId;
 }

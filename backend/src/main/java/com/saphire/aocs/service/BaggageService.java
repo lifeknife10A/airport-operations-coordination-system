@@ -44,8 +44,13 @@ public class BaggageService {
     @Transactional
     public MishandledBaggage createMishandledReport(String claimNumber, String incidentType, String tagNumber, Long passengerId) {
         BagTag bagTag = getBagByTagNumber(tagNumber);
-        Passenger passenger = passengerRepository.findById(passengerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Passenger not found ID: " + passengerId));
+        Passenger passenger = passengerId != null
+                ? passengerRepository.findById(passengerId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Passenger not found ID: " + passengerId))
+                : bagTag.getPassenger();
+        if (claimNumber == null || claimNumber.isBlank()) {
+            claimNumber = "PIR-APP-" + (100000 + new java.security.SecureRandom().nextInt(900000));
+        }
 
         MishandledBaggage report = MishandledBaggage.builder()
                 .claimNumber(claimNumber)
@@ -60,5 +65,13 @@ public class BaggageService {
     @Transactional(readOnly = true)
     public List<MishandledBaggage> getAllMishandledReports() {
         return mishandledBaggageRepository.findAll();
+    }
+
+    /** Newest first, one page at a time (there are a thousand of these). */
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<MishandledBaggage> getMishandledReportsPage(int page, int size) {
+        return mishandledBaggageRepository.findAll(org.springframework.data.domain.PageRequest.of(
+                Math.max(0, page), Math.min(Math.max(1, size), 100),
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "reportId")));
     }
 }

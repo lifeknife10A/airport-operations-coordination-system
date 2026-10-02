@@ -166,6 +166,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
     tag: 'LOGISTICS',
     items: [
       { label: 'Overview', path: '/dashboard/logistics', icon: <Sliders size={18} />, section: 'MAIN' },
+      { label: 'Live Baggage Desk', path: '/dashboard/logistics#desk', icon: <Layers size={18} />, badge: 'Live', section: 'OPERATIONS' },
       { label: 'Cargo Manifest', path: '/dashboard/logistics#cargo', icon: <Package size={18} />, badge: '7 Active', section: 'OPERATIONS' },
       { label: 'Baggage Carousels', path: '/dashboard/logistics#baggage', icon: <Layers size={18} />, badge: '6 Belts', section: 'OPERATIONS' },
       { label: 'Fuel Operations', path: '/dashboard/logistics#fuel', icon: <Fuel size={18} />, badge: 'Hydrant', section: 'OPERATIONS' },

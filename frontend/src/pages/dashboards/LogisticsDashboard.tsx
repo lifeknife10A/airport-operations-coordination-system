@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import LiveBaggageDesk from '../../components/logistics/LiveBaggageDesk';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -192,11 +193,11 @@ export const LogisticsDashboard: React.FC = () => {
   const { user } = useAuth();
 
   // Navigation tab based on hash
-  const [activeTab, setActiveTab] = useState<'overview' | 'cargo' | 'baggage' | 'fuel' | 'timeline' | 'notifications' | 'profile'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'desk' | 'cargo' | 'baggage' | 'fuel' | 'timeline' | 'notifications' | 'profile'>('overview');
 
   useEffect(() => {
     const hash = location.hash.replace('#', '');
-    if (['cargo', 'baggage', 'fuel', 'timeline', 'notifications', 'profile'].includes(hash)) {
+    if (['desk', 'cargo', 'baggage', 'fuel', 'timeline', 'notifications', 'profile'].includes(hash)) {
       setActiveTab(hash as any);
     } else {
       setActiveTab('overview');
@@ -1023,6 +1024,8 @@ export const LogisticsDashboard: React.FC = () => {
       {/* ===================================================================== */}
       {/* 4. SUBVIEW: BAGGAGE CAROUSEL RECLAIM HALL (#baggage)                   */}
       {/* ===================================================================== */}
+      {activeTab === 'desk' && <LiveBaggageDesk />}
+
       {activeTab === 'baggage' && (
         <Box>
           <Box sx={{ mb: 3 }}>
