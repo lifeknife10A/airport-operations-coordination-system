@@ -103,6 +103,46 @@ public class FlightService {
                 .build();
     }
 
+    /**
+     * The public timetable: one page of departures or arrivals, optionally narrowed to a concourse
+     * and a free-text match on flight number, airline or either airport. Arrivals also carry the
+     * baggage carousel they are assigned to.
+     */
+    @Transactional(readOnly = true)
+    public PagedResponseDTO<FlightDTO> getSchedulePage(String type, String concourse, String query, int page, int size) {
+        String flightType = "ARRIVAL".equalsIgnoreCase(type) ? "ARRIVAL" : "DEPARTURE";
+        int safeSize = Math.min(Math.max(1, size), MAX_PAGE_SIZE);
+        Pageable pageable = PageRequest.of(Math.max(0, page), safeSize);
+        Page<Flight> result = flightRepository.searchSchedule(flightType,
+                concourse == null ? "" : concourse.trim(), query == null ? "" : query.trim().toLowerCase(), pageable);
+        List<FlightDTO> rows = withTaskCounts(result.getContent().stream().map(this::mapToDTO).collect(Collectors.toList()));
+        if (!rows.isEmpty()) {
+            java.util.Map<Long, String> carousels = new java.util.HashMap<>();
+            for (Object[] r : flightRepository.findCarouselsForFlights(rows.stream().map(FlightDTO::getFlightId).collect(Collectors.toList()))) {
+                carousels.put((Long) r[0], (String) r[1]);
+            }
+            rows.forEach(f -> f.setCarousel(carousels.get(f.getFlightId())));
+        }
+        return PagedResponseDTO.<FlightDTO>builder().content(rows).page(result.getNumber()).size(result.getSize())
+                .totalElements(result.getTotalElements()).totalPages(result.getTotalPages()).build();
+    }
+
+    /** Counts for the schedule header: departures, arrivals, boarding and delayed. */
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Long> getScheduleSummary() {
+        java.util.Map<String, Long> out = new java.util.LinkedHashMap<>();
+        out.put("DEPARTURE", 0L);
+        out.put("ARRIVAL", 0L);
+        out.put("BOARDING", 0L);
+        out.put("DELAYED", 0L);
+        for (Object[] row : flightRepository.countHubFlightsByType()) out.put(String.valueOf(row[0]), (Long) row[1]);
+        for (Object[] row : flightRepository.countHubFlightsByStatus()) {
+            String status = String.valueOf(row[0]);
+            if (out.containsKey(status)) out.put(status, (Long) row[1]);
+        }
+        return out;
+    }
+
     /** Fills tasksTotal/tasksCompleted for a whole page of flights with a single grouped query. */
     private List<FlightDTO> withTaskCounts(List<FlightDTO> flights) {
         if (flights.isEmpty()) return flights;
@@ -302,6 +342,7 @@ public class FlightService {
                 .gateNumber(flight.getGate() != null ? flight.getGate().getGateNumber() : null)
                 .standId(flight.getStand() != null ? flight.getStand().getStandId() : null)
                 .standNumber(flight.getStand() != null ? flight.getStand().getStandNumber() : null)
+                .concourse(flight.getStand() != null ? flight.getStand().getConcourse() : null)
                 .scheduledDepartureTime(flight.getScheduledDepartureTime())
                 .estimatedDepartureTime(flight.getEstimatedDepartureTime())
                 .actualDepartureTime(flight.getActualDepartureTime())

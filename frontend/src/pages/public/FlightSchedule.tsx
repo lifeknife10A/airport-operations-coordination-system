@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import {
@@ -31,79 +31,72 @@ import {
   Luggage,
   Sparkles,
 } from 'lucide-react';
+import { flightApi } from '../../api/flightApi';
+import axiosClient from '../../api/axiosClient';
+import type { Flight } from '../../types';
 import bannerSchedule from '../../assets/banners/airport-digital-board.png';
 
-interface ScheduleFlight {
-  id: string;
-  type: 'DEPARTURE' | 'ARRIVAL';
-  flightNo: string;
-  airline: string;
-  airport: string;
-  city: string;
-  scheduledTime: string;
-  estimatedTime: string;
-  gate: string;
-  concourse: 'Concourse A' | 'Concourse B' | 'Concourse C';
-  aircraft: string;
-  carousel?: string;
-  status: 'ON TIME' | 'BOARDING' | 'FINAL CALL' | 'GATE OPEN' | 'LANDED' | 'DELAYED' | 'SCHEDULED';
+interface WeatherReport {
+  visibilityMeters: number;
+  windSpeedKnots: number;
+  temperatureCelsius: number;
+  runwayCondition: string;
+  observedAt: string;
 }
 
-const mockScheduleData: ScheduleFlight[] = [
-  // Departures
-  { id: 'd1', type: 'DEPARTURE', flightNo: 'SPH-102', airline: 'Saphire Air', airport: 'London Heathrow (LHR)', city: 'London', scheduledTime: '14:45 UTC', estimatedTime: '14:45 UTC', gate: 'C04', concourse: 'Concourse C', aircraft: 'Airbus A350-1000', status: 'BOARDING' },
-  { id: 'd2', type: 'DEPARTURE', flightNo: 'EK-501', airline: 'Emirates', airport: 'Dubai International (DXB)', city: 'Dubai', scheduledTime: '15:10 UTC', estimatedTime: '15:10 UTC', gate: 'C12', concourse: 'Concourse C', aircraft: 'Boeing 777-300ER', status: 'GATE OPEN' },
-  { id: 'd3', type: 'DEPARTURE', flightNo: 'BA-138', airline: 'British Airways', airport: 'London Heathrow (LHR)', city: 'London', scheduledTime: '15:25 UTC', estimatedTime: '15:25 UTC', gate: 'C08', concourse: 'Concourse C', aircraft: 'Boeing 787-9', status: 'ON TIME' },
-  { id: 'd4', type: 'DEPARTURE', flightNo: 'SQ-402', airline: 'Singapore Airlines', airport: 'Singapore Changi (SIN)', city: 'Singapore', scheduledTime: '15:40 UTC', estimatedTime: '15:40 UTC', gate: 'B06', concourse: 'Concourse B', aircraft: 'Airbus A350-900', status: 'ON TIME' },
-  { id: 'd5', type: 'DEPARTURE', flightNo: 'SPH-204', airline: 'Saphire Air', airport: 'Mumbai Chhatrapati Shivaji (BOM)', city: 'Mumbai', scheduledTime: '15:50 UTC', estimatedTime: '15:50 UTC', gate: 'A03', concourse: 'Concourse A', aircraft: 'Airbus A321neo', status: 'FINAL CALL' },
-  { id: 'd6', type: 'DEPARTURE', flightNo: 'QR-570', airline: 'Qatar Airways', airport: 'Doha Hamad (DOH)', city: 'Doha', scheduledTime: '16:05 UTC', estimatedTime: '16:05 UTC', gate: 'B12', concourse: 'Concourse B', aircraft: 'Boeing 777-300ER', status: 'ON TIME' },
-  { id: 'd7', type: 'DEPARTURE', flightNo: 'LH-760', airline: 'Lufthansa', airport: 'Frankfurt am Main (FRA)', city: 'Frankfurt', scheduledTime: '16:20 UTC', estimatedTime: '16:45 UTC', gate: 'C01', concourse: 'Concourse C', aircraft: 'Airbus A340-300', status: 'DELAYED' },
-  { id: 'd8', type: 'DEPARTURE', flightNo: 'AI-101', airline: 'Air India', airport: 'New York JFK (JFK)', city: 'New York', scheduledTime: '16:40 UTC', estimatedTime: '16:40 UTC', gate: 'C16', concourse: 'Concourse C', aircraft: 'Boeing 777-200LR', status: 'SCHEDULED' },
-  { id: 'd9', type: 'DEPARTURE', flightNo: 'NH-828', airline: 'ANA All Nippon', airport: 'Tokyo Haneda (HND)', city: 'Tokyo', scheduledTime: '17:00 UTC', estimatedTime: '17:00 UTC', gate: 'B02', concourse: 'Concourse B', aircraft: 'Boeing 787-9', status: 'SCHEDULED' },
-  { id: 'd10', type: 'DEPARTURE', flightNo: 'SPH-312', airline: 'Saphire Air', airport: 'Bengaluru Kempegowda (BLR)', city: 'Bengaluru', scheduledTime: '17:15 UTC', estimatedTime: '17:15 UTC', gate: 'A08', concourse: 'Concourse A', aircraft: 'Airbus A320neo', status: 'SCHEDULED' },
-  { id: 'd11', type: 'DEPARTURE', flightNo: 'AF-218', airline: 'Air France', airport: 'Paris Charles de Gaulle (CDG)', city: 'Paris', scheduledTime: '17:35 UTC', estimatedTime: '17:35 UTC', gate: 'C10', concourse: 'Concourse C', aircraft: 'Airbus A350-900', status: 'SCHEDULED' },
-  { id: 'd12', type: 'DEPARTURE', flightNo: 'CX-660', airline: 'Cathay Pacific', airport: 'Hong Kong International (HKG)', city: 'Hong Kong', scheduledTime: '18:00 UTC', estimatedTime: '18:00 UTC', gate: 'B14', concourse: 'Concourse B', aircraft: 'Airbus A350-1000', status: 'SCHEDULED' },
-  { id: 'd13', type: 'DEPARTURE', flightNo: 'SPH-404', airline: 'Saphire Air', airport: 'Delhi Indira Gandhi (DEL)', city: 'Delhi', scheduledTime: '18:20 UTC', estimatedTime: '18:20 UTC', gate: 'A11', concourse: 'Concourse A', aircraft: 'Airbus A321neo', status: 'SCHEDULED' },
-  { id: 'd14', type: 'DEPARTURE', flightNo: 'EY-206', airline: 'Etihad Airways', airport: 'Abu Dhabi (AUH)', city: 'Abu Dhabi', scheduledTime: '18:45 UTC', estimatedTime: '18:45 UTC', gate: 'B08', concourse: 'Concourse B', aircraft: 'Boeing 787-10', status: 'SCHEDULED' },
-
-  // Arrivals
-  { id: 'a1', type: 'ARRIVAL', flightNo: 'SPH-701', airline: 'Saphire Air', airport: 'Paris Charles de Gaulle (CDG)', city: 'Paris', scheduledTime: '14:20 UTC', estimatedTime: '14:15 UTC', gate: 'C05', concourse: 'Concourse C', aircraft: 'Airbus A350-1000', carousel: 'Belt 06', status: 'LANDED' },
-  { id: 'a2', type: 'ARRIVAL', flightNo: 'SQ-401', airline: 'Singapore Airlines', airport: 'Singapore Changi (SIN)', city: 'Singapore', scheduledTime: '14:35 UTC', estimatedTime: '14:30 UTC', gate: 'B04', concourse: 'Concourse B', aircraft: 'Airbus A350-900', carousel: 'Belt 04', status: 'LANDED' },
-  { id: 'a3', type: 'ARRIVAL', flightNo: 'EK-500', airline: 'Emirates', airport: 'Dubai International (DXB)', city: 'Dubai', scheduledTime: '14:50 UTC', estimatedTime: '14:50 UTC', gate: 'C14', concourse: 'Concourse C', aircraft: 'Airbus A380-800', carousel: 'Belt 08', status: 'ON TIME' },
-  { id: 'a4', type: 'ARRIVAL', flightNo: 'SPH-809', airline: 'Saphire Air', airport: 'New York JFK (JFK)', city: 'New York', scheduledTime: '14:55 UTC', estimatedTime: '15:15 UTC', gate: 'C02', concourse: 'Concourse C', aircraft: 'Airbus A350-1000', carousel: 'Belt 07', status: 'DELAYED' },
-  { id: 'a5', type: 'ARRIVAL', flightNo: 'AI-304', airline: 'Air India', airport: 'Delhi Indira Gandhi (DEL)', city: 'Delhi', scheduledTime: '15:15 UTC', estimatedTime: '15:15 UTC', gate: 'A05', concourse: 'Concourse A', aircraft: 'Airbus A321neo', carousel: 'Belt 01', status: 'ON TIME' },
-  { id: 'a6', type: 'ARRIVAL', flightNo: 'QR-569', airline: 'Qatar Airways', airport: 'Doha Hamad (DOH)', city: 'Doha', scheduledTime: '15:30 UTC', estimatedTime: '15:30 UTC', gate: 'B10', concourse: 'Concourse B', aircraft: 'Boeing 777-300ER', carousel: 'Belt 05', status: 'ON TIME' },
-  { id: 'a7', type: 'ARRIVAL', flightNo: 'LH-759', airline: 'Lufthansa', airport: 'Munich (MUC)', city: 'Munich', scheduledTime: '15:45 UTC', estimatedTime: '15:45 UTC', gate: 'C09', concourse: 'Concourse C', aircraft: 'Airbus A350-900', carousel: 'Belt 06', status: 'ON TIME' },
-  { id: 'a8', type: 'ARRIVAL', flightNo: 'SPH-602', airline: 'Saphire Air', airport: 'Hyderabad Rajiv Gandhi (HYD)', city: 'Hyderabad', scheduledTime: '16:00 UTC', estimatedTime: '16:00 UTC', gate: 'A12', concourse: 'Concourse A', aircraft: 'Airbus A320neo', carousel: 'Belt 02', status: 'SCHEDULED' },
-  { id: 'a9', type: 'ARRIVAL', flightNo: 'BA-137', airline: 'British Airways', airport: 'London Heathrow (LHR)', city: 'London', scheduledTime: '16:25 UTC', estimatedTime: '16:25 UTC', gate: 'C07', concourse: 'Concourse C', aircraft: 'Boeing 787-9', carousel: 'Belt 08', status: 'SCHEDULED' },
-  { id: 'a10', type: 'ARRIVAL', flightNo: 'CX-659', airline: 'Cathay Pacific', airport: 'Hong Kong International (HKG)', city: 'Hong Kong', scheduledTime: '16:50 UTC', estimatedTime: '16:50 UTC', gate: 'B15', concourse: 'Concourse B', aircraft: 'Airbus A350-1000', carousel: 'Belt 04', status: 'SCHEDULED' },
-  { id: 'a11', type: 'ARRIVAL', flightNo: 'NH-827', airline: 'ANA All Nippon', airport: 'Tokyo Haneda (HND)', city: 'Tokyo', scheduledTime: '17:10 UTC', estimatedTime: '17:10 UTC', gate: 'B01', concourse: 'Concourse B', aircraft: 'Boeing 787-9', carousel: 'Belt 05', status: 'SCHEDULED' },
-  { id: 'a12', type: 'ARRIVAL', flightNo: 'SPH-515', airline: 'Saphire Air', airport: 'Chennai International (MAA)', city: 'Chennai', scheduledTime: '17:30 UTC', estimatedTime: '17:30 UTC', gate: 'A02', concourse: 'Concourse A', aircraft: 'Airbus A321neo', carousel: 'Belt 03', status: 'SCHEDULED' },
-];
+const pad = (n: number) => String(n).padStart(2, '0');
+const dayOf = (iso?: string) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : `${pad(d.getUTCDate())} ${d.toLocaleString('en', { month: 'short', timeZone: 'UTC' })}`;
+};
+const timeOf = (iso?: string) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+};
 
 export const FlightSchedule: React.FC = () => {
   const [flightType, setFlightType] = useState<'DEPARTURE' | 'ARRIVAL'>('DEPARTURE');
-  const [selectedDate, setSelectedDate] = useState<'TODAY' | 'TOMORROW'>('TODAY');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedConcourse, setSelectedConcourse] = useState<string>('ALL');
+  const [page, setPage] = useState(0);
+  const [rows, setRows] = useState<Flight[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [summary, setSummary] = useState<Record<string, number>>({});
+  const [weather, setWeather] = useState<WeatherReport | null>(null);
 
-  const filteredSchedule = useMemo(() => {
-    return mockScheduleData.filter((flight) => {
-      if (flight.type !== flightType) return false;
-      if (selectedConcourse !== 'ALL' && flight.concourse !== selectedConcourse) return false;
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        const matchesFlightNo = flight.flightNo.toLowerCase().includes(query);
-        const matchesAirline = flight.airline.toLowerCase().includes(query);
-        const matchesAirport = flight.airport.toLowerCase().includes(query);
-        const matchesCity = flight.city.toLowerCase().includes(query);
-        return matchesFlightNo || matchesAirline || matchesAirport || matchesCity;
-      }
-      return true;
-    });
-  }, [flightType, selectedConcourse, searchQuery]);
+  useEffect(() => {
+    flightApi.getScheduleSummary().then(setSummary).catch(() => setSummary({}));
+    axiosClient.get<WeatherReport>('/weather/latest').then((r) => setWeather(r.data || null)).catch(() => setWeather(null));
+  }, []);
 
-  const getStatusBadge = (status: ScheduleFlight['status']) => {
+  // One server page at a time; search is run by the server (debounced).
+  useEffect(() => {
+    let cancelled = false;
+    const handle = setTimeout(() => {
+      setLoading(true);
+      flightApi
+        .getSchedule(flightType, searchQuery.trim(), page)
+        .then((res) => {
+          if (cancelled) return;
+          setRows(res.content);
+          setTotalPages(Math.max(1, res.totalPages));
+          setTotalElements(res.totalElements);
+          setLoadError(false);
+        })
+        .catch(() => !cancelled && setLoadError(true))
+        .finally(() => !cancelled && setLoading(false));
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [flightType, searchQuery, page]);
+
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'BOARDING':
         return (
@@ -147,6 +140,12 @@ export const FlightSchedule: React.FC = () => {
         return (
           <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.8, px: 1.4, py: 0.5, borderRadius: '6px', background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 700 }}>
             <AlertTriangle size={12} /> DELAYED
+          </Box>
+        );
+      default:
+        return (
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.8, px: 1.4, py: 0.5, borderRadius: '6px', background: '#F1F5F9', border: '1px solid #CBD5E1', color: '#475569', fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem', fontWeight: 700 }}>
+            {status}
           </Box>
         );
     }
@@ -194,7 +193,7 @@ export const FlightSchedule: React.FC = () => {
               Airport Flight Schedules
             </Typography>
             <Typography sx={{ fontFamily: "'Inter', sans-serif", color: '#475569', maxWidth: '720px', lineHeight: 1.65, fontSize: '1rem' }}>
-              Real-time master timetable of commercial flight movements across Central Terminal Concourses A, B, and C with live gate assignment and baggage claim telemetry.
+              Real-time master timetable of commercial flight movements at Saphire International, with gate assignments and baggage carousels.
             </Typography>
           </Box>
         </Container>
@@ -222,10 +221,10 @@ export const FlightSchedule: React.FC = () => {
             </Box>
             <Box>
               <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.68rem', color: '#64748B', fontWeight: 600, letterSpacing: '0.06em' }}>
-                TOTAL MOVEMENTS
+                TOTAL MOVEMENTS ON RECORD
               </Typography>
               <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '1.25rem', fontWeight: 800, color: '#0F2942' }}>
-                54 Scheduled
+                {((summary.DEPARTURE ?? 0) + (summary.ARRIVAL ?? 0)).toLocaleString()} Movements
               </Typography>
             </Box>
           </Paper>
@@ -249,10 +248,10 @@ export const FlightSchedule: React.FC = () => {
             </Box>
             <Box>
               <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.68rem', color: '#64748B', fontWeight: 600, letterSpacing: '0.06em' }}>
-                DEPARTURES ACTIVE
+                DEPARTURES
               </Typography>
               <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '1.25rem', fontWeight: 800, color: '#0F2942' }}>
-                28 Flights (96.4% On-Time)
+                {(summary.DEPARTURE ?? 0).toLocaleString()} Departures · {(summary.BOARDING ?? 0).toLocaleString()} Boarding
               </Typography>
             </Box>
           </Paper>
@@ -275,10 +274,10 @@ export const FlightSchedule: React.FC = () => {
             </Box>
             <Box>
               <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.68rem', color: '#64748B', fontWeight: 600, letterSpacing: '0.06em' }}>
-                INBOUND ARRIVALS
+                ARRIVALS
               </Typography>
               <Typography sx={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '1.25rem', fontWeight: 800, color: '#0F2942' }}>
-                26 Expected Today
+                {(summary.ARRIVAL ?? 0).toLocaleString()} Arrivals · {(summary.DELAYED ?? 0).toLocaleString()} Delayed
               </Typography>
             </Box>
           </Paper>
@@ -302,10 +301,10 @@ export const FlightSchedule: React.FC = () => {
             </Box>
             <Box>
               <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.68rem', color: '#64748B', fontWeight: 600, letterSpacing: '0.06em' }}>
-                SPH METAR CONDITIONS
+                LATEST WEATHER REPORT
               </Typography>
               <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.94rem', fontWeight: 700, color: '#0F2942' }}>
-                28°C • Wind 080°/11kt
+                {weather ? `${weather.temperatureCelsius}°C • ${weather.windSpeedKnots} kt • vis ${weather.visibilityMeters} m` : 'No report'}
               </Typography>
             </Box>
           </Paper>
@@ -336,7 +335,7 @@ export const FlightSchedule: React.FC = () => {
               id="flight-direction-toggle"
               value={flightType}
               exclusive
-              onChange={(_, val) => val && setFlightType(val)}
+              onChange={(_, val) => { if (val) { setFlightType(val); setPage(0); } }}
               sx={{ background: '#FAF9F6', p: 0.4, borderRadius: '10px', border: '1px solid #E2E8F0' }}
             >
               <ToggleButton
@@ -389,8 +388,8 @@ export const FlightSchedule: React.FC = () => {
                 fullWidth
                 size="small"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search flight no, airline, or city (e.g. SPH-102, London)..."
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
+                placeholder="Search flight no, airline, city or airport code..."
                 slotProps={{
                   input: {
                     startAdornment: (
@@ -414,81 +413,11 @@ export const FlightSchedule: React.FC = () => {
               />
             </Box>
 
-            {/* Date Picker Toggle */}
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              <Calendar size={15} color="#64748B" />
-              <Button
-                onClick={() => setSelectedDate('TODAY')}
-                variant="outlined"
-                size="small"
-                sx={{
-                  borderRadius: '8px',
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  fontWeight: 600,
-                  fontSize: '0.82rem',
-                  textTransform: 'none',
-                  backgroundColor: selectedDate === 'TODAY' ? '#1E3A5F' : '#FFFFFF',
-                  color: selectedDate === 'TODAY' ? '#FFFFFF' : '#475569',
-                  borderColor: selectedDate === 'TODAY' ? '#1E3A5F' : '#CBD5E1',
-                }}
-              >
-                Today
-              </Button>
-              <Button
-                onClick={() => setSelectedDate('TOMORROW')}
-                variant="outlined"
-                size="small"
-                sx={{
-                  borderRadius: '8px',
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  fontWeight: 600,
-                  fontSize: '0.82rem',
-                  textTransform: 'none',
-                  backgroundColor: selectedDate === 'TOMORROW' ? '#1E3A5F' : '#FFFFFF',
-                  color: selectedDate === 'TOMORROW' ? '#FFFFFF' : '#475569',
-                  borderColor: selectedDate === 'TOMORROW' ? '#1E3A5F' : '#CBD5E1',
-                }}
-              >
-                Tomorrow
-              </Button>
-            </Box>
+            <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem', color: '#64748B' }}>
+              {totalElements.toLocaleString()} {flightType === 'DEPARTURE' ? 'departures' : 'arrivals'}, newest first
+            </Typography>
           </Box>
 
-          {/* Concourse Filter Tabs Bar (Single Terminal Model) */}
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', pt: 1, borderTop: '1px solid #F1F5F9' }}>
-            <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem', color: '#64748B', fontWeight: 600, alignSelf: 'center', mr: 1 }}>
-              CONCOURSE FILTER:
-            </Typography>
-            {[
-              { id: 'ALL', label: 'All Concourses' },
-              { id: 'Concourse A', label: 'Concourse A (Domestic)' },
-              { id: 'Concourse B', label: 'Concourse B (Transcontinental)' },
-              { id: 'Concourse C', label: 'Concourse C (Widebody Flagship)' },
-            ].map((concourse) => {
-              const isSelected = selectedConcourse === concourse.id;
-              return (
-                <button
-                  key={concourse.id}
-                  type="button"
-                  onClick={() => setSelectedConcourse(concourse.id)}
-                  style={{
-                    padding: '5px 12px',
-                    borderRadius: '6px',
-                    border: isSelected ? '1px solid #0284C7' : '1px solid #E2E8F0',
-                    backgroundColor: isSelected ? 'rgba(2, 132, 199, 0.08)' : '#FFFFFF',
-                    color: isSelected ? '#0284C7' : '#475569',
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    fontSize: '0.80rem',
-                    fontWeight: isSelected ? 700 : 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.18s ease',
-                  }}
-                >
-                  {concourse.label}
-                </button>
-              );
-            })}
-          </Box>
         </Paper>
 
         {/* Schedule FIDS Data Table */}
@@ -517,79 +446,69 @@ export const FlightSchedule: React.FC = () => {
                 <TableCell sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600, letterSpacing: '0.08em', py: 2 }}>SCHEDULED (UTC)</TableCell>
                 <TableCell sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600, letterSpacing: '0.08em', py: 2 }}>ESTIMATED</TableCell>
                 <TableCell sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600, letterSpacing: '0.08em', py: 2 }}>
-                  {flightType === 'DEPARTURE' ? 'GATE / CONCOURSE' : 'GATE / BAGGAGE'}
+                  {flightType === 'DEPARTURE' ? 'GATE' : 'GATE / BAGGAGE'}
                 </TableCell>
                 <TableCell sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', fontWeight: 600, letterSpacing: '0.08em', py: 2 }}>STATUS</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredSchedule.length === 0 ? (
+              {rows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} sx={{ textAlign: 'center', py: 6, color: '#64748B', fontFamily: "'Inter', sans-serif" }}>
-                    No scheduled flight movements found matching your search criteria.
+                    {loading ? 'Loading flights…' : loadError ? 'The schedule could not be loaded. Please try again.' : 'No flight movements match your search.'}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredSchedule.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    hover
-                    sx={{
-                      borderBottom: '1px solid #F1F5F9',
-                    }}
-                  >
-                    <TableCell sx={{ color: '#0F2942', fontFamily: "'Geist Mono', monospace", fontWeight: 700, fontSize: '0.88rem' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Plane size={14} color="#0284C7" />
-                        {row.flightNo}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ color: '#1E293B', fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', fontWeight: 600 }}>
-                        {row.airline}
-                      </Typography>
-                      <Typography sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem' }}>
-                        {row.aircraft}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ color: '#0F2942', fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: '0.88rem' }}>
-                        {row.airport}
-                      </Typography>
-                      <Typography sx={{ color: '#64748B', fontFamily: "'Inter', sans-serif", fontSize: '0.75rem' }}>
-                        Non-stop • Central Terminal
-                      </Typography>
-                    </TableCell>
-                    <TableCell sx={{ color: '#475569', fontFamily: "'Geist Mono', monospace", fontSize: '0.84rem' }}>
-                      {row.scheduledTime}
-                    </TableCell>
-                    <TableCell sx={{ color: row.status === 'DELAYED' ? '#B91C1C' : '#047857', fontFamily: "'Geist Mono', monospace", fontSize: '0.84rem', fontWeight: 600 }}>
-                      {row.estimatedTime}
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <span style={{ padding: '3px 8px', borderRadius: '6px', background: '#F1F5F9', border: '1px solid #E2E8F0', fontWeight: 700, color: '#1E3A5F', fontFamily: "'Geist Mono', monospace", fontSize: '0.78rem' }}>
-                          Gate {row.gate}
-                        </span>
-                        {flightType === 'ARRIVAL' && row.carousel && (
-                          <span style={{ padding: '3px 8px', borderRadius: '6px', background: 'rgba(2, 132, 199, 0.08)', border: '1px solid rgba(2, 132, 199, 0.2)', fontWeight: 600, color: '#0284C7', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <Luggage size={11} /> {row.carousel}
+                rows.map((row) => {
+                  const departure = row.flightType === 'DEPARTURE';
+                  const airport = departure ? `${row.destinationAirportName} (${row.destinationAirportCode})` : `${row.originAirportName} (${row.originAirportCode})`;
+                  return (
+                    <TableRow key={row.flightId} hover sx={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <TableCell sx={{ color: '#0F2942', fontFamily: "'Geist Mono', monospace", fontWeight: 700, fontSize: '0.88rem' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Plane size={14} color="#0284C7" />
+                          {row.flightNumber}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography sx={{ color: '#1E293B', fontFamily: "'Inter', sans-serif", fontSize: '0.88rem', fontWeight: 600 }}>{row.airlineName}</Typography>
+                        <Typography sx={{ color: '#64748B', fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem' }}>{row.aircraftType}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography sx={{ color: '#0F2942', fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: '0.88rem' }}>{airport}</Typography>
+                      </TableCell>
+                      <TableCell sx={{ color: '#475569', fontFamily: "'Geist Mono', monospace", fontSize: '0.84rem' }}>
+                        {dayOf(row.scheduledAt)} {timeOf(row.scheduledAt)}
+                      </TableCell>
+                      <TableCell sx={{ color: row.status === 'DELAYED' ? '#B91C1C' : '#047857', fontFamily: "'Geist Mono', monospace", fontSize: '0.84rem', fontWeight: 600 }}>
+                        {row.estimatedAt ? `${dayOf(row.estimatedAt)} ${timeOf(row.estimatedAt)}` : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <span style={{ padding: '3px 8px', borderRadius: '6px', background: '#F1F5F9', border: '1px solid #E2E8F0', fontWeight: 700, color: '#1E3A5F', fontFamily: "'Geist Mono', monospace", fontSize: '0.78rem' }}>
+                            {row.gateCode ? `Gate ${row.gateCode}` : 'Gate TBA'}
                           </span>
-                        )}
-                        {flightType === 'DEPARTURE' && (
-                          <span style={{ color: '#64748B', fontFamily: "'Inter', sans-serif", fontSize: '0.75rem' }}>
-                            {row.concourse}
-                          </span>
-                        )}
-                      </Box>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(row.status)}</TableCell>
-                  </TableRow>
-                ))
+                          {!departure && row.carousel && (
+                            <span style={{ padding: '3px 8px', borderRadius: '6px', background: 'rgba(2, 132, 199, 0.08)', border: '1px solid rgba(2, 132, 199, 0.2)', fontWeight: 600, color: '#0284C7', fontFamily: "'Geist Mono', monospace", fontSize: '0.74rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <Luggage size={11} /> {row.carousel}
+                            </span>
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(row.status)}</TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
         </TableContainer>
+
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mt: 3 }}>
+          <Button disabled={page === 0 || loading} onClick={() => setPage((p) => p - 1)} sx={{ textTransform: 'none', fontWeight: 600 }}>Previous</Button>
+          <Typography sx={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.8rem', color: '#64748B' }}>Page {page + 1} of {totalPages}</Typography>
+          <Button disabled={page + 1 >= totalPages || loading} onClick={() => setPage((p) => p + 1)} sx={{ textTransform: 'none', fontWeight: 600 }}>Next</Button>
+        </Box>
       </Container>
 
       <Footer />

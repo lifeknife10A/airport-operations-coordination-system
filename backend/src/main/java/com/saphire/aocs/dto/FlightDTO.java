@@ -39,6 +39,9 @@ public class FlightDTO {
     
     private Long standId;
     private String standNumber;
+    private String concourse;
+    /** Baggage carousel serving this flight; only filled by the public schedule. */
+    private String carousel;
     
     private ZonedDateTime scheduledDepartureTime;
     private ZonedDateTime estimatedDepartureTime;

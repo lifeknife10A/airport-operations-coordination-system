@@ -40,6 +40,10 @@ export interface Flight {
   status: 'SCHEDULED' | 'LANDED' | 'ON_BLOCK' | 'SERVICING' | 'READY' | 'BOARDING' | 'AIRBORNE' | 'DEPARTED' | 'DELAYED' | 'CANCELLED';
   gateCode?: string;
   standCode?: string;
+  concourse?: string;
+  carousel?: string;
+  scheduledAt?: string;
+  estimatedAt?: string;
   // Turnaround task counts, present on list endpoints that load them.
   tasksTotal?: number;
   tasksCompleted?: number;

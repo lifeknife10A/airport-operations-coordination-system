@@ -146,7 +146,7 @@ See `.env.example`. For local (non-Docker) dev the backend has fallback defaults
 
 ## Database migrations
 
-Flyway migrations live **only** in `backend/src/main/resources/db/migration/` (V1–V19) and build
+Flyway migrations live **only** in `backend/src/main/resources/db/migration/` (V1–V20) and build
 everything from an empty database: schema, constraints, and the ~158k-row demo dataset.
 
 - `V16__complete_production_dataset_sync.sql` truncates the tables it fills, then loads the dataset.
@@ -165,8 +165,8 @@ cd backend
 ./mvnw test
 ```
 
-83 backend unit tests cover auth/session handling, gate-assignment locking, login lockout,
-turnaround task and flight state transitions, and more. They use mocks and do not touch a
+109 backend unit tests cover auth/session handling, gate-assignment locking and wingspan checks, login lockout,
+turnaround task and flight state transitions, delay logging, clearance and carousel rules, and more. They use mocks and do not touch a
 database; CI additionally boots the app against an empty Postgres 16 to prove the migrations.
 
 ```bash
@@ -202,16 +202,34 @@ classes linger after switching Java versions or branches.
 
 ---
 
+## What runs on live data
+
+Every dashboard and the public pages read from the backend and write back to it. A write the
+server rejects is rolled back (or never shown) and the server's reason is displayed.
+
+| Screen | Live data |
+|---|---|
+| Public flight tracker, schedule, lost & found | Paged flights, status counts, carousels, latest weather report, lost property |
+| Ground Ops | Paged task board, live status counts, active turnarounds, ramp staff workload, assignment |
+| Airside Ops | Gates, runways (traffic counted from flights), live/upcoming flights, computed conflicts (wingspan over gate limit, overlapping departures), gate and runway assignment |
+| AOCC Controller | Flight board with turnaround progress, per-flight tasks, delay log and codes, delay logging, gate assignment |
+| Passenger & Security Ops | Boarding flights, manifests (last four passport digits only), clearance scans and log, incident log, lounge visits, lost & found |
+| Check-In | Flight manifests, boarding pass issue, baggage tags (server-issued numbers), desks |
+| Logistics | Baggage desk, cargo manifest, carousels (reassignable), fuel logs, ground equipment, turnaround timeline |
+| System Admin | Staff directory, account creation and suspension, audit trail |
+| Billing | Invoices and charges |
+
 ## Known limitations
 
-- **Wired to the live backend:** flight board and tracker, gate assignment, flight and task status,
-  lost-and-found, check-in, shift handover, System Admin (staff directory, account creation and
-  suspension, audit trail), Billing (invoices and charges) and the Logistics baggage desk.
-  A write the server rejects is rolled back with an error message.
-- **Still partly seeded demo data:** the Logistics cargo/carousel/fuel tabs, Ground Ops,
-  Airside Ops and Passenger Security panels, and the public flight schedule page.
-- Seeded flight dates are fixed (July–September 2026) rather than relative to today.
+- The seed data has fixed dates (July to September 2026) rather than dates relative to today, and
+  the latest weather report is from August. Screens show the timestamps so this is visible.
+- The seed contains 1,164 aircraft assigned to gates narrower than their wingspan; the Airside
+  conflicts list shows them, and new assignments are refused if the aircraft does not fit.
+- Things the data does not record, and so the screens do not show: fuel volume pumped (only
+  density), cargo load status, lounge capacity, check-in queue lengths and agents, wind direction.
+- Flyway's checksum validation is off (`spring.flyway.validate-on-migrate=false`).
 - The older Department (cleaning/fuel/maintenance) dashboard is no longer assigned to any role.
+- Report exports are plain TXT/CSV.
 
 ---
 

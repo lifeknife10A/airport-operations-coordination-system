@@ -15,6 +15,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { flightApi } from '../../api/flightApi';
 import {
   Plane,
   ShieldCheck,
@@ -79,12 +80,12 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
     tag: 'ADMIN',
     items: [
       { label: 'Overview', path: '/dashboard/system-admin', icon: <Sliders size={18} />, section: 'MAIN' },
-      { label: 'Flights', path: '/dashboard/system-admin#flights', icon: <Plane size={18} />, badge: '64 Active', section: 'OPERATIONS' },
+      { label: 'Flights', path: '/dashboard/system-admin#flights', icon: <Plane size={18} />, section: 'OPERATIONS' },
       { label: 'Staff Users', path: '/dashboard/system-admin#users', icon: <Users size={18} />, section: 'OPERATIONS' },
       { label: 'Roles & RBAC', path: '/dashboard/system-admin#roles', icon: <ShieldCheck size={18} />, section: 'OPERATIONS' },
       { label: 'Audit Trail', path: '/dashboard/system-admin#audit', icon: <FileText size={18} />, section: 'OPERATIONS' },
       { label: 'Reports & SLA', path: '/dashboard/system-admin#reports', icon: <Radio size={18} />, section: 'OPERATIONS' },
-      { label: 'Notifications', path: '/dashboard/system-admin#notifications', icon: <Bell size={18} />, badge: '7', section: 'SYSTEM' },
+      { label: 'Notifications', path: '/dashboard/system-admin#notifications', icon: <Bell size={18} />, section: 'SYSTEM' },
       { label: 'Profile & Settings', path: '/dashboard/system-admin#profile', icon: <UserCheck size={18} />, section: 'SYSTEM' },
     ],
   },
@@ -95,12 +96,12 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
     tag: 'AOCC',
     items: [
       { label: 'Dashboard', path: '/dashboard/aocc', icon: <Sliders size={18} />, section: 'MAIN' },
-      { label: 'Live Flight Monitor', path: '/dashboard/aocc#flights', icon: <Plane size={18} />, badge: '64 Active', section: 'OPERATIONS' },
+      { label: 'Live Flight Monitor', path: '/dashboard/aocc#flights', icon: <Plane size={18} />, section: 'OPERATIONS' },
       { label: 'Flight Details', path: '/dashboard/aocc#details', icon: <FileText size={18} />, section: 'OPERATIONS' },
-      { label: 'Gate Occupancy', path: '/dashboard/aocc#gates', icon: <Layers size={18} />, badge: '86%', section: 'OPERATIONS' },
+      { label: 'Gate Occupancy', path: '/dashboard/aocc#gates', icon: <Layers size={18} />, section: 'OPERATIONS' },
       { label: 'Turnaround Timeline', path: '/dashboard/aocc#turnaround', icon: <Clock size={18} />, section: 'OPERATIONS' },
-      { label: 'Delay Logs', path: '/dashboard/aocc#delays', icon: <AlertTriangle size={18} />, badge: '5', section: 'OPERATIONS' },
-      { label: 'Notifications', path: '/dashboard/aocc#notifications', icon: <Bell size={18} />, badge: '3', section: 'MONITORING' },
+      { label: 'Delay Logs', path: '/dashboard/aocc#delays', icon: <AlertTriangle size={18} />, section: 'OPERATIONS' },
+      { label: 'Notifications', path: '/dashboard/aocc#notifications', icon: <Bell size={18} />, section: 'MONITORING' },
       { label: 'Profile', path: '/dashboard/aocc#profile', icon: <UserCheck size={18} />, section: 'ACCOUNT' },
     ],
   },
@@ -111,11 +112,11 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
     tag: 'RAMP',
     items: [
       { label: 'Dashboard', path: '/dashboard/ground-ops', icon: <Sliders size={18} />, section: 'MAIN' },
-      { label: 'Active Flights', path: '/dashboard/ground-ops#flights', icon: <Plane size={18} />, badge: '18 Active', section: 'OPERATIONS' },
-      { label: 'Task Center', path: '/dashboard/ground-ops#tasks', icon: <CheckCircle2 size={18} />, badge: '32', section: 'OPERATIONS' },
+      { label: 'Active Flights', path: '/dashboard/ground-ops#flights', icon: <Plane size={18} />, section: 'OPERATIONS' },
+      { label: 'Task Center', path: '/dashboard/ground-ops#tasks', icon: <CheckCircle2 size={18} />, section: 'OPERATIONS' },
       { label: 'Task Assignment', path: '/dashboard/ground-ops#assignment', icon: <Users size={18} />, section: 'OPERATIONS' },
-      { label: 'Shift Handover', path: '/dashboard/ground-ops#handover', icon: <Briefcase size={18} />, badge: '3 Pending', section: 'OPERATIONS' },
-      { label: 'Notifications', path: '/dashboard/ground-ops#notifications', icon: <Bell size={18} />, badge: '2', section: 'MONITORING' },
+      { label: 'Shift Handover', path: '/dashboard/ground-ops#handover', icon: <Briefcase size={18} />, section: 'OPERATIONS' },
+      { label: 'Notifications', path: '/dashboard/ground-ops#notifications', icon: <Bell size={18} />, section: 'MONITORING' },
       { label: 'Profile', path: '/dashboard/ground-ops#profile', icon: <UserCheck size={18} />, section: 'ACCOUNT' },
     ],
   },
@@ -135,13 +136,13 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
     tag: 'WORKSPACES',
     items: [
       { label: 'Overview', path: '/dashboard/department', icon: <Sliders size={18} />, section: 'MAIN' },
-      { label: 'Cabin Cleaning', path: '/dashboard/department#cleaning', icon: <Sparkles size={18} />, badge: '3 Active', section: 'DEPARTMENTS' },
-      { label: 'Fuel Operations', path: '/dashboard/department#fuel', icon: <Fuel size={18} />, badge: 'Calculator', section: 'DEPARTMENTS' },
-      { label: 'Aircraft Maintenance', path: '/dashboard/department#maintenance', icon: <Wrench size={18} />, badge: '1 Fault', section: 'DEPARTMENTS' },
-      { label: 'Security Clearance', path: '/dashboard/department#security', icon: <ShieldCheck size={18} />, badge: 'PIN Sign', section: 'DEPARTMENTS' },
+      { label: 'Cabin Cleaning', path: '/dashboard/department#cleaning', icon: <Sparkles size={18} />, section: 'DEPARTMENTS' },
+      { label: 'Fuel Operations', path: '/dashboard/department#fuel', icon: <Fuel size={18} />, section: 'DEPARTMENTS' },
+      { label: 'Aircraft Maintenance', path: '/dashboard/department#maintenance', icon: <Wrench size={18} />, section: 'DEPARTMENTS' },
+      { label: 'Security Clearance', path: '/dashboard/department#security', icon: <ShieldCheck size={18} />, section: 'DEPARTMENTS' },
       { label: 'Assigned Flights', path: '/dashboard/department#flights', icon: <Plane size={18} />, section: 'OPERATIONS' },
-      { label: 'Task Center', path: '/dashboard/department#tasks', icon: <CheckCircle2 size={18} />, badge: '18', section: 'OPERATIONS' },
-      { label: 'Notifications', path: '/dashboard/department#notifications', icon: <Bell size={18} />, badge: '3', section: 'MONITORING' },
+      { label: 'Task Center', path: '/dashboard/department#tasks', icon: <CheckCircle2 size={18} />, section: 'OPERATIONS' },
+      { label: 'Notifications', path: '/dashboard/department#notifications', icon: <Bell size={18} />, section: 'MONITORING' },
       { label: 'Staff Profile', path: '/dashboard/department#profile', icon: <UserCheck size={18} />, section: 'ACCOUNT' },
     ],
   },
@@ -152,10 +153,10 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
     tag: 'AIRSIDE',
     items: [
       { label: 'Overview', path: '/dashboard/airside-ops', icon: <Sliders size={18} />, section: 'MAIN' },
-      { label: 'Gate Allocation', path: '/dashboard/airside-ops#gates', icon: <Layers size={18} />, badge: '24 Gates', section: 'OPERATIONS' },
-      { label: 'Runway Status', path: '/dashboard/airside-ops#runways', icon: <Wind size={18} />, badge: '4 Active', section: 'OPERATIONS' },
-      { label: 'Flight Assignment', path: '/dashboard/airside-ops#assignments', icon: <Plane size={18} />, badge: '12 Flights', section: 'OPERATIONS' },
-      { label: 'Notifications', path: '/dashboard/airside-ops#notifications', icon: <Bell size={18} />, badge: '3', section: 'MONITORING' },
+      { label: 'Gate Allocation', path: '/dashboard/airside-ops#gates', icon: <Layers size={18} />, section: 'OPERATIONS' },
+      { label: 'Runway Status', path: '/dashboard/airside-ops#runways', icon: <Wind size={18} />, section: 'OPERATIONS' },
+      { label: 'Flight Assignment', path: '/dashboard/airside-ops#assignments', icon: <Plane size={18} />, section: 'OPERATIONS' },
+      { label: 'Notifications', path: '/dashboard/airside-ops#notifications', icon: <Bell size={18} />, section: 'MONITORING' },
       { label: 'Profile', path: '/dashboard/airside-ops#profile', icon: <UserCheck size={18} />, section: 'ACCOUNT' },
     ],
   },
@@ -167,11 +168,11 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
     items: [
       { label: 'Overview', path: '/dashboard/logistics', icon: <Sliders size={18} />, section: 'MAIN' },
       { label: 'Live Baggage Desk', path: '/dashboard/logistics#desk', icon: <Layers size={18} />, badge: 'Live', section: 'OPERATIONS' },
-      { label: 'Cargo Manifest', path: '/dashboard/logistics#cargo', icon: <Package size={18} />, badge: '7 Active', section: 'OPERATIONS' },
-      { label: 'Baggage Carousels', path: '/dashboard/logistics#baggage', icon: <Layers size={18} />, badge: '6 Belts', section: 'OPERATIONS' },
-      { label: 'Fuel Operations', path: '/dashboard/logistics#fuel', icon: <Fuel size={18} />, badge: 'Hydrant', section: 'OPERATIONS' },
+      { label: 'Cargo Manifest', path: '/dashboard/logistics#cargo', icon: <Package size={18} />, section: 'OPERATIONS' },
+      { label: 'Baggage Carousels', path: '/dashboard/logistics#baggage', icon: <Layers size={18} />, section: 'OPERATIONS' },
+      { label: 'Fuel Operations', path: '/dashboard/logistics#fuel', icon: <Fuel size={18} />, section: 'OPERATIONS' },
       { label: 'Logistics Timeline', path: '/dashboard/logistics#timeline', icon: <Clock size={18} />, section: 'OPERATIONS' },
-      { label: 'Notifications', path: '/dashboard/logistics#notifications', icon: <Bell size={18} />, badge: '3', section: 'MONITORING' },
+      { label: 'Notifications', path: '/dashboard/logistics#notifications', icon: <Bell size={18} />, section: 'MONITORING' },
       { label: 'Profile', path: '/dashboard/logistics#profile', icon: <UserCheck size={18} />, section: 'ACCOUNT' },
     ],
   },
@@ -182,12 +183,12 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
     tag: 'SECURITY',
     items: [
       { label: 'Overview', path: '/dashboard/passenger-security', icon: <Sliders size={18} />, section: 'MAIN' },
-      { label: 'Security Screening', path: '/dashboard/passenger-security#security-screening', icon: <ShieldCheck size={18} />, badge: 'Gate A12', section: 'OPERATIONS' },
-      { label: 'Passenger Clearance', path: '/dashboard/passenger-security#clearance', icon: <ShieldCheck size={18} />, badge: '3 Flagged', section: 'OPERATIONS' },
-      { label: 'Lost & Found', path: '/dashboard/passenger-security#lost-found', icon: <Package size={18} />, badge: '4 New', section: 'OPERATIONS' },
-      { label: 'Incidents', path: '/dashboard/passenger-security#incidents', icon: <AlertTriangle size={18} />, badge: '2 Active', section: 'OPERATIONS' },
+      { label: 'Security Screening', path: '/dashboard/passenger-security#security-screening', icon: <ShieldCheck size={18} />, section: 'OPERATIONS' },
+      { label: 'Passenger Clearance', path: '/dashboard/passenger-security#clearance', icon: <ShieldCheck size={18} />, section: 'OPERATIONS' },
+      { label: 'Lost & Found', path: '/dashboard/passenger-security#lost-found', icon: <Package size={18} />, section: 'OPERATIONS' },
+      { label: 'Incidents', path: '/dashboard/passenger-security#incidents', icon: <AlertTriangle size={18} />, section: 'OPERATIONS' },
       { label: 'Lounge Activity', path: '/dashboard/passenger-security#lounges', icon: <Layers size={18} />, section: 'OPERATIONS' },
-      { label: 'Notifications', path: '/dashboard/passenger-security#notifications', icon: <Bell size={18} />, badge: '4', section: 'MONITORING' },
+      { label: 'Notifications', path: '/dashboard/passenger-security#notifications', icon: <Bell size={18} />, section: 'MONITORING' },
       { label: 'Profile', path: '/dashboard/passenger-security#profile', icon: <UserCheck size={18} />, section: 'ACCOUNT' },
     ],
   },
@@ -200,28 +201,13 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
       { label: 'Counters Overview', path: '/dashboard/check-in', icon: <Sliders size={18} />, section: 'MAIN' },
       { label: 'Passenger Manifest', path: '/dashboard/check-in#manifest', icon: <Users size={18} />, badge: 'Live', section: 'OPERATIONS' },
       { label: 'PNR Lookup & Check-In', path: '/dashboard/check-in#pnr-lookup', icon: <UserCheck size={18} />, section: 'OPERATIONS' },
-      { label: 'Boarding Pass Desk', path: '/dashboard/check-in#boarding-desk', icon: <CreditCard size={18} />, badge: 'Ready', section: 'OPERATIONS' },
+      { label: 'Boarding Pass Desk', path: '/dashboard/check-in#boarding-desk', icon: <CreditCard size={18} />, section: 'OPERATIONS' },
       { label: 'Baggage Induction', path: '/dashboard/check-in#baggage-tag', icon: <Luggage size={18} />, section: 'OPERATIONS' },
-      { label: 'Notifications', path: '/dashboard/check-in#notifications', icon: <Bell size={18} />, badge: '2', section: 'MONITORING' },
+      { label: 'Notifications', path: '/dashboard/check-in#notifications', icon: <Bell size={18} />, section: 'MONITORING' },
       { label: 'Staff Profile', path: '/dashboard/check-in#profile', icon: <UserCheck size={18} />, section: 'ACCOUNT' },
     ],
   },
 };
-
-const SEARCHABLE_ITEMS = [
-  { type: 'FLIGHT', title: 'SPH-102 · London Heathrow (LHR)', sub: 'Boarding · Gate B12 · Concourse B', link: '/dashboard/system-admin#flights' },
-  { type: 'FLIGHT', title: 'SPH-204 · Dubai International (DXB)', sub: 'Scheduled · Gate A04 · Concourse A', link: '/dashboard/system-admin#flights' },
-  { type: 'FLIGHT', title: 'SPH-308 · Los Angeles (LAX)', sub: 'Airborne · Gate C14 · Concourse C', link: '/dashboard/system-admin#flights' },
-  { type: 'FLIGHT', title: 'SPH-809 · New York (JFK)', sub: 'Delayed (+20m) · Gate A10 · Concourse A', link: '/dashboard/system-admin#flights' },
-  { type: 'STAFF', title: 'Aarav Li', sub: 'System Administrator · Terminal Management', link: '/dashboard/system-admin#users' },
-  { type: 'STAFF', title: 'Sai Sharma', sub: 'AOCC Operations Manager · Flight Operations', link: '/dashboard/system-admin#users' },
-  { type: 'STAFF', title: 'Riya Johnson', sub: 'Ground Ops Supervisor · Ground Handling', link: '/dashboard/system-admin#users' },
-  { type: 'STAFF', title: 'Elena Tanaka', sub: 'Airline Billing Clerk · Finance & Billing', link: '/dashboard/system-admin#users' },
-  { type: 'GATE', title: 'Gate B12', sub: 'Code F Dual-Deck Aerobridge · Central Concourse B', link: '/dashboard/system-admin#flights' },
-  { type: 'GATE', title: 'Gate A04', sub: 'Widebody Stand · Central Concourse A', link: '/dashboard/system-admin#flights' },
-  { type: 'AUDIT', title: 'ROLE_UPDATE Event #8821', sub: 'Admin updated RBAC permissions for Ground Ops', link: '/dashboard/system-admin#audit' },
-  { type: 'AUDIT', title: 'GATE_ASSIGNMENT Event #8820', sub: 'Gate B12 synchronized for flight SPH-102', link: '/dashboard/system-admin#audit' },
-];
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -334,59 +320,33 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeRole]);
 
-  const searchableItems = React.useMemo(() => {
-    const flights = aocsDataStore.getFlights().map((f) => ({
-      type: 'FLIGHT',
-      title: `${f.flightNumber} · ${f.originAirportCode} → ${f.destinationAirportCode}`,
-      sub: `${f.status} · Gate ${f.gateCode || 'Unassigned'} · ${f.aircraftType}`,
-      link: '/dashboard/system-admin#flights',
-    }));
-
-    const gates = aocsDataStore.getGates().map((g) => ({
-      type: 'GATE',
-      title: `Gate ${g.gateCode} (${g.terminalName})`,
-      sub: `${g.status} · ${g.hasJetbridge ? 'Aerobridge' : 'Ramp Stand'} · Assigned: ${g.assignedFlightNumber || 'Available'}`,
-      link: '/dashboard/system-admin#flights',
-    }));
-
-    const staff = aocsDataStore.getStaffUsers().map((u) => ({
-      type: 'STAFF',
-      title: u.fullName,
-      sub: `${u.roleName} · ${u.department} (${u.email})`,
-      link: '/dashboard/system-admin#users',
-    }));
-
-    const bags = aocsDataStore.getBags().map((b) => ({
-      type: 'BAGGAGE',
-      title: `Tag: ${b.tagNumber} (${b.flightNumber})`,
-      sub: `Pax: ${b.passengerName} · Weight: ${b.weightKg}kg · Status: ${b.status}`,
-      link: '/dashboard/system-admin#audit',
-    }));
-
-    const incidents = aocsDataStore.getIncidents().map((inc) => ({
-      type: 'INCIDENT',
-      title: `${inc.ticketId}: ${inc.title}`,
-      sub: `${inc.severity} Severity · Loc: ${inc.location} · Assigned: ${inc.assignedOfficer}`,
-      link: '/dashboard/system-admin#audit',
-    }));
-
-    const audits = aocsDataStore.getAuditLogs().slice(0, 15).map((log) => ({
-      type: 'AUDIT',
-      title: `${log.action} (#${log.auditId})`,
-      sub: `${log.changePayload} · By: ${log.performedByUserName} · ${log.timestamp}`,
-      link: '/dashboard/system-admin#audit',
-    }));
-
-    return [...flights, ...gates, ...staff, ...bags, ...incidents, ...audits];
-  }, [searchOpen]);
-
-  const filteredSearch = searchQuery.trim() === ''
-    ? searchableItems.slice(0, 8)
-    : searchableItems.filter((item) =>
-        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.sub.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.type.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  // Search looks flights up on the server (flight number, airline, airport or gate) and opens the
+  // public flight tracker for the one chosen.
+  const [filteredSearch, setFilteredSearch] = useState<{ type: string; title: string; sub: string; link: string }[]>([]);
+  useEffect(() => {
+    if (!searchOpen) return;
+    let cancelled = false;
+    const handle = setTimeout(() => {
+      flightApi
+        .getSaphireHubFlightsPaged(0, 8, searchQuery.trim())
+        .then((res) => {
+          if (cancelled) return;
+          setFilteredSearch(
+            res.content.map((f) => ({
+              type: 'FLIGHT',
+              title: `${f.flightNumber} · ${f.originAirportCode} → ${f.destinationAirportCode}`,
+              sub: `${f.status} · Gate ${f.gateCode || 'unassigned'} · ${f.airlineName}`,
+              link: `/tracker?flight=${encodeURIComponent(f.flightNumber)}`,
+            }))
+          );
+        })
+        .catch(() => !cancelled && setFilteredSearch([]));
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [searchOpen, searchQuery]);
 
   const handleLogout = async () => {
     await logout();
@@ -996,7 +956,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
           <TextField
             autoFocus
             fullWidth
-            placeholder="Search flights, staff accounts, gates, bags, incidents, audit records..."
+            placeholder="Search flights by number, airline, airport or gate..."
             variant="standard"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

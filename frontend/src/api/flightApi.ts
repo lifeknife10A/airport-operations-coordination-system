@@ -36,6 +36,10 @@ export const normalizeFlight = (d: any): Flight => {
     status: d.flightStatus ?? d.status ?? 'SCHEDULED',
     gateCode: d.gateNumber ?? undefined,
     standCode: d.standNumber ?? undefined,
+    concourse: d.concourse ?? undefined,
+    carousel: d.carousel ?? undefined,
+    scheduledAt: scheduled ?? undefined,
+    estimatedAt: estimated ?? undefined,
     tasksTotal: d.tasksTotal ?? undefined,
     tasksCompleted: d.tasksCompleted ?? undefined,
   };
@@ -46,6 +50,18 @@ export const flightApi = {
     const response = await axiosClient.get('/flights');
     return response.data.map(normalizeFlight);
   },
+
+  getSchedule: async (
+    type: 'DEPARTURE' | 'ARRIVAL',
+    query: string,
+    page: number,
+    size = 15
+  ): Promise<PagedResponse<Flight>> => {
+    const response = await axiosClient.get('/flights/schedule', { params: { type, q: query || undefined, page, size } });
+    return { ...response.data, content: response.data.content.map(normalizeFlight) };
+  },
+
+  getScheduleSummary: async (): Promise<Record<string, number>> => (await axiosClient.get('/flights/schedule/summary')).data,
 
   getOperationalFlights: async (limit = 40): Promise<Flight[]> => {
     const response = await axiosClient.get('/flights/operational', { params: { limit } });

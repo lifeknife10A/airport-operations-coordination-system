@@ -38,6 +38,21 @@ public class FlightController {
         return ResponseEntity.ok(flightService.getSaphireHubFlightsPaged(page, size, query));
     }
 
+    @GetMapping("/schedule")
+    public ResponseEntity<PagedResponseDTO<FlightDTO>> getSchedule(
+            @RequestParam(defaultValue = "DEPARTURE") String type,
+            @RequestParam(required = false) String concourse,
+            @RequestParam(required = false, name = "q") String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "15") int size) {
+        return ResponseEntity.ok(flightService.getSchedulePage(type, concourse, query, page, size));
+    }
+
+    @GetMapping("/schedule/summary")
+    public ResponseEntity<java.util.Map<String, Long>> getScheduleSummary() {
+        return ResponseEntity.ok(flightService.getScheduleSummary());
+    }
+
     @GetMapping("/operational")
     public ResponseEntity<List<FlightDTO>> getOperationalFlights(@RequestParam(defaultValue = "40") int limit) {
         return ResponseEntity.ok(flightService.getOperationalFlights(limit));

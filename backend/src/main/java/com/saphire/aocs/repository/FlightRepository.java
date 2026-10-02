@@ -118,4 +118,29 @@ public interface FlightRepository extends JpaRepository<Flight, Long> {
             + "((f.flightType = 'DEPARTURE' AND f.flightStatus IN ('BOARDING', 'DELAYED')) "
             + "OR (f.flightType = 'ARRIVAL' AND f.flightStatus = 'AIRBORNE')) GROUP BY f.runwayId, f.flightType")
     List<Object[]> countRunwayTraffic();
+
+    @Query(value = "SELECT f FROM Flight f JOIN FETCH f.originAirport JOIN FETCH f.destinationAirport JOIN FETCH f.airline "
+            + "JOIN FETCH f.aircraft a JOIN FETCH a.aircraftType LEFT JOIN FETCH f.gate LEFT JOIN FETCH f.stand s LEFT JOIN FETCH f.department "
+            + "WHERE (f.originAirport.airportId = 1 OR f.destinationAirport.airportId = 1) AND f.flightType = :type "
+            + "AND (:concourse = '' OR s.concourse = :concourse) "
+            + "AND (:q = '' OR LOWER(f.flightNumber) LIKE CONCAT('%', :q, '%') OR LOWER(f.airline.airlineName) LIKE CONCAT('%', :q, '%') "
+            + "OR LOWER(f.originAirport.iataCode) LIKE CONCAT('%', :q, '%') OR LOWER(f.destinationAirport.iataCode) LIKE CONCAT('%', :q, '%') "
+            + "OR LOWER(f.originAirport.city) LIKE CONCAT('%', :q, '%') OR LOWER(f.destinationAirport.city) LIKE CONCAT('%', :q, '%')) "
+            + "ORDER BY f.scheduledDepartureTime DESC, f.flightId DESC",
+            countQuery = "SELECT COUNT(f) FROM Flight f LEFT JOIN f.stand s "
+            + "WHERE (f.originAirport.airportId = 1 OR f.destinationAirport.airportId = 1) AND f.flightType = :type "
+            + "AND (:concourse = '' OR s.concourse = :concourse) "
+            + "AND (:q = '' OR LOWER(f.flightNumber) LIKE CONCAT('%', :q, '%') OR LOWER(f.airline.airlineName) LIKE CONCAT('%', :q, '%') "
+            + "OR LOWER(f.originAirport.iataCode) LIKE CONCAT('%', :q, '%') OR LOWER(f.destinationAirport.iataCode) LIKE CONCAT('%', :q, '%') "
+            + "OR LOWER(f.originAirport.city) LIKE CONCAT('%', :q, '%') OR LOWER(f.destinationAirport.city) LIKE CONCAT('%', :q, '%'))")
+    Page<Flight> searchSchedule(@org.springframework.data.repository.query.Param("type") String type,
+                                @org.springframework.data.repository.query.Param("concourse") String concourse,
+                                @org.springframework.data.repository.query.Param("q") String q, Pageable pageable);
+
+    @Query("SELECT f.flightType, COUNT(f) FROM Flight f WHERE f.originAirport.airportId = 1 OR f.destinationAirport.airportId = 1 GROUP BY f.flightType")
+    List<Object[]> countHubFlightsByType();
+
+    /** Columns: flight id, carousel number. */
+    @Query(value = "SELECT c.flight_id, c.carousel_number FROM baggage_carousels c WHERE c.flight_id IN (:flightIds)", nativeQuery = true)
+    List<Object[]> findCarouselsForFlights(@org.springframework.data.repository.query.Param("flightIds") java.util.Collection<Long> flightIds);
 }

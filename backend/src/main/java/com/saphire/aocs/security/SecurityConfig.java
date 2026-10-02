@@ -99,6 +99,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET,
                         "/api/gates", "/api/v1/gates", "/api/airside/gates", "/api/v1/airside/gates").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/tasks", "/api/v1/tasks").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/weather/latest", "/api/v1/weather/latest").permitAll()
 
                 .requestMatchers(HttpMethod.GET, "/api/lost-found/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/lost-found").permitAll()
