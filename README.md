@@ -146,7 +146,7 @@ See `.env.example`. For local (non-Docker) dev the backend has fallback defaults
 
 ## Database migrations
 
-Flyway migrations live **only** in `backend/src/main/resources/db/migration/` (V1–V17) and build
+Flyway migrations live **only** in `backend/src/main/resources/db/migration/` (V1–V19) and build
 everything from an empty database: schema, constraints, and the ~158k-row demo dataset.
 
 - `V16__complete_production_dataset_sync.sql` truncates the tables it fills, then loads the dataset.
@@ -204,13 +204,14 @@ classes linger after switching Java versions or branches.
 
 ## Known limitations
 
-- Several staff dashboards still present seeded/`localStorage` demo data for some panels instead
-  of live API data (the flight board, flight tracker, gate assignment, flight status, task status,
-  shift handover, lost-and-found and check-in screens are wired to the backend; a write the
-  server rejects is rolled back with an error message).
-- Account suspension (`PUT /api/users/{id}/status`) is not persisted: the `users` table has no
-  status column.
+- **Wired to the live backend:** flight board and tracker, gate assignment, flight and task status,
+  lost-and-found, check-in, shift handover, System Admin (staff directory, account creation and
+  suspension, audit trail), Billing (invoices and charges) and the Logistics baggage desk.
+  A write the server rejects is rolled back with an error message.
+- **Still partly seeded demo data:** the Logistics cargo/carousel/fuel tabs, Ground Ops,
+  Airside Ops and Passenger Security panels, and the public flight schedule page.
 - Seeded flight dates are fixed (July–September 2026) rather than relative to today.
+- The older Department (cleaning/fuel/maintenance) dashboard is no longer assigned to any role.
 
 ---
 
