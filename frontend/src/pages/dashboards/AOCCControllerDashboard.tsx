@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -63,12 +63,19 @@ import { useAuth } from '../../context/AuthContext';
 import { aocsDataStore } from '../../services/aocsDataStore';
 import { exportFlightMovementCSV, exportGateUtilizationPDF } from '../../utils/exportReports';
 import { flightApi } from '../../api/flightApi';
+import { gateApi } from '../../api/gateApi';
+import { taskApi } from '../../api/taskApi';
+import { airsideApi } from '../../api/airsideApi';
+import { flightOpsApi, DelayEntry, DelayCode } from '../../api/flightOpsApi';
+import { describeApiError } from '../../services/aocsDataStore';
+import type { Gate, TurnaroundTask } from '../../types';
 import { Flight as BackendFlight } from '../../types';
 import { ChevronLeft } from 'lucide-react';
 
 // Types
 export interface OperationalFlight {
   id: string;
+  flightId: number;
   flightNumber: string;
   airline: string;
   aircraft: string;
@@ -79,47 +86,51 @@ export interface OperationalFlight {
   scheduledTime: string;
   estimatedTime: string;
   status: 'SCHEDULED' | 'BOARDING' | 'AIRBORNE' | 'ON_BLOCK' | 'DELAYED' | 'READY';
-  turnaroundProgress: number; // 0 - 100
+  turnaroundProgress: number; // 0 - 100, completed tasks / total tasks
   turnaroundStage: string;
-  passengers: number;
-  fuelKg: number;
-  crew: string;
-  delayMinutes?: number;
-  delayReason?: string;
+  /** Boarding passes issued; only known once the flight's operations have been loaded. */
+  boardingPasses?: number;
 }
 
-// Maps a raw backend Flight (from /api/flights/paged) into the enriched shape this dashboard
-// renders. Operational fields that don't exist on the backend yet (passengers, fuelKg, crew,
-// turnaroundProgress) get the same placeholder derivation the full-list store sync already used.
-const mapFlightDtoToOperational = (sf: BackendFlight): OperationalFlight => ({
-  id: `FL-${sf.flightId}`,
-  flightNumber: sf.flightNumber,
-  airline: sf.airlineName,
-  aircraft: sf.aircraftType,
-  route: `${sf.originAirportCode} → ${sf.destinationAirportCode}`,
-  origin: sf.originAirportName,
-  destination: sf.destinationAirportName,
-  gate: sf.gateCode || 'Unassigned',
-  scheduledTime: sf.scheduledTime,
-  estimatedTime: sf.estimatedTime || sf.scheduledTime,
-  status: (sf.status as OperationalFlight['status']) || 'SCHEDULED',
-  turnaroundProgress: sf.status === 'READY' ? 100 : sf.status === 'BOARDING' ? 80 : 45,
-  turnaroundStage: 'Turnaround Active',
-  passengers: 180,
-  fuelKg: 25000,
-  crew: 'Capt. / First Officer',
-});
+// Maps a backend Flight into the shape this dashboard renders. Turnaround progress is the share
+// of the flight's turnaround tasks that are completed (the backend counts them per page).
+const mapFlightDtoToOperational = (sf: BackendFlight): OperationalFlight => {
+  const total = sf.tasksTotal ?? 0;
+  const done = sf.tasksCompleted ?? 0;
+  return {
+    id: `FL-${sf.flightId}`,
+    flightId: sf.flightId,
+    flightNumber: sf.flightNumber,
+    airline: sf.airlineName,
+    aircraft: sf.aircraftType,
+    route: `${sf.originAirportCode} → ${sf.destinationAirportCode}`,
+    origin: sf.originAirportName,
+    destination: sf.destinationAirportName,
+    gate: sf.gateCode || 'Unassigned',
+    scheduledTime: sf.scheduledTime,
+    estimatedTime: sf.estimatedTime || sf.scheduledTime,
+    status: (sf.status as OperationalFlight['status']) || 'SCHEDULED',
+    turnaroundProgress: total ? Math.round((done / total) * 100) : 0,
+    turnaroundStage: total ? `${done} of ${total} tasks done` : 'No turnaround tasks',
+  };
+};
+
+const EMPTY_FLIGHT: OperationalFlight = {
+  id: 'none', flightId: 0, flightNumber: '—', airline: '', aircraft: '', route: '', origin: '', destination: '', gate: '—',
+  scheduledTime: '', estimatedTime: '', status: 'SCHEDULED', turnaroundProgress: 0, turnaroundStage: '',
+};
 
 export interface TurnaroundStep {
   id: string;
   title: string;
-  status: 'COMPLETED' | 'IN_PROGRESS' | 'PENDING';
+  status: 'COMPLETED' | 'IN_PROGRESS' | 'PENDING' | 'BLOCKED';
   timestamp: string;
   notes: string;
   department: string;
 }
 
 export interface GateSlot {
+  gateId: number;
   gate: string;
   concourse: string;
   flight: string | null;
@@ -132,242 +143,54 @@ export interface DelayLogItem {
   flightNumber: string;
   route: string;
   delayMinutes: number;
-  reasonCategory: 'WEATHER' | 'MAINTENANCE' | 'ATC' | 'GROUND_HANDLING' | 'BAGGAGE';
+  reasonCategory: string;
   description: string;
   loggedAt: string;
   loggedBy: string;
   status: 'ACTIVE' | 'RESOLVED' | 'MITIGATED';
 }
 
-// Initial Data
-const INITIAL_FLIGHTS: OperationalFlight[] = [
-  {
-    id: 'FL-203',
-    flightNumber: 'AI-203',
-    airline: 'Air India',
-    aircraft: 'Boeing 787-8 Dreamliner',
-    route: 'DEL → BOM',
-    origin: 'DEL (New Delhi)',
-    destination: 'BOM (Mumbai)',
-    gate: 'A01',
-    scheduledTime: '23:30 UTC',
-    estimatedTime: '23:42 UTC',
-    status: 'BOARDING',
-    turnaroundProgress: 80,
-    turnaroundStage: 'Fuel & Cleaning Done',
-    passengers: 248,
-    fuelKg: 38400,
-    crew: 'Capt. R. Deshmukh / FO P. Varma',
-    delayMinutes: 12,
-    delayReason: 'Line maintenance hydraulic fluid check',
-  },
-  {
-    id: 'FL-521',
-    flightNumber: '6E-521',
-    airline: 'IndiGo',
-    aircraft: 'Airbus A321neo',
-    route: 'BOM → BLR',
-    origin: 'BOM (Mumbai)',
-    destination: 'BLR (Bengaluru)',
-    gate: 'A07',
-    scheduledTime: '23:15 UTC',
-    estimatedTime: '23:33 UTC',
-    status: 'DELAYED',
-    turnaroundProgress: 50,
-    turnaroundStage: 'Apron Refueling In Progress',
-    passengers: 214,
-    fuelKg: 14200,
-    crew: 'Capt. A. Nair / FO S. Pillai',
-    delayMinutes: 18,
-    delayReason: 'Weather routing deviation over Deccan Plateau',
-  },
-  {
-    id: 'FL-901',
-    flightNumber: 'UK-901',
-    airline: 'Vistara',
-    aircraft: 'Airbus A320neo',
-    route: 'BOM → DEL',
-    origin: 'BOM (Mumbai)',
-    destination: 'DEL (New Delhi)',
-    gate: 'A04',
-    scheduledTime: '23:05 UTC',
-    estimatedTime: '23:05 UTC',
-    status: 'READY',
-    turnaroundProgress: 100,
-    turnaroundStage: 'All Checks Clear - Pushback Ready',
-    passengers: 168,
-    fuelKg: 11800,
-    crew: 'Capt. V. Kapoor / FO M. Chawla',
-  },
-  {
-    id: 'FL-102',
-    flightNumber: 'SPH-102',
-    airline: 'Saphire Airways',
-    aircraft: 'Airbus A350-900',
-    route: 'SPH → LHR',
-    origin: 'SPH (Saphire Hub)',
-    destination: 'LHR (London Heathrow)',
-    gate: 'B03',
-    scheduledTime: '23:45 UTC',
-    estimatedTime: '23:45 UTC',
-    status: 'BOARDING',
-    turnaroundProgress: 85,
-    turnaroundStage: 'Passenger Boarding Group 3',
-    passengers: 312,
-    fuelKg: 78500,
-    crew: 'Capt. E. Sterling / FO J. Davies',
-  },
-  {
-    id: 'FL-204',
-    flightNumber: 'SPH-204',
-    airline: 'Saphire Airways',
-    aircraft: 'Boeing 777-300ER',
-    route: 'SPH → DXB',
-    origin: 'SPH (Saphire Hub)',
-    destination: 'DXB (Dubai Int)',
-    gate: 'B01',
-    scheduledTime: '00:15 UTC',
-    estimatedTime: '00:15 UTC',
-    status: 'SCHEDULED',
-    turnaroundProgress: 20,
-    turnaroundStage: 'Inbound Bag Offload',
-    passengers: 340,
-    fuelKg: 64200,
-    crew: 'Capt. M. Al-Mansoori / FO K. Vance',
-  },
-  {
-    id: 'FL-308',
-    flightNumber: 'SPH-308',
-    airline: 'Saphire Airways',
-    aircraft: 'Boeing 787-9 Dreamliner',
-    route: 'SPH → LAX',
-    origin: 'SPH (Saphire Hub)',
-    destination: 'LAX (Los Angeles Int)',
-    gate: 'C01',
-    scheduledTime: '22:50 UTC',
-    estimatedTime: '22:50 UTC',
-    status: 'AIRBORNE',
-    turnaroundProgress: 100,
-    turnaroundStage: 'Departed Runway 27R',
-    passengers: 288,
-    fuelKg: 91000,
-    crew: 'Capt. C. Montgomery / FO H. Becker',
-  },
-  {
-    id: 'FL-809',
-    flightNumber: 'SPH-809',
-    airline: 'Saphire Airways',
-    aircraft: 'Airbus A330-300',
-    route: 'SPH → JFK',
-    origin: 'SPH (Saphire Hub)',
-    destination: 'JFK (New York JFK)',
-    gate: 'C04',
-    scheduledTime: '23:55 UTC',
-    estimatedTime: '00:20 UTC',
-    status: 'DELAYED',
-    turnaroundProgress: 40,
-    turnaroundStage: 'Cabin Catering Hold',
-    passengers: 275,
-    fuelKg: 82000,
-    crew: 'Capt. D. Miller / FO G. Henderson',
-    delayMinutes: 25,
-    delayReason: 'Catering highloader hydraulic mechanical servicing',
-  },
-  {
-    id: 'FL-201',
-    flightNumber: 'EK-201',
-    airline: 'Emirates',
-    aircraft: 'Airbus A380-800',
-    route: 'SPH → DXB',
-    origin: 'SPH (Saphire Hub)',
-    destination: 'DXB (Dubai Int)',
-    gate: 'C08',
-    scheduledTime: '00:50 UTC',
-    estimatedTime: '00:50 UTC',
-    status: 'SCHEDULED',
-    turnaroundProgress: 35,
-    turnaroundStage: 'Pre-flight catering & fuel upload',
-    passengers: 489,
-    fuelKg: 145000,
-    crew: 'Capt. F. Al-Nuaimi / FO S. Leclerc',
-  },
-];
+// ---------------------------------------------------------------------------------------------
+// Live data mapping
+// ---------------------------------------------------------------------------------------------
+const clockOf = (iso?: string | null): string => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : `${d.toISOString().slice(11, 16)} UTC`;
+};
 
-const INITIAL_GATES: GateSlot[] = [
-  // Concourse A (Domestic Pier)
-  { gate: 'A01', concourse: 'Concourse A', flight: 'AI-203', aircraftType: 'Boeing 787-8', status: 'BOARDING' },
-  { gate: 'A02', concourse: 'Concourse A', flight: null, status: 'AVAILABLE' },
-  { gate: 'A03', concourse: 'Concourse A', flight: null, status: 'AVAILABLE' },
-  { gate: 'A04', concourse: 'Concourse A', flight: 'UK-901', aircraftType: 'Airbus A320neo', status: 'BOARDING' },
-  { gate: 'A05', concourse: 'Concourse A', flight: null, status: 'AVAILABLE' },
-  { gate: 'A06', concourse: 'Concourse A', flight: null, status: 'AVAILABLE' },
-  { gate: 'A07', concourse: 'Concourse A', flight: '6E-521', aircraftType: 'Airbus A321neo', status: 'DELAYED' },
-  { gate: 'A08', concourse: 'Concourse A', flight: null, status: 'AVAILABLE' },
+const toTurnaroundStep = (t: TurnaroundTask): TurnaroundStep => ({
+  id: `t${t.taskId}`,
+  title: t.taskName,
+  status: t.status as TurnaroundStep['status'],
+  timestamp: t.actualEnd ? `Done ${t.actualEnd}` : t.actualStart ? `Running since ${t.actualStart}` : t.plannedEnd ? `Target: ${t.plannedEnd}` : '',
+  notes: t.notes ?? '',
+  department: t.assignedUserName ?? 'Unassigned',
+});
 
-  // Concourse B (Transcontinental Pier)
-  { gate: 'B01', concourse: 'Concourse B', flight: 'SPH-204', aircraftType: 'Boeing 777-300ER', status: 'OCCUPIED' },
-  { gate: 'B02', concourse: 'Concourse B', flight: null, status: 'AVAILABLE' },
-  { gate: 'B03', concourse: 'Concourse B', flight: 'SPH-102', aircraftType: 'Airbus A350-900', status: 'BOARDING' },
-  { gate: 'B04', concourse: 'Concourse B', flight: null, status: 'AVAILABLE' },
-  { gate: 'B05', concourse: 'Concourse B', flight: null, status: 'AVAILABLE' },
-  { gate: 'B06', concourse: 'Concourse B', flight: null, status: 'AVAILABLE' },
+const toGateSlot = (g: Gate, flights: OperationalFlight[]): GateSlot => {
+  const occupant = g.assignedFlightNumber ? flights.find((f) => f.flightNumber === g.assignedFlightNumber) : undefined;
+  return {
+    gateId: g.gateId,
+    gate: g.gateCode,
+    concourse: g.concourse ?? '',
+    flight: g.assignedFlightNumber ?? null,
+    aircraftType: occupant?.aircraft,
+    status: g.status === 'MAINTENANCE' ? 'MAINTENANCE' : g.status === 'OCCUPIED' ? (occupant?.status === 'DELAYED' ? 'DELAYED' : occupant?.status === 'BOARDING' ? 'BOARDING' : 'OCCUPIED') : 'AVAILABLE',
+  };
+};
 
-  // Concourse C (Widebody Flagship Pier)
-  { gate: 'C01', concourse: 'Concourse C', flight: 'SPH-308', aircraftType: 'Boeing 787-9', status: 'OCCUPIED' },
-  { gate: 'C02', concourse: 'Concourse C', flight: null, status: 'AVAILABLE' },
-  { gate: 'C03', concourse: 'Concourse C', flight: null, status: 'AVAILABLE' },
-  { gate: 'C04', concourse: 'Concourse C', flight: 'SPH-809', aircraftType: 'Airbus A330-300', status: 'DELAYED' },
-  { gate: 'C05', concourse: 'Concourse C', flight: null, status: 'AVAILABLE' },
-  { gate: 'C08', concourse: 'Concourse C', flight: 'EK-201', aircraftType: 'Airbus A380-800', status: 'OCCUPIED' },
-  { gate: 'C12', concourse: 'Concourse C', flight: null, status: 'AVAILABLE' },
-];
-
-const INITIAL_DELAYS: DelayLogItem[] = [
-  {
-    id: 'DLY-101',
-    flightNumber: 'AI-203',
-    route: 'DEL → BOM',
-    delayMinutes: 12,
-    reasonCategory: 'MAINTENANCE',
-    description: 'Line maintenance checking secondary hydraulic reserve pressure sensor on stand G12.',
-    loggedAt: '22:30 UTC',
-    loggedBy: 'Sai Sharma (AOCC)',
-    status: 'ACTIVE',
-  },
-  {
-    id: 'DLY-102',
-    flightNumber: '6E-521',
-    route: 'BOM → BLR',
-    delayMinutes: 18,
-    reasonCategory: 'WEATHER',
-    description: 'Deccan Plateau storm cell causing air traffic control hold & re-routing 45 nm west.',
-    loggedAt: '22:15 UTC',
-    loggedBy: 'Sai Sharma (AOCC)',
-    status: 'ACTIVE',
-  },
-  {
-    id: 'DLY-103',
-    flightNumber: 'SPH-809',
-    route: 'SPH → JFK',
-    delayMinutes: 25,
-    reasonCategory: 'GROUND_HANDLING',
-    description: 'Catering lift truck replaced after stand mechanical sensor triggered fail-safe.',
-    loggedAt: '22:05 UTC',
-    loggedBy: 'Riya Johnson (Ground Ops)',
-    status: 'ACTIVE',
-  },
-  {
-    id: 'DLY-104',
-    flightNumber: 'UK-442',
-    route: 'BOM → CCU',
-    delayMinutes: 15,
-    reasonCategory: 'BAGGAGE',
-    description: 'Transfer baggage conveyor belt jam in Concourse B sorting hall.',
-    loggedAt: '21:40 UTC',
-    loggedBy: 'Priya Kumar (Logistics)',
-    status: 'RESOLVED',
-  },
-];
+const toDelayLogItem = (d: DelayEntry): DelayLogItem => ({
+  id: `DLY-${d.flightId}-${d.seqNo}`,
+  flightNumber: d.flightNumber,
+  route: d.route,
+  delayMinutes: d.delayMinutes,
+  reasonCategory: d.category,
+  description: d.description,
+  loggedAt: '',
+  loggedBy: d.delayCode,
+  status: 'ACTIVE',
+});
 
 export const AOCCControllerDashboard: React.FC = () => {
   const location = useLocation();
@@ -394,152 +217,126 @@ export const AOCCControllerDashboard: React.FC = () => {
     }
   };
 
-  // State
-  const [flights, setFlights] = useState<OperationalFlight[]>(INITIAL_FLIGHTS);
-  const [gates, setGates] = useState<GateSlot[]>(INITIAL_GATES);
-  const [delayLogs, setDelayLogs] = useState<DelayLogItem[]>(INITIAL_DELAYS);
-  const [selectedFlight, setSelectedFlight] = useState<OperationalFlight>(INITIAL_FLIGHTS[0]); // defaults to AI-203
+  // State -- everything is loaded from the backend.
+  const [flights, setFlights] = useState<OperationalFlight[]>([]);
+  const [gates, setGates] = useState<GateSlot[]>([]);
+  const [delayLogs, setDelayLogs] = useState<DelayLogItem[]>([]);
+  const [delayTotal, setDelayTotal] = useState(0);
+  const [blockedTasks, setBlockedTasks] = useState<TurnaroundTask[]>([]);
+  const [blockedTotal, setBlockedTotal] = useState(0);
+  const [delayCodes, setDelayCodes] = useState<DelayCode[]>([]);
+  const [flightSummary, setFlightSummary] = useState<Record<string, number>>({});
+  const [selectedFlight, setSelectedFlight] = useState<OperationalFlight>(EMPTY_FLIGHT);
   const [selectedConcourse, setSelectedConcourse] = useState<'ALL' | 'Concourse A' | 'Concourse B' | 'Concourse C'>('ALL');
   const [flightSearch, setFlightSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [gateTabLimit, setGateTabLimit] = useState(48);
 
-  // Flight Operations Board pagination (10 rows/page, fetched straight from the backend's
-  // LIMIT/OFFSET endpoint) -- separate from `flights` above, which stays the full mock+store
-  // list feeding KPI counts, the turnaround/gate/delay pickers, and the dedicated Flights tab.
-  // Deliberately not merged: this table's rows come straight from the server per page, so they
-  // won't reflect an optimistic local mutation made elsewhere (delay dialog, gate reassignment)
-  // until the page is refetched -- acceptable for a first pass, revisit if that's confusing.
+  // Flight Operations Board pagination: 10 rows per page, searched and paged on the server.
   const [tablePage, setTablePage] = useState(0);
   const [tablePageFlights, setTablePageFlights] = useState<OperationalFlight[]>([]);
   const [tableTotalPages, setTableTotalPages] = useState(1);
   const [tableTotalElements, setTableTotalElements] = useState(0);
   const [tableLoading, setTableLoading] = useState(false);
 
-  // Dynamic Turnaround Tasks for selected flight
-  const [turnaroundTasks, setTurnaroundTasks] = useState<TurnaroundStep[]>([
-    { id: 't1', title: 'Arrival & Chocks On Stand', status: 'COMPLETED', timestamp: '22:15 UTC', notes: 'Aircraft marshaled, ground power plugged in.', department: 'Ramp Ops' },
-    { id: 't2', title: 'Baggage Offload & Cabin Cleaning', status: 'COMPLETED', timestamp: '22:25 UTC', notes: 'Hold containers offloaded; interior sterilized.', department: 'Ground & Cabin' },
-    { id: 't3', title: 'Apron Refueling Operation', status: 'COMPLETED', timestamp: '22:40 UTC', notes: '38,400 kg Jet A-1 loaded and verified.', department: 'Refueling Ops' },
-    { id: 't4', title: 'Maintenance & Pre-Flight Inspections', status: 'IN_PROGRESS', timestamp: 'Running (22:45 UTC)', notes: 'Line engineer inspecting hydraulic fluid sensor.', department: 'Engineering' },
-    { id: 't5', title: 'Security Sweep & Passenger Boarding', status: 'PENDING', timestamp: 'Target: 23:05 UTC', notes: 'Biometric aerobridge gates standing by.', department: 'Passenger Security' },
-    { id: 't6', title: 'Cabin Door Closure & Ready Status', status: 'PENDING', timestamp: 'Target: 23:25 UTC', notes: 'Final manifest cross-checked with ATC slot.', department: 'Gate Operations' },
-    { id: 't7', title: 'Tug Pushback & Runway Taxi', status: 'PENDING', timestamp: 'Target: 23:35 UTC', notes: 'Towbar hitched; ATC clearance received.', department: 'Apron Movement' },
-  ]);
+  // Turnaround tasks of the selected flight (real tasks) and its boarding pass count
+  const [turnaroundTasks, setTurnaroundTasks] = useState<TurnaroundStep[]>([]);
+  const [rawSelectedTasks, setRawSelectedTasks] = useState<TurnaroundTask[]>([]);
 
   // Dialog States
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [modalFlight, setModalFlight] = useState<OperationalFlight | null>(null);
 
   const [logDelayOpen, setLogDelayOpen] = useState(false);
-  const [delayFlightNum, setDelayFlightNum] = useState('AI-203');
+  const [delayFlightId, setDelayFlightId] = useState<number | ''>('');
   const [delayMinutesInput, setDelayMinutesInput] = useState('15');
-  const [delayCategoryInput, setDelayCategoryInput] = useState<'WEATHER' | 'MAINTENANCE' | 'ATC' | 'GROUND_HANDLING' | 'BAGGAGE'>('MAINTENANCE');
-  const [delayDescInput, setDelayDescInput] = useState('');
+  const [delayCodeInput, setDelayCodeInput] = useState('');
 
   const [reassignModalOpen, setReassignModalOpen] = useState(false);
   const [reassignGateTarget, setReassignGateTarget] = useState<GateSlot | null>(null);
-  const [reassignFlightChoice, setReassignFlightChoice] = useState('');
+  const [reassignFlightChoice, setReassignFlightChoice] = useState<number | ''>('');
+
+  const concourseByGate = useMemo(() => new Map(gates.map((g) => [g.gate, g.concourse])), [gates]);
+
+  // Live and upcoming flights, gates, status counts and the delay log
+  const loadBoard = useCallback(async () => {
+    try {
+      const [operational, gateData, summary, delays, blocked] = await Promise.all([
+        flightApi.getOperationalFlights(60),
+        gateApi.getAllGates(),
+        airsideApi.getFlightStatusSummary(),
+        flightOpsApi.getDelays(0, 50),
+        taskApi.getPage({ status: 'BLOCKED', size: 3 }),
+      ]);
+      const mapped = operational.map(mapFlightDtoToOperational);
+      setFlights(mapped);
+      setGates(gateData.map((g) => toGateSlot(g, mapped)));
+      setFlightSummary(summary);
+      setDelayLogs(delays.content.map(toDelayLogItem));
+      setDelayTotal(delays.totalElements);
+      setBlockedTasks(blocked.content);
+      setBlockedTotal(blocked.totalElements);
+      setSelectedFlight((cur) => (cur.flightId === 0 && mapped.length ? mapped[0] : cur));
+    } catch (e) {
+      toast.error(`Could not load the operations board: ${describeApiError(e)}`);
+    }
+  }, []);
+  useEffect(() => {
+    loadBoard();
+    flightOpsApi.getDelayCodes().then((codes) => {
+      setDelayCodes(codes);
+      setDelayCodeInput((cur) => cur || codes[0]?.delayCode || '');
+    }).catch(() => setDelayCodes([]));
+  }, [loadBoard]);
+
+  // Selected flight: load its real turnaround tasks and boarding pass count
+  const loadSelectedOperations = useCallback(async (flightId: number) => {
+    if (!flightId) {
+      setTurnaroundTasks([]);
+      setRawSelectedTasks([]);
+      return;
+    }
+    try {
+      const ops = await flightOpsApi.getOperations(flightId);
+      setRawSelectedTasks(ops.tasks);
+      setTurnaroundTasks(ops.tasks.map(toTurnaroundStep));
+      const done = ops.tasks.filter((t) => t.status === 'COMPLETED').length;
+      setSelectedFlight((cur) =>
+        cur.flightId === flightId
+          ? {
+              ...cur,
+              boardingPasses: ops.boardingPasses,
+              turnaroundProgress: ops.tasks.length ? Math.round((done / ops.tasks.length) * 100) : 0,
+              turnaroundStage: ops.tasks.length ? `${done} of ${ops.tasks.length} tasks done` : 'No turnaround tasks',
+            }
+          : cur
+      );
+    } catch (e) {
+      toast.error(`Could not load turnaround tasks: ${describeApiError(e)}`);
+    }
+  }, []);
+  useEffect(() => {
+    loadSelectedOperations(selectedFlight.flightId);
+  }, [selectedFlight.flightId, loadSelectedOperations]);
 
   // Handlers
-  const handleSelectFlightForTurnaround = (f: OperationalFlight) => {
-    setSelectedFlight(f);
-    // Adjust turnaround task progression based on the flight's status
-    if (f.status === 'READY' || f.status === 'AIRBORNE') {
-      setTurnaroundTasks((prev) => prev.map((t) => ({ ...t, status: 'COMPLETED' })));
-    } else if (f.status === 'BOARDING') {
-      setTurnaroundTasks((prev) =>
-        prev.map((t, idx) => ({
-          ...t,
-          status: idx < 4 ? 'COMPLETED' : idx === 4 ? 'IN_PROGRESS' : 'PENDING',
-        }))
-      );
-    } else if (f.status === 'DELAYED') {
-      setTurnaroundTasks((prev) =>
-        prev.map((t, idx) => ({
-          ...t,
-          status: idx < 3 ? 'COMPLETED' : idx === 3 ? 'IN_PROGRESS' : 'PENDING',
-        }))
-      );
-    } else {
-      setTurnaroundTasks((prev) =>
-        prev.map((t, idx) => ({
-          ...t,
-          status: idx < 1 ? 'COMPLETED' : idx === 1 ? 'IN_PROGRESS' : 'PENDING',
-        }))
-      );
-    }
-  };
+  const handleSelectFlightForTurnaround = (f: OperationalFlight) => setSelectedFlight(f);
 
   const handleOpenFlightDetails = (f: OperationalFlight) => {
     setModalFlight(f);
     setDetailsModalOpen(true);
+    flightOpsApi
+      .getOperations(f.flightId)
+      .then((ops) => setModalFlight((cur) => (cur && cur.flightId === f.flightId ? { ...cur, boardingPasses: ops.boardingPasses } : cur)))
+      .catch(() => undefined);
   };
 
-  // Synchronize with AOCS Store
-  useEffect(() => {
-    const syncFromStore = () => {
-      const storeFlights = aocsDataStore.getFlights();
-      if (storeFlights && storeFlights.length > 0) {
-        setFlights((prev) =>
-          storeFlights.map((sf) => {
-            const existing = prev.find((p) => p.flightNumber === sf.flightNumber);
-            return {
-              id: existing ? existing.id : `FL-${sf.flightId}`,
-              flightNumber: sf.flightNumber,
-              airline: sf.airlineName,
-              aircraft: sf.aircraftType,
-              route: `${sf.originAirportCode} → ${sf.destinationAirportCode}`,
-              origin: sf.originAirportName,
-              destination: sf.destinationAirportName,
-              gate: sf.gateCode || 'Unassigned',
-              scheduledTime: sf.scheduledTime,
-              estimatedTime: sf.estimatedTime || sf.scheduledTime,
-              status: (sf.status as any) || 'SCHEDULED',
-              turnaroundProgress: existing ? existing.turnaroundProgress : (sf.status === 'READY' ? 100 : sf.status === 'BOARDING' ? 80 : 45),
-              turnaroundStage: existing ? existing.turnaroundStage : 'Turnaround Active',
-              passengers: existing ? existing.passengers : 180,
-              fuelKg: existing ? existing.fuelKg : 25000,
-              crew: existing ? existing.crew : 'Capt. / First Officer',
-            };
-          })
-        );
-      }
-
-      const storeGates = aocsDataStore.getGates();
-      if (storeGates && storeGates.length > 0) {
-        setGates(
-          // Defensive: the live backend's gate payload doesn't actually carry gateCode/status
-          // (it sends gateNumber, with no status field at all -- a pre-existing data-contract
-          // mismatch against this file's Gate type, not something new). Guarding here just stops
-          // a hard crash; it doesn't fix the underlying mismatch.
-          storeGates.map((sg) => {
-            const code = sg.gateCode || 'A0';
-            return {
-              gate: code,
-              concourse: `Concourse ${code.charAt(0) || 'A'}`,
-              flight: sg.assignedFlightNumber || null,
-              status: (sg.status as any) || 'AVAILABLE',
-            };
-          })
-        );
-      }
-    };
-
-    syncFromStore();
-    const unsub = aocsDataStore.subscribe(() => {
-      syncFromStore();
-    });
-    return () => unsub();
-  }, []);
-
-  // Flight Operations Board: fetch exactly one page (10 rows) from the server on mount and on
-  // every page change. Never loads the full flights table into the browser regardless of how
-  // many thousand rows exist in aocs_db.
-  useEffect(() => {
+  // Flight Operations Board: one server page, searched on the server (debounced).
+  const loadTablePage = useCallback(() => {
     let cancelled = false;
     setTableLoading(true);
     flightApi
-      .getSaphireHubFlightsPaged(tablePage, 10)
+      .getSaphireHubFlightsPaged(tablePage, 10, flightSearch.trim())
       .then((res) => {
         if (cancelled) return;
         setTablePageFlights(res.content.map(mapFlightDtoToOperational));
@@ -555,114 +352,110 @@ export const AOCCControllerDashboard: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [tablePage]);
+  }, [tablePage, flightSearch]);
+  useEffect(() => {
+    const handle = setTimeout(() => loadTablePage(), 250);
+    return () => clearTimeout(handle);
+  }, [loadTablePage]);
 
-  const handleAdvanceTask = () => {
-    const currentInProgressIdx = turnaroundTasks.findIndex((t) => t.status === 'IN_PROGRESS');
-    if (currentInProgressIdx !== -1) {
-      const updated = [...turnaroundTasks];
-      updated[currentInProgressIdx].status = 'COMPLETED';
-      if (currentInProgressIdx + 1 < updated.length) {
-        updated[currentInProgressIdx + 1].status = 'IN_PROGRESS';
-      }
-      setTurnaroundTasks(updated);
-
-      // Increase progress of selected flight
-      const newProgress = Math.min(100, selectedFlight.turnaroundProgress + 15);
-      const newStatus = newProgress >= 100 ? 'READY' : selectedFlight.status;
-      setFlights(
-        flights.map((fl) => (fl.id === selectedFlight.id ? { ...fl, turnaroundProgress: newProgress, status: newStatus } : fl))
-      );
-      setSelectedFlight({ ...selectedFlight, turnaroundProgress: newProgress, status: newStatus });
-      aocsDataStore.updateFlightStatus(selectedFlight.flightNumber, newStatus as any, 'AOCC Controller');
-      toast.success(`Turnaround step advanced for ${selectedFlight.flightNumber}`);
-    } else {
+  // Advance the selected flight's turnaround: finish the running task, or start the next pending one.
+  const handleAdvanceTask = async () => {
+    const running = rawSelectedTasks.find((t) => t.status === 'IN_PROGRESS');
+    const next = running ?? rawSelectedTasks.find((t) => t.status === 'PENDING' || t.status === 'BLOCKED');
+    if (!next) {
       toast('All turnaround tasks for this flight are already complete.', { icon: '✓' });
-    }
-  };
-
-  const handleSaveDelay = () => {
-    if (!delayFlightNum || !delayDescInput.trim()) {
-      toast.error('Please specify flight number and delay description.');
       return;
     }
-    const newLog: DelayLogItem = {
-      id: `DLY-${Math.floor(100 + Math.random() * 900)}`,
-      flightNumber: delayFlightNum,
-      route: flights.find((f) => f.flightNumber === delayFlightNum)?.route || 'SPH Hub Route',
-      delayMinutes: parseInt(delayMinutesInput, 10) || 15,
-      reasonCategory: delayCategoryInput,
-      description: delayDescInput,
-      loggedAt: 'Just now (UTC)',
-      loggedBy: 'Sai Sharma (AOCC Controller)',
-      status: 'ACTIVE',
-    };
-    setDelayLogs([newLog, ...delayLogs]);
-
-    // Update flight status to DELAYED and sync store
-    setFlights(
-      flights.map((fl) =>
-        fl.flightNumber === delayFlightNum
-          ? { ...fl, status: 'DELAYED', delayMinutes: newLog.delayMinutes, delayReason: newLog.description }
-          : fl
-      )
-    );
-    aocsDataStore.updateFlightStatus(delayFlightNum, 'DELAYED', 'AOCC Controller');
-    aocsDataStore.logAuditEvent(
-      'FLIGHT_DELAY_LOGGED',
-      `Delay logged for ${delayFlightNum} (+${newLog.delayMinutes}m [${newLog.reasonCategory}]): ${newLog.description}`,
-      'AOCC Controller'
-    );
-    toast.success(`Operational delay of +${newLog.delayMinutes}m logged for ${delayFlightNum}`);
-    setLogDelayOpen(false);
-    setDelayDescInput('');
+    const target = running ? 'COMPLETED' : 'IN_PROGRESS';
+    try {
+      // A blocked task has to be resumed (BLOCKED -> IN_PROGRESS) before it can be completed.
+      await taskApi.updateTaskStatus(next.taskId, target);
+      toast.success(`${next.taskName} ${target === 'COMPLETED' ? 'completed' : 'started'} for ${selectedFlight.flightNumber}`);
+      loadSelectedOperations(selectedFlight.flightId);
+      loadBoard();
+      loadTablePage();
+    } catch (e) {
+      toast.error(`${next.taskName} was NOT changed: ${describeApiError(e)}`);
+    }
   };
 
-  const handleReassignGateSubmit = () => {
-    if (!reassignGateTarget) return;
-    setGates(
-      gates.map((g) => {
-        if (g.gate === reassignGateTarget.gate) {
-          return {
-            ...g,
-            flight: reassignFlightChoice || null,
-            status: reassignFlightChoice ? 'OCCUPIED' : 'AVAILABLE',
-          };
-        }
-        return g;
-      })
-    );
-    if (reassignFlightChoice) {
-      aocsDataStore.assignGate(reassignFlightChoice, reassignGateTarget.gate, 'AOCC Controller');
-      setFlights(
-        flights.map((f) => (f.flightNumber === reassignFlightChoice ? { ...f, gate: reassignGateTarget.gate } : f))
-      );
-      toast.success(`Stand ${reassignGateTarget.gate} assigned to ${reassignFlightChoice}`);
-    } else {
-      aocsDataStore.logAuditEvent('STAND_DEALLOCATED', `Stand ${reassignGateTarget.gate} cleared and marked AVAILABLE`, 'AOCC Controller');
-      toast.success(`Stand ${reassignGateTarget.gate} cleared and marked AVAILABLE`);
+  const handleSaveDelay = async () => {
+    const minutes = parseInt(delayMinutesInput, 10);
+    if (delayFlightId === '' || !delayCodeInput || !Number.isFinite(minutes) || minutes < 1) {
+      toast.error('Choose a flight, a delay code and a duration of at least 1 minute.');
+      return;
     }
-    setReassignModalOpen(false);
+    try {
+      const entry = await flightOpsApi.logDelay(delayFlightId, delayCodeInput, minutes);
+      aocsDataStore.logAuditEvent(
+        'FLIGHT_DELAY_LOGGED',
+        `Delay logged for ${entry.flightNumber} (+${entry.delayMinutes}m [${entry.delayCode} ${entry.category}])`,
+        'AOCC Controller'
+      );
+      toast.success(`Delay of +${entry.delayMinutes}m (${entry.category.replace(/_/g, ' ')}) logged for ${entry.flightNumber}`);
+      setLogDelayOpen(false);
+      loadBoard();
+      loadTablePage();
+    } catch (e) {
+      toast.error(`Delay was NOT logged: ${describeApiError(e)}`);
+    }
+  };
+
+  const handleReassignGateSubmit = async () => {
+    if (!reassignGateTarget) return;
+    if (reassignFlightChoice === '') {
+      toast.error('Choose the flight to put on this gate.');
+      return;
+    }
+    try {
+      await gateApi.assignGateToFlight({ flightId: reassignFlightChoice, gateId: reassignGateTarget.gateId });
+      const flightNumber = flights.find((f) => f.flightId === reassignFlightChoice)?.flightNumber ?? '';
+      aocsDataStore.logAuditEvent('GATE_ASSIGNMENT', `Gate ${reassignGateTarget.gate} assigned to Flight ${flightNumber}`, 'AOCC Controller');
+      toast.success(`Gate ${reassignGateTarget.gate} assigned to ${flightNumber}`);
+      setReassignModalOpen(false);
+      loadBoard();
+      loadTablePage();
+    } catch (e) {
+      toast.error(`Gate ${reassignGateTarget.gate} was NOT assigned: ${describeApiError(e)}`);
+    }
+  };
+
+  const attentionItems = [
+    ...blockedTasks.map((t) => ({
+      id: `task-${t.taskId}`,
+      blocked: true,
+      title: `${t.flightNumber} · ${t.taskName}`,
+      chip: 'BLOCKED',
+      body: t.assignedUserName ? `Blocked task, assigned to ${t.assignedUserName}.` : 'Blocked task with nobody assigned.',
+      flightId: t.flightId,
+      flightNumber: t.flightNumber,
+    })),
+    ...flights
+      .filter((f) => f.status === 'DELAYED')
+      .slice(0, 3)
+      .map((f) => ({
+        id: `flt-${f.flightId}`,
+        blocked: false,
+        title: `${f.flightNumber} · ${f.route}`,
+        chip: 'DELAYED',
+        body: `Gate ${f.gate}. ${f.turnaroundStage}.`,
+        flightId: f.flightId,
+        flightNumber: f.flightNumber,
+      })),
+  ].slice(0, 4);
+
+  const openTurnaroundFor = (flightId: number, flightNumber: string) => {
+    const known = flights.find((f) => f.flightId === flightId);
+    setSelectedFlight(known ?? { ...EMPTY_FLIGHT, id: `FL-${flightId}`, flightId, flightNumber });
+    navigate('/dashboard/aocc#turnaround');
   };
 
   // Filtered flights -- filters the current server-fetched page only (10 rows), not the whole
   // aocs_db table. A flight on a different page won't show up here until you page to it.
   const filteredFlights = tablePageFlights.filter((f) => {
-    const matchesSearch =
-      f.flightNumber.toLowerCase().includes(flightSearch.toLowerCase()) ||
-      f.route.toLowerCase().includes(flightSearch.toLowerCase()) ||
-      f.gate.toLowerCase().includes(flightSearch.toLowerCase()) ||
-      f.airline.toLowerCase().includes(flightSearch.toLowerCase()) ||
-      f.status.toLowerCase().includes(flightSearch.toLowerCase());
-
     const matchesStatus = statusFilter === 'ALL' || f.status === statusFilter;
-    const matchesConcourse =
-      selectedConcourse === 'ALL' ||
-      (selectedConcourse === 'Concourse A' && (f.gate.startsWith('A') || (f.gate.startsWith('G0') && parseInt(f.gate.replace('G0', ''), 10) <= 14))) ||
-      (selectedConcourse === 'Concourse B' && (f.gate.startsWith('B') || f.gate.startsWith('G1') || f.gate.startsWith('G2'))) ||
-      (selectedConcourse === 'Concourse C' && (f.gate.startsWith('C') || f.gate.startsWith('G3') || f.gate.startsWith('G4')));
-
-    return matchesSearch && matchesStatus && matchesConcourse;
+    const matchesConcourse = selectedConcourse === 'ALL' || concourseByGate.get(f.gate) === selectedConcourse;
+    return matchesStatus && matchesConcourse;
   });
 
   return (
@@ -705,7 +498,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                 Flight Operations Command
               </Typography>
               <Typography sx={{ fontSize: '0.86rem', color: '#64748B', mt: 0.2 }}>
-                Controller: Sai Sharma · Saphire Air Operations Control Center (SPH)
+                Controller: {user?.name || 'AOCC Controller'} · Saphire Air Operations Control Center (SPH)
               </Typography>
             </Box>
 
@@ -833,13 +626,13 @@ export const AOCCControllerDashboard: React.FC = () => {
                 />
               </Box>
               <Typography variant="h3" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942', lineHeight: 1.1 }}>
-                {flights.length}
+                {Object.values(flightSummary).reduce((a, b) => a + b, 0).toLocaleString()}
               </Typography>
               <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.84rem', fontWeight: 700, color: '#475569', mt: 0.5 }}>
                 Active Flights
               </Typography>
               <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8', mt: 0.3 }}>
-                {flights.filter((f) => f.status === 'AIRBORNE').length} Airborne · {flights.filter((f) => f.status === 'BOARDING').length} Boarding · {flights.filter((f) => f.status === 'ON_BLOCK').length} On Block
+                {flightSummary.AIRBORNE ?? 0} Airborne · {flightSummary.BOARDING ?? 0} Boarding · {flightSummary.ON_BLOCK ?? 0} On Block
               </Typography>
             </Card>
 
@@ -883,7 +676,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                 />
               </Box>
               <Typography variant="h3" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942', lineHeight: 1.1 }}>
-                {flights.filter((f) => f.status === 'BOARDING').length}
+                {flightSummary.BOARDING ?? 0}
               </Typography>
               <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.84rem', fontWeight: 700, color: '#475569', mt: 0.5 }}>
                 Boarding Now
@@ -933,7 +726,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                 />
               </Box>
               <Typography variant="h3" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#D97706', lineHeight: 1.1 }}>
-                {flights.filter((f) => f.status === 'DELAYED').length}
+                {flightSummary.DELAYED ?? 0}
               </Typography>
               <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.84rem', fontWeight: 700, color: '#475569', mt: 0.5 }}>
                 Delayed Flights
@@ -983,13 +776,13 @@ export const AOCCControllerDashboard: React.FC = () => {
                 />
               </Box>
               <Typography variant="h3" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#DC2626', lineHeight: 1.1 }}>
-                {delayLogs.length}
+                {delayTotal.toLocaleString()}
               </Typography>
               <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.84rem', fontWeight: 700, color: '#475569', mt: 0.5 }}>
                 Attention Required
               </Typography>
               <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8', mt: 0.3 }}>
-                {delayLogs.length} Logged Delays · Click to triage
+                {delayTotal.toLocaleString()} Logged Delays · Click to triage
               </Typography>
             </Card>
           </Box>
@@ -1024,7 +817,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                   Flight Operations Board
                 </Typography>
                 <Typography sx={{ fontSize: '0.8rem', color: '#64748B' }}>
-                  Click a flight to inspect its real-time Turnaround Progress below · search and filters apply to the current page only
+                  Click a flight to inspect its real-time Turnaround Progress below · search runs on the server; the status and concourse filters apply to the current page
                 </Typography>
               </Box>
 
@@ -1405,7 +1198,10 @@ export const AOCCControllerDashboard: React.FC = () => {
                 <Button
                   variant="outlined"
                   size="small"
-                  onClick={() => toast.success(`Priority telemetry dispatched to ${selectedFlight.gate} ground crews.`)}
+                  onClick={() => {
+                    setDelayFlightId(selectedFlight.flightId || '');
+                    setLogDelayOpen(true);
+                  }}
                   startIcon={<Send size={15} />}
                   sx={{
                     fontFamily: "'Outfit', sans-serif",
@@ -1418,7 +1214,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                     '&:hover': { borderColor: '#0284C7', color: '#0284C7' },
                   }}
                 >
-                  Ping Ground Handling
+                  Log Delay for This Flight
                 </Button>
               </Box>
             </Card>
@@ -1448,200 +1244,55 @@ export const AOCCControllerDashboard: React.FC = () => {
                     </Typography>
                   </Box>
                   <Chip
-                    label="3 ACTIVE"
+                    label={`${blockedTotal + (flightSummary.DELAYED ?? 0)} ACTIVE`}
                     size="small"
                     sx={{ bgcolor: '#FEF2F2', color: '#DC2626', fontWeight: 800, fontSize: '0.68rem', border: '1px solid #FECACA' }}
                   />
                 </Box>
 
-                {/* Attention Items */}
+                {/* Attention Items: blocked turnaround tasks first, then delayed flights */}
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {/* Alert 1 */}
-                  <Box
-                    sx={{
-                      p: 2,
-                      borderRadius: '12px',
-                      bgcolor: '#FEF2F2',
-                      border: '1px solid #FECACA',
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#DC2626' }} />
-                        <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '0.88rem', color: '#991B1B' }}>
-                          AI-203 · Gate A01 (Stand G01)
-                        </Typography>
-                      </Box>
-                      <Chip label="+12 min" size="small" sx={{ height: 18, fontSize: '0.65rem', fontWeight: 800, bgcolor: '#FFFFFF', color: '#DC2626' }} />
-                    </Box>
-                    <Typography sx={{ fontSize: '0.76rem', color: '#7F1D1D', mb: 1.5 }}>
-                      Maintenance task pending: secondary hydraulic fluid check awaiting engineer signoff.
+                  {attentionItems.length === 0 && (
+                    <Typography sx={{ fontSize: '0.84rem', color: '#64748B' }}>
+                      Nothing needs attention: no blocked turnaround tasks and no delayed flights on the live board.
                     </Typography>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        size="small"
-                        onClick={() => toast.success('Line maintenance team contacted for AI-203.')}
-                        sx={{
-                          fontSize: '0.72rem',
-                          fontFamily: "'Outfit', sans-serif",
-                          fontWeight: 700,
-                          backgroundColor: '#DC2626',
-                          color: '#FFF',
-                          py: 0.3,
-                          textTransform: 'none',
-                          borderRadius: '6px',
-                          '&:hover': { backgroundColor: '#B91C1C' },
-                        }}
-                      >
-                        Contact Maintenance
-                      </Button>
-                      <Button
-                        size="small"
-                        onClick={() => {
-                          const gateTarget = gates.find((g) => g.gate === 'A01') || gates[0];
-                          setReassignGateTarget(gateTarget);
-                          setReassignModalOpen(true);
-                        }}
-                        sx={{
-                          fontSize: '0.72rem',
-                          fontFamily: "'Outfit', sans-serif",
-                          fontWeight: 700,
-                          backgroundColor: '#FFFFFF',
-                          color: '#991B1B',
-                          border: '1px solid #FCA5A5',
-                          py: 0.3,
-                          textTransform: 'none',
-                          borderRadius: '6px',
-                          '&:hover': { backgroundColor: '#FEE2E2' },
-                        }}
-                      >
-                        Reassign Stand
-                      </Button>
-                    </Box>
-                  </Box>
-
-                  {/* Alert 2 */}
-                  <Box
-                    sx={{
-                      p: 2,
-                      borderRadius: '12px',
-                      bgcolor: '#FFFBEB',
-                      border: '1px solid #FDE68A',
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#D97706' }} />
-                        <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '0.88rem', color: '#92400E' }}>
-                          6E-521 · BOM → BLR
-                        </Typography>
+                  )}
+                  {attentionItems.map((item) => (
+                    <Box
+                      key={item.id}
+                      sx={{ p: 2, borderRadius: '12px', bgcolor: item.blocked ? '#FEF2F2' : '#FFFBEB', border: '1px solid', borderColor: item.blocked ? '#FECACA' : '#FDE68A' }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: item.blocked ? '#DC2626' : '#D97706' }} />
+                          <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '0.88rem', color: item.blocked ? '#991B1B' : '#92400E' }}>
+                            {item.title}
+                          </Typography>
+                        </Box>
+                        <Chip label={item.chip} size="small" sx={{ height: 18, fontSize: '0.65rem', fontWeight: 800, bgcolor: '#FFFFFF', color: item.blocked ? '#DC2626' : '#D97706' }} />
                       </Box>
-                      <Chip label="+18 min" size="small" sx={{ height: 18, fontSize: '0.65rem', fontWeight: 800, bgcolor: '#FFFFFF', color: '#D97706' }} />
-                    </Box>
-                    <Typography sx={{ fontSize: '0.76rem', color: '#78350F', mb: 1.5 }}>
-                      En-route Deccan weather hold delay logged. Refueling running 6 mins behind target.
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        size="small"
-                        onClick={() => toast.success('ATC Slot updated and filed for 6E-521.')}
-                        sx={{
-                          fontSize: '0.72rem',
-                          fontFamily: "'Outfit', sans-serif",
-                          fontWeight: 700,
-                          backgroundColor: '#D97706',
-                          color: '#FFF',
-                          py: 0.3,
-                          textTransform: 'none',
-                          borderRadius: '6px',
-                          '&:hover': { backgroundColor: '#B45309' },
-                        }}
-                      >
-                        Update Slot
-                      </Button>
-                      <Button
-                        size="small"
-                        onClick={() => {
-                          setDelayFlightNum('6E-521');
-                          setLogDelayOpen(true);
-                        }}
-                        sx={{
-                          fontSize: '0.72rem',
-                          fontFamily: "'Outfit', sans-serif",
-                          fontWeight: 700,
-                          backgroundColor: '#FFFFFF',
-                          color: '#92400E',
-                          border: '1px solid #FCD34D',
-                          py: 0.3,
-                          textTransform: 'none',
-                          borderRadius: '6px',
-                          '&:hover': { backgroundColor: '#FEF3C7' },
-                        }}
-                      >
-                        Log Reason
-                      </Button>
-                    </Box>
-                  </Box>
-
-                  {/* Alert 3 */}
-                  <Box
-                    sx={{
-                      p: 2,
-                      borderRadius: '12px',
-                      bgcolor: '#FFFBEB',
-                      border: '1px solid #FDE68A',
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#D97706' }} />
-                        <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '0.88rem', color: '#92400E' }}>
-                          UK-442 · Stand G04
-                        </Typography>
+                      <Typography sx={{ fontSize: '0.76rem', color: item.blocked ? '#7F1D1D' : '#78350F', mb: 1.5 }}>{item.body}</Typography>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          size="small"
+                          onClick={() => openTurnaroundFor(item.flightId, item.flightNumber)}
+                          sx={{ fontSize: '0.72rem', fontFamily: "'Outfit', sans-serif", fontWeight: 700, backgroundColor: item.blocked ? '#DC2626' : '#D97706', color: '#FFF', py: 0.3, textTransform: 'none', borderRadius: '6px', '&:hover': { backgroundColor: item.blocked ? '#B91C1C' : '#B45309' } }}
+                        >
+                          Open Turnaround
+                        </Button>
+                        <Button
+                          size="small"
+                          onClick={() => {
+                            setDelayFlightId(item.flightId);
+                            setLogDelayOpen(true);
+                          }}
+                          sx={{ fontSize: '0.72rem', fontFamily: "'Outfit', sans-serif", fontWeight: 700, backgroundColor: '#FFFFFF', color: item.blocked ? '#991B1B' : '#92400E', border: '1px solid', borderColor: item.blocked ? '#FCA5A5' : '#FCD34D', py: 0.3, textTransform: 'none', borderRadius: '6px' }}
+                        >
+                          Log Delay
+                        </Button>
                       </Box>
-                      <Chip label="Baggage" size="small" sx={{ height: 18, fontSize: '0.65rem', fontWeight: 800, bgcolor: '#FFFFFF', color: '#D97706' }} />
                     </Box>
-                    <Typography sx={{ fontSize: '0.76rem', color: '#78350F', mb: 1.5 }}>
-                      Baggage container tractor held at Concourse B apron crossing. Turnaround incomplete.
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        size="small"
-                        onClick={() => toast.success('Ramp tug expedited for Stand G04.')}
-                        sx={{
-                          fontSize: '0.72rem',
-                          fontFamily: "'Outfit', sans-serif",
-                          fontWeight: 700,
-                          backgroundColor: '#0F2942',
-                          color: '#FFF',
-                          py: 0.3,
-                          textTransform: 'none',
-                          borderRadius: '6px',
-                          '&:hover': { backgroundColor: '#1E3A5F' },
-                        }}
-                      >
-                        Dispatch Tug
-                      </Button>
-                      <Button
-                        size="small"
-                        onClick={() => toast.success('Baggage telemetry center notified.')}
-                        sx={{
-                          fontSize: '0.72rem',
-                          fontFamily: "'Outfit', sans-serif",
-                          fontWeight: 700,
-                          backgroundColor: '#FFFFFF',
-                          color: '#334155',
-                          border: '1px solid #CBD5E1',
-                          py: 0.3,
-                          textTransform: 'none',
-                          borderRadius: '6px',
-                          '&:hover': { backgroundColor: '#F8FAFC' },
-                        }}
-                      >
-                        Notify Baggage
-                      </Button>
-                    </Box>
-                  </Box>
+                  ))}
                 </Box>
               </Box>
             </Card>
@@ -1699,7 +1350,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                 gap: 1.5,
               }}
             >
-              {gates.map((g) => {
+              {gates.slice(0, 48).map((g) => {
                 const isOccupied = g.status === 'OCCUPIED';
                 const isBoarding = g.status === 'BOARDING';
                 const isDelayed = g.status === 'DELAYED';
@@ -1714,7 +1365,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                     key={g.gate}
                     onClick={() => {
                       setReassignGateTarget(g);
-                      setReassignFlightChoice(g.flight || '');
+                      setReassignFlightChoice(flights.find((f) => f.flightNumber === g.flight)?.flightId ?? '');
                       setReassignModalOpen(true);
                     }}
                     sx={{
@@ -1819,7 +1470,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                         <Chip label={f.gate} size="small" sx={{ fontWeight: 700, bgcolor: '#F1F5F9' }} />
                       </TableCell>
                       <TableCell sx={{ fontFamily: "'Inter', monospace", fontSize: '0.84rem' }}>{f.scheduledTime}</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#475569' }}>{f.passengers} pax</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: '#475569' }}>{f.turnaroundStage}</TableCell>
                       <TableCell>
                         <Chip
                           label={f.status}
@@ -1900,10 +1551,6 @@ export const AOCCControllerDashboard: React.FC = () => {
                   <Typography sx={{ color: '#64748B', fontSize: '0.84rem' }}>Route Manifest</Typography>
                   <Typography sx={{ fontWeight: 700, color: '#0284C7' }}>{selectedFlight.origin} ➔ {selectedFlight.destination}</Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #F1F5F9' }}>
-                  <Typography sx={{ color: '#64748B', fontSize: '0.84rem' }}>Flight Crew</Typography>
-                  <Typography sx={{ fontWeight: 600, color: '#475569' }}>{selectedFlight.crew}</Typography>
-                </Box>
               </Box>
             </Card>
 
@@ -1914,12 +1561,8 @@ export const AOCCControllerDashboard: React.FC = () => {
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #F1F5F9' }}>
-                  <Typography sx={{ color: '#64748B', fontSize: '0.84rem' }}>Booked Passengers</Typography>
-                  <Typography sx={{ fontWeight: 800, color: '#0F2942' }}>{selectedFlight.passengers} Pax</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #F1F5F9' }}>
-                  <Typography sx={{ color: '#64748B', fontSize: '0.84rem' }}>Fuel On Board</Typography>
-                  <Typography sx={{ fontWeight: 700, color: '#0F2942' }}>{selectedFlight.fuelKg.toLocaleString()} kg (Jet A-1)</Typography>
+                  <Typography sx={{ color: '#64748B', fontSize: '0.84rem' }}>Boarding Passes Issued</Typography>
+                  <Typography sx={{ fontWeight: 800, color: '#0F2942' }}>{selectedFlight.boardingPasses ?? '—'}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #F1F5F9' }}>
                   <Typography sx={{ color: '#64748B', fontSize: '0.84rem' }}>Target Pushback</Typography>
@@ -1933,13 +1576,16 @@ export const AOCCControllerDashboard: React.FC = () => {
                   <Typography sx={{ color: '#64748B', fontSize: '0.84rem' }}>Turnaround Stage</Typography>
                   <Typography sx={{ fontWeight: 700, color: '#10B981' }}>{selectedFlight.turnaroundStage}</Typography>
                 </Box>
-                {selectedFlight.delayReason && (
-                  <Box sx={{ p: 1.5, borderRadius: '8px', bgcolor: '#FEF2F2', border: '1px solid #FECACA', mt: 1 }}>
-                    <Typography sx={{ fontSize: '0.76rem', color: '#991B1B', fontWeight: 700 }}>
-                      Active Delay Note: {selectedFlight.delayReason} (+{selectedFlight.delayMinutes}m)
-                    </Typography>
-                  </Box>
-                )}
+                {delayLogs
+                  .filter((d) => d.flightNumber === selectedFlight.flightNumber)
+                  .slice(0, 2)
+                  .map((d) => (
+                    <Box key={d.id} sx={{ p: 1.5, borderRadius: '8px', bgcolor: '#FEF2F2', border: '1px solid #FECACA', mt: 1 }}>
+                      <Typography sx={{ fontSize: '0.76rem', color: '#991B1B', fontWeight: 700 }}>
+                        Delay {d.loggedBy}: {d.reasonCategory.replace(/_/g, ' ')} (+{d.delayMinutes}m)
+                      </Typography>
+                    </Box>
+                  ))}
               </Box>
             </Card>
           </Box>
@@ -1970,7 +1616,7 @@ export const AOCCControllerDashboard: React.FC = () => {
           </Box>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2.5 }}>
-            {gates.map((g) => (
+            {gates.slice(0, gateTabLimit).map((g) => (
               <Card
                 key={g.gate}
                 sx={{
@@ -1984,7 +1630,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                 }}
                 onClick={() => {
                   setReassignGateTarget(g);
-                  setReassignFlightChoice(g.flight || '');
+                  setReassignFlightChoice(flights.find((f) => f.flightNumber === g.flight)?.flightId ?? '');
                   setReassignModalOpen(true);
                 }}
               >
@@ -2011,6 +1657,13 @@ export const AOCCControllerDashboard: React.FC = () => {
               </Card>
             ))}
           </Box>
+          {gates.length > gateTabLimit && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Button onClick={() => setGateTabLimit((n) => n + 48)} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                Show more gates ({gates.length - gateTabLimit} remaining)
+              </Button>
+            </Box>
+          )}
         </Box>
       )}
 
@@ -2159,7 +1812,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                         <Chip label={d.reasonCategory.replace(/_/g, ' ')} size="small" sx={{ fontWeight: 700, fontSize: '0.68rem', bgcolor: '#F1F5F9' }} />
                       </TableCell>
                       <TableCell sx={{ fontSize: '0.8rem', color: '#334155' }}>{d.description}</TableCell>
-                      <TableCell sx={{ fontSize: '0.74rem', color: '#64748B' }}>{d.loggedBy} ({d.loggedAt})</TableCell>
+                      <TableCell sx={{ fontSize: '0.74rem', color: '#64748B' }}>{d.loggedBy}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -2180,7 +1833,7 @@ export const AOCCControllerDashboard: React.FC = () => {
                 Operational Alerts & Broadcasts
               </Typography>
               <Typography sx={{ fontSize: '0.86rem', color: '#64748B' }}>
-                Airside telemetry stream, ATC vector advisories, and critical turnarounds
+                Blocked turnaround tasks and delayed flights, computed live
               </Typography>
             </Box>
             <Button
@@ -2193,32 +1846,25 @@ export const AOCCControllerDashboard: React.FC = () => {
           </Box>
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Card sx={{ p: 2.5, borderRadius: '14px', border: '1px solid #FECACA', bgcolor: '#FEF2F2' }}>
-              <Typography sx={{ fontWeight: 800, color: '#991B1B', fontSize: '0.95rem', mb: 0.5 }}>
-                CRITICAL: Gate G12 Stand Conflict & Maintenance Hold
+            {attentionItems.length === 0 && (
+              <Typography sx={{ fontSize: '0.86rem', color: '#64748B' }}>No alerts: nothing is blocked or delayed on the live board.</Typography>
+            )}
+            {attentionItems.map((item) => (
+              <Card
+                key={item.id}
+                sx={{ p: 2.5, borderRadius: '14px', border: '1px solid', borderColor: item.blocked ? '#FECACA' : '#FDE68A', bgcolor: item.blocked ? '#FEF2F2' : '#FFFBEB' }}
+              >
+                <Typography sx={{ fontWeight: 800, color: item.blocked ? '#991B1B' : '#92400E', fontSize: '0.95rem', mb: 0.5 }}>
+                  {item.blocked ? 'BLOCKED' : 'DELAYED'}: {item.title}
+                </Typography>
+                <Typography sx={{ fontSize: '0.82rem', color: item.blocked ? '#7F1D1D' : '#78350F' }}>{item.body}</Typography>
+              </Card>
+            ))}
+            {blockedTotal > blockedTasks.length && (
+              <Typography sx={{ fontSize: '0.8rem', color: '#64748B' }}>
+                {blockedTotal - blockedTasks.length} more blocked task(s) across the airport. Open the Ground Ops task center to see them all.
               </Typography>
-              <Typography sx={{ fontSize: '0.82rem', color: '#7F1D1D' }}>
-                Flight AI-203 line maintenance check running over slot by 12 minutes. Inbound widebody SPH-204 scheduled for G12 stand at 00:15 UTC. Stand reallocation required immediately.
-              </Typography>
-            </Card>
-
-            <Card sx={{ p: 2.5, borderRadius: '14px', border: '1px solid #FDE68A', bgcolor: '#FFFBEB' }}>
-              <Typography sx={{ fontWeight: 800, color: '#92400E', fontSize: '0.95rem', mb: 0.5 }}>
-                WARNING: Deccan Plateau Weather Routing Deviation
-              </Typography>
-              <Typography sx={{ fontSize: '0.82rem', color: '#78350F' }}>
-                Air traffic control reported active convective cloud build-up along Route W42. Inbound flight 6E-521 holding 45 nm west; delay logged +18m.
-              </Typography>
-            </Card>
-
-            <Card sx={{ p: 2.5, borderRadius: '14px', border: '1px solid #BAE6FD', bgcolor: '#F0F9FF' }}>
-              <Typography sx={{ fontWeight: 800, color: '#0369A1', fontSize: '0.95rem', mb: 0.5 }}>
-                INFO: Concourse A Biometric E-Gate Channel Operational
-              </Typography>
-              <Typography sx={{ fontSize: '0.82rem', color: '#075985' }}>
-                All 8 boarding lanes for Flight SPH-102 (LHR) operational. Boarding completion estimated at 23:30 UTC.
-              </Typography>
-            </Card>
+            )}
           </Box>
         </Box>
       )}
@@ -2249,17 +1895,17 @@ export const AOCCControllerDashboard: React.FC = () => {
           <Card sx={{ p: 3.5, borderRadius: '16px', border: '1px solid #E2E8F0', maxWidth: 640 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, mb: 3, pb: 2.5, borderBottom: '1px solid #F1F5F9' }}>
               <Avatar sx={{ width: 64, height: 64, bgcolor: '#0284C7', fontSize: '1.4rem', fontWeight: 800 }}>
-                SS
+                {(user?.name || 'AO').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
               </Avatar>
               <Box>
                 <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
-                  Sai Sharma
+                  {user?.name || 'AOCC Controller'}
                 </Typography>
                 <Typography sx={{ fontSize: '0.82rem', color: '#0284C7', fontWeight: 700 }}>
-                  AOCC Operations Manager · Level 4 Airside Controller
+                  Airport Operations Manager
                 </Typography>
                 <Typography sx={{ fontSize: '0.75rem', color: '#64748B', mt: 0.2 }}>
-                  Station ID: SPH-AOCC-CON-01 · Radio Frequency: 121.85 MHz (Ground Ops)
+                  Username: {user?.username} · Department: {user?.departmentName?.replace(/_/g, ' ')}
                 </Typography>
               </Box>
             </Box>
@@ -2267,7 +1913,7 @@ export const AOCCControllerDashboard: React.FC = () => {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #F1F5F9' }}>
                 <Typography sx={{ color: '#64748B', fontSize: '0.84rem' }}>Operational Email</Typography>
-                <Typography sx={{ fontWeight: 700, color: '#0F2942' }}>aocc@saphire.in</Typography>
+                <Typography sx={{ fontWeight: 700, color: '#0F2942' }}>{user?.email || '—'}</Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #F1F5F9' }}>
                 <Typography sx={{ color: '#64748B', fontSize: '0.84rem' }}>Assigned Airfield Hub</Typography>
@@ -2275,7 +1921,7 @@ export const AOCCControllerDashboard: React.FC = () => {
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #F1F5F9' }}>
                 <Typography sx={{ color: '#64748B', fontSize: '0.84rem' }}>Assigned Concourse</Typography>
-                <Typography sx={{ fontWeight: 700, color: '#0F2942' }}>Concourse A & B (All Terminal Gates)</Typography>
+                <Typography sx={{ fontWeight: 700, color: '#0F2942' }}>All terminal gates</Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #F1F5F9' }}>
                 <Typography sx={{ color: '#64748B', fontSize: '0.84rem' }}>Active Session Security</Typography>
@@ -2337,12 +1983,8 @@ export const AOCCControllerDashboard: React.FC = () => {
                   <Typography sx={{ fontSize: '0.86rem', fontWeight: 700, color: '#0F2942' }}>{modalFlight.scheduledTime}</Typography>
                 </Box>
                 <Box>
-                  <Typography sx={{ fontSize: '0.72rem', color: '#64748B' }}>PASSENGERS</Typography>
-                  <Typography sx={{ fontSize: '0.86rem', fontWeight: 700, color: '#0F2942' }}>{modalFlight.passengers} Pax</Typography>
-                </Box>
-                <Box>
-                  <Typography sx={{ fontSize: '0.72rem', color: '#64748B' }}>FUEL WEIGHT</Typography>
-                  <Typography sx={{ fontSize: '0.86rem', fontWeight: 700, color: '#0F2942' }}>{modalFlight.fuelKg.toLocaleString()} kg</Typography>
+                  <Typography sx={{ fontSize: '0.72rem', color: '#64748B' }}>BOARDING PASSES</Typography>
+                  <Typography sx={{ fontSize: '0.86rem', fontWeight: 700, color: '#0F2942' }}>{modalFlight.boardingPasses ?? '—'}</Typography>
                 </Box>
               </Box>
 
@@ -2396,21 +2038,21 @@ export const AOCCControllerDashboard: React.FC = () => {
         <DialogContent dividers>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 1 }}>
             <FormControl fullWidth size="small">
-              <InputLabel>Flight Number</InputLabel>
+              <InputLabel>Flight</InputLabel>
               <Select
-                value={delayFlightNum}
-                label="Flight Number"
-                onChange={(e) => setDelayFlightNum(e.target.value)}
+                value={delayFlightId}
+                label="Flight"
+                onChange={(e) => setDelayFlightId(Number(e.target.value))}
               >
                 {flights.map((f) => (
-                  <MenuItem key={f.id} value={f.flightNumber}>
+                  <MenuItem key={f.id} value={f.flightId}>
                     {f.flightNumber} ({f.route}) — {f.gate}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 2 }}>
               <TextField
                 label="Delay Duration (Minutes)"
                 type="number"
@@ -2420,29 +2062,20 @@ export const AOCCControllerDashboard: React.FC = () => {
               />
 
               <FormControl fullWidth size="small">
-                <InputLabel>Root Reason Category</InputLabel>
-                <Select
-                  value={delayCategoryInput}
-                  label="Root Reason Category"
-                  onChange={(e) => setDelayCategoryInput(e.target.value as any)}
-                >
-                  <MenuItem value="WEATHER">Weather Deviation</MenuItem>
-                  <MenuItem value="MAINTENANCE">Line Maintenance</MenuItem>
-                  <MenuItem value="ATC">ATC Vector Hold</MenuItem>
-                  <MenuItem value="GROUND_HANDLING">Ground Servicing</MenuItem>
-                  <MenuItem value="BAGGAGE">Baggage Conveyor Jam</MenuItem>
+                <InputLabel>Delay code</InputLabel>
+                <Select value={delayCodeInput} label="Delay code" onChange={(e) => setDelayCodeInput(e.target.value)}>
+                  {delayCodes.map((c) => (
+                    <MenuItem key={c.delayCode} value={c.delayCode}>
+                      {c.delayCode} · {c.category.replace(/_/g, ' ')}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Box>
 
-            <TextField
-              label="Incident Description & Operational Mitigation"
-              multiline
-              rows={3}
-              value={delayDescInput}
-              onChange={(e) => setDelayDescInput(e.target.value)}
-              placeholder="e.g. Line maintenance checking secondary hydraulic pressure sensor on stand..."
-            />
+            <Typography sx={{ fontSize: '0.78rem', color: '#64748B' }}>
+              Saving moves the flight to DELAYED (when its status allows it) and pushes its estimated departure back by this many minutes.
+            </Typography>
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
@@ -2479,21 +2112,18 @@ export const AOCCControllerDashboard: React.FC = () => {
         <DialogContent dividers>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <Typography sx={{ fontSize: '0.84rem', color: '#64748B' }}>
-              Assign an active flight or clear this stand to mark it as Available.
+              Put a flight on this gate. The server rejects it if the aircraft is too wide or the ground time overlaps another flight.
             </Typography>
 
             <FormControl fullWidth size="small">
-              <InputLabel>Assigned Flight</InputLabel>
+              <InputLabel>Flight</InputLabel>
               <Select
                 value={reassignFlightChoice}
-                label="Assigned Flight"
-                onChange={(e) => setReassignFlightChoice(e.target.value)}
+                label="Flight"
+                onChange={(e) => setReassignFlightChoice(Number(e.target.value))}
               >
-                <MenuItem value="">
-                  <em>None (Clear Stand to Available)</em>
-                </MenuItem>
                 {flights.map((f) => (
-                  <MenuItem key={f.id} value={f.flightNumber}>
+                  <MenuItem key={f.id} value={f.flightId}>
                     {f.flightNumber} — {f.route}
                   </MenuItem>
                 ))}
@@ -2510,7 +2140,7 @@ export const AOCCControllerDashboard: React.FC = () => {
             onClick={handleReassignGateSubmit}
             sx={{ backgroundColor: '#0F2942', textTransform: 'none', fontWeight: 700 }}
           >
-            Update Stand
+            Assign Gate
           </Button>
         </DialogActions>
       </Dialog>

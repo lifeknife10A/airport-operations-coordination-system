@@ -69,4 +69,9 @@ public interface TaskRepository extends JpaRepository<TurnaroundTask, Long> {
             + "WHERE u.role.roleName = 'RAMP_AGENT' AND u.status = 'ACTIVE' "
             + "GROUP BY u.userId, u.name, u.username, d.departmentName ORDER BY COUNT(t) ASC, u.name ASC, u.username ASC")
     List<Object[]> findRampStaffWorkload();
+
+    /** Per flight: task count and completed-task count. Columns: flight id, total, completed. */
+    @Query("SELECT t.flight.flightId, COUNT(t), SUM(CASE WHEN t.status = 'COMPLETED' THEN 1 ELSE 0 END) "
+            + "FROM TurnaroundTask t WHERE t.flight.flightId IN :flightIds GROUP BY t.flight.flightId")
+    List<Object[]> countTasksByFlightIds(@org.springframework.data.repository.query.Param("flightIds") java.util.Collection<Long> flightIds);
 }

@@ -55,4 +55,8 @@ public class FlightDTO {
     private String departmentName;
     
     private Long inboundFlightId;
+
+    /** Turnaround task counts; only filled on list endpoints that load them in one query. */
+    private Integer tasksTotal;
+    private Integer tasksCompleted;
 }

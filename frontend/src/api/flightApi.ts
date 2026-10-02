@@ -36,12 +36,19 @@ export const normalizeFlight = (d: any): Flight => {
     status: d.flightStatus ?? d.status ?? 'SCHEDULED',
     gateCode: d.gateNumber ?? undefined,
     standCode: d.standNumber ?? undefined,
+    tasksTotal: d.tasksTotal ?? undefined,
+    tasksCompleted: d.tasksCompleted ?? undefined,
   };
 };
 
 export const flightApi = {
   getSaphireHubFlights: async (): Promise<Flight[]> => {
     const response = await axiosClient.get('/flights');
+    return response.data.map(normalizeFlight);
+  },
+
+  getOperationalFlights: async (limit = 40): Promise<Flight[]> => {
+    const response = await axiosClient.get('/flights/operational', { params: { limit } });
     return response.data.map(normalizeFlight);
   },
 

@@ -48,6 +48,7 @@ class FlightServiceTest {
     @Mock private StandRepository standRepository;
     @Mock private DepartmentRepository departmentRepository;
     @Mock private com.saphire.aocs.repository.RunwayRepository runwayRepository;
+    @Mock private com.saphire.aocs.repository.TaskRepository taskRepository;
 
     @InjectMocks private FlightService flightService;
 

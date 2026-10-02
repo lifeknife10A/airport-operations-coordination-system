@@ -61,6 +61,7 @@ public class FlightService {
     private final StandRepository standRepository;
     private final DepartmentRepository departmentRepository;
     private final com.saphire.aocs.repository.RunwayRepository runwayRepository;
+    private final com.saphire.aocs.repository.TaskRepository taskRepository;
 
     private static final int MAX_PAGE_SIZE = 100;
 
@@ -94,7 +95,7 @@ public class FlightService {
                 : flightRepository.searchSaphireHubFlights(trimmedQuery, pageable);
 
         return PagedResponseDTO.<FlightDTO>builder()
-                .content(result.getContent().stream().map(this::mapToDTO).collect(Collectors.toList()))
+                .content(withTaskCounts(result.getContent().stream().map(this::mapToDTO).collect(Collectors.toList())))
                 .page(result.getNumber())
                 .size(result.getSize())
                 .totalElements(result.getTotalElements())
@@ -102,13 +103,29 @@ public class FlightService {
                 .build();
     }
 
+    /** Fills tasksTotal/tasksCompleted for a whole page of flights with a single grouped query. */
+    private List<FlightDTO> withTaskCounts(List<FlightDTO> flights) {
+        if (flights.isEmpty()) return flights;
+        java.util.Map<Long, int[]> counts = new java.util.HashMap<>();
+        for (Object[] row : taskRepository.countTasksByFlightIds(
+                flights.stream().map(FlightDTO::getFlightId).collect(Collectors.toList()))) {
+            counts.put((Long) row[0], new int[]{((Number) row[1]).intValue(), ((Number) row[2]).intValue()});
+        }
+        for (FlightDTO f : flights) {
+            int[] c = counts.getOrDefault(f.getFlightId(), new int[2]);
+            f.setTasksTotal(c[0]);
+            f.setTasksCompleted(c[1]);
+        }
+        return flights;
+    }
+
     /** Flights that are live or upcoming: boarding first, then delayed, then scheduled. */
     @Transactional(readOnly = true)
     public List<FlightDTO> getOperationalFlights(int limit) {
         int safeLimit = Math.max(1, Math.min(limit, MAX_PAGE_SIZE));
-        return flightRepository.findOperationalFlights(PageRequest.of(0, safeLimit)).stream()
+        return withTaskCounts(flightRepository.findOperationalFlights(PageRequest.of(0, safeLimit)).stream()
                 .map(this::mapToDTO)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
     }
 
     /** Hub flight count per status; every known status is present even at zero. */
