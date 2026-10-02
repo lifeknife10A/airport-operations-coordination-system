@@ -32,6 +32,30 @@ export interface CheckinLookupData {
   }>;
 }
 
+export interface CheckinManifestEntry {
+  passengerId: number;
+  pnr: string;
+  name: string;
+  nationality: string;
+  boardingPassId?: number;
+  seat?: string;
+  cabinClass?: string;
+  boardingGroup?: string;
+  ticketNumber?: string;
+  barcodeData?: string;
+  bags: number;
+  bagWeightKg: number;
+}
+
+export interface BagTagResult {
+  bagTagId: number;
+  tagNumber: string;
+  weightKg: number;
+  status: string;
+  passengerId: number;
+  flightId: number;
+}
+
 export interface SeatMapData {
   flightId: number;
   flightNumber: string;
@@ -95,6 +119,11 @@ export const checkinApi = {
     return response.data;
   },
 
+  getManifest: async (flightId: number): Promise<CheckinManifestEntry[]> => {
+    const response = await axiosClient.get<CheckinManifestEntry[]>(`/checkin/flights/${flightId}/manifest`);
+    return response.data;
+  },
+
   getSeatMap: async (flightId: number): Promise<SeatMapData> => {
     const response = await axiosClient.get<SeatMapData>(`/checkin/flights/${flightId}/seatmap`);
     return response.data;
@@ -105,8 +134,8 @@ export const checkinApi = {
     return response.data;
   },
 
-  tagBaggage: async (payload: TagBaggageRequest) => {
-    const response = await axiosClient.post('/checkin/tag-baggage', payload);
+  tagBaggage: async (payload: TagBaggageRequest): Promise<BagTagResult> => {
+    const response = await axiosClient.post<BagTagResult>('/checkin/tag-baggage', payload);
     return response.data;
   },
 

@@ -23,6 +23,7 @@ public class CheckinService {
     private final BaggageScanEventRepository baggageScanEventRepository;
     private final CheckinCounterRepository checkinCounterRepository;
     private final FlightRepository flightRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @Transactional(readOnly = true)
     public CheckinLookupDTO lookupPassenger(String query) {
@@ -150,7 +151,7 @@ public class CheckinService {
         }
 
         Integer nextSeq = boardingPassRepository.findMaxSequenceNumberByFlightId(flight.getFlightId()) + 1;
-        String ticketNumber = "ETKT-2026-" + String.format("%06d", (int) (Math.random() * 900000) + 100000);
+        String ticketNumber = uniqueTicketNumber();
         String barcodeData = String.format("M1%s/%s %s %s %s", 
                 passenger.getPnrCode(), 
                 traveler.getLastName().toUpperCase(), 
@@ -178,7 +179,7 @@ public class CheckinService {
 
         BoardingPass saved = boardingPassRepository.save(bp);
 
-        String gateStr = flight.getGate() != null ? flight.getGate().getGateNumber() : "Gate A04";
+        String gateStr = flight.getGate() != null ? flight.getGate().getGateNumber() : "TBA";
         String originStr = flight.getOriginAirport() != null ? flight.getOriginAirport().getIataCode() : "BOM";
         String destStr = flight.getDestinationAirport() != null ? flight.getDestinationAirport().getIataCode() : "DEL";
 
@@ -217,7 +218,7 @@ public class CheckinService {
         Flight flight = flightRepository.findById(dto.getFlightId())
                 .orElseThrow(() -> new ResourceNotFoundException("Flight not found with ID: " + dto.getFlightId()));
 
-        String tagNumber = "0098" + String.format("%06d", (int) (Math.random() * 900000) + 100000);
+        String tagNumber = uniqueTagNumber();
 
         BagTag bagTag = BagTag.builder()
                 .tagNumber(tagNumber)
@@ -247,6 +248,28 @@ public class CheckinService {
                 .build();
     }
 
+    /** Every passenger booked on the flight with their boarding pass (if issued) and checked bags. */
+    @Transactional(readOnly = true)
+    public List<com.saphire.aocs.dto.CheckinManifestEntry> getFlightManifest(Long flightId) {
+        if (!flightRepository.existsById(flightId)) {
+            throw new ResourceNotFoundException("Flight not found with ID: " + flightId);
+        }
+        return jdbcTemplate.query(
+                "SELECT p.passenger_id, p.pnr_code, t.first_name, t.last_name, t.nationality, "
+                + "b.boarding_pass_id, b.seat_number, b.cabin_class, b.boarding_group, b.ticket_number, b.barcode_data, "
+                + "(SELECT COUNT(*) FROM bag_tags g WHERE g.passenger_id = p.passenger_id AND g.flight_id = p.flight_id) AS bags, "
+                + "(SELECT COALESCE(SUM(g.weight_kg), 0) FROM bag_tags g WHERE g.passenger_id = p.passenger_id AND g.flight_id = p.flight_id) AS bag_kg "
+                + "FROM passengers p JOIN travelers t ON t.traveler_id = p.traveler_id "
+                + "LEFT JOIN boarding_passes b ON b.passenger_id = p.passenger_id AND b.flight_id = p.flight_id "
+                + "WHERE p.flight_id = ? ORDER BY b.sequence_number NULLS LAST, p.passenger_id",
+                (rs, i) -> new com.saphire.aocs.dto.CheckinManifestEntry(rs.getLong("passenger_id"), rs.getString("pnr_code"),
+                        rs.getString("first_name") + " " + rs.getString("last_name"), rs.getString("nationality"),
+                        (Long) rs.getObject("boarding_pass_id"), rs.getString("seat_number"), rs.getString("cabin_class"),
+                        rs.getString("boarding_group"), rs.getString("ticket_number"), rs.getString("barcode_data"),
+                        rs.getLong("bags"), rs.getDouble("bag_kg")),
+                flightId);
+    }
+
     @Transactional(readOnly = true)
     public List<CheckinCounterDTO> getAllCounters() {
         return checkinCounterRepository.findAll().stream().map(c -> CheckinCounterDTO.builder()
@@ -257,7 +280,25 @@ public class CheckinService {
                 .allocatedAirlineId(c.getAllocatedAirline() != null ? c.getAllocatedAirline().getAirlineId() : null)
                 .allocatedAirlineName(c.getAllocatedAirline() != null ? c.getAllocatedAirline().getAirlineName() : "Unassigned")
                 .allocatedAirlineIata(c.getAllocatedAirline() != null ? c.getAllocatedAirline().getIataCode() : "--")
-                .status("OPEN")
+                .status(c.getAllocatedAirline() != null ? "ALLOCATED" : "UNASSIGNED")
                 .build()).collect(Collectors.toList());
+    }
+
+    // Random six-digit numbers collide once a few thousand exist (the unique constraints would then
+    // turn a normal check-in into a 500), so draw again until the number is free.
+    private String uniqueTicketNumber() {
+        String ticket;
+        do {
+            ticket = "ETKT-2026-" + String.format("%06d", (int) (Math.random() * 900000) + 100000);
+        } while (boardingPassRepository.findByTicketNumber(ticket).isPresent());
+        return ticket;
+    }
+
+    private String uniqueTagNumber() {
+        String tag;
+        do {
+            tag = "0098" + String.format("%06d", (int) (Math.random() * 900000) + 100000);
+        } while (bagTagRepository.findByTagNumber(tag).isPresent());
+        return tag;
     }
 }

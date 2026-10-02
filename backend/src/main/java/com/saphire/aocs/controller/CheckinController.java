@@ -25,6 +25,12 @@ public class CheckinController {
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER', 'CHECKIN_AGENT', 'GATE_AGENT')")
+    @GetMapping("/flights/{flightId}/manifest")
+    public ResponseEntity<java.util.List<com.saphire.aocs.dto.CheckinManifestEntry>> getFlightManifest(@PathVariable Long flightId) {
+        return ResponseEntity.ok(checkinService.getFlightManifest(flightId));
+    }
+
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER', 'CHECKIN_AGENT', 'GATE_AGENT')")
     @GetMapping("/flights/{flightId}/seatmap")
     public ResponseEntity<SeatMapResponseDTO> getSeatMap(@PathVariable Long flightId) {
         return ResponseEntity.ok(checkinService.getSeatMap(flightId));
