@@ -5,7 +5,7 @@ export const ROLE_TO_DASHBOARD: Record<string, string> = {
   AIRPORT_OPERATIONS_MANAGER: 'aocc',
   GROUND_HANDLING_SUPERVISOR: 'ground-ops',
   RAMP_AGENT: 'ground-ops',
-  AIRLINE_BILLING_CLERK: 'department',
+  AIRLINE_BILLING_CLERK: 'billing',
   GATE_AGENT: 'airside-ops',
   BAGGAGE_HANDLER: 'logistics',
   SECURITY_OFFICER: 'passenger-security',

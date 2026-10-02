@@ -119,6 +119,15 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
       { label: 'Profile', path: '/dashboard/ground-ops#profile', icon: <UserCheck size={18} />, section: 'ACCOUNT' },
     ],
   },
+  'billing': {
+    name: 'Airline Billing',
+    roleKey: 'billing',
+    accent: '#0284C7',
+    tag: 'BILLING',
+    items: [
+      { label: 'Invoices', path: '/dashboard/billing', icon: <Sliders size={18} />, section: 'MAIN' },
+    ],
+  },
   'department': {
     name: 'Department Workspaces',
     roleKey: 'department',

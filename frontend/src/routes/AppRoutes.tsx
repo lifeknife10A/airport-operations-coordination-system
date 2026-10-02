@@ -14,6 +14,7 @@ const SystemAdminDashboard = lazy(() => import('../pages/dashboards/SystemAdminD
 const AOCCControllerDashboard = lazy(() => import('../pages/dashboards/AOCCControllerDashboard'));
 const GroundOpsSupervisorDashboard = lazy(() => import('../pages/dashboards/GroundOpsSupervisorDashboard'));
 const DepartmentDashboard = lazy(() => import('../pages/dashboards/DepartmentDashboard'));
+const BillingDashboard = lazy(() => import('../pages/dashboards/BillingDashboard'));
 const AirsideOpsDashboard = lazy(() => import('../pages/dashboards/AirsideOpsDashboard'));
 const LogisticsDashboard = lazy(() => import('../pages/dashboards/LogisticsDashboard'));
 const PassengerSecurityOpsDashboard = lazy(() => import('../pages/dashboards/PassengerSecurityOpsDashboard'));
@@ -37,6 +38,7 @@ const AppRoutes: React.FC = () => {
                 <Route path="/dashboard/system-admin" element={<ProtectedRoute dashboard="system-admin"><SystemAdminDashboard /></ProtectedRoute>} />
                 <Route path="/dashboard/aocc" element={<ProtectedRoute dashboard="aocc"><AOCCControllerDashboard /></ProtectedRoute>} />
                 <Route path="/dashboard/ground-ops" element={<ProtectedRoute dashboard="ground-ops"><GroundOpsSupervisorDashboard /></ProtectedRoute>} />
+                <Route path="/dashboard/billing" element={<ProtectedRoute dashboard="billing"><BillingDashboard /></ProtectedRoute>} />
                 <Route path="/dashboard/department" element={<ProtectedRoute dashboard="department"><DepartmentDashboard /></ProtectedRoute>} />
                 <Route path="/dashboard/airside-ops" element={<ProtectedRoute dashboard="airside-ops"><AirsideOpsDashboard /></ProtectedRoute>} />
                 <Route path="/dashboard/logistics" element={<ProtectedRoute dashboard="logistics"><LogisticsDashboard /></ProtectedRoute>} />
