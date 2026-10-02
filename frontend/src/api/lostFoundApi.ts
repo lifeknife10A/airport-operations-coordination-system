@@ -44,6 +44,11 @@ export const lostFoundApi = {
     return response.data;
   },
 
+  updateStatus: async (id: number, status: string, storageVaultLocation?: string): Promise<LostFoundItemData> => {
+    const response = await axiosClient.put<LostFoundItemData>(`/lost-found/${id}/status`, { status, storageVaultLocation });
+    return response.data;
+  },
+
   submitClaim: async (id: number, payload: {
     claimantName: string;
     claimantContactEmail: string;

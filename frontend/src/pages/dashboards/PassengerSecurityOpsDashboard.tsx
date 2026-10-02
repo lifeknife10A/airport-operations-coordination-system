@@ -1,2907 +1,1061 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Box,
-  Typography,
+  Button,
   Card,
   Chip,
-  Button,
-  IconButton,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
-  TextField,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  InputAdornment,
+  InputLabel,
+  LinearProgress,
   MenuItem,
+  Select,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  LinearProgress,
-  Tooltip,
-  Divider,
+  TextField,
+  Typography,
 } from '@mui/material';
-import {
-  UserCheck,
-  ShieldCheck,
-  ShieldAlert,
-  Radio,
-  Sliders,
-  Plane,
-  Package,
-  Layers,
-  Bell,
-  Clock,
-  CheckCircle2,
-  AlertTriangle,
-  X,
-  Search,
-  Plus,
-  RefreshCw,
-  Eye,
-  Check,
-  Lock,
-  Unlock,
-  MapPin,
-  Filter,
-  FileText,
-  Phone,
-  Sparkles,
-  ExternalLink,
-} from 'lucide-react';
+import { AlertTriangle, Plus, Search } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { DashboardLayout } from '../../components/dashboard/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
-import { aocsDataStore } from '../../services/aocsDataStore';
-import toast from 'react-hot-toast';
+import { aocsDataStore, describeApiError } from '../../services/aocsDataStore';
 import { lostFoundApi, LostFoundItemData } from '../../api/lostFoundApi';
+import {
+  securityOpsApi,
+  Checkpoint,
+  ClearanceEntry,
+  ClearanceStatus,
+  GateFlight,
+  Incident,
+  IncidentSeverity,
+  IncidentStatus,
+  Lounge,
+  LoungeVisit,
+  ManifestEntry,
+  VerificationMethod,
+} from '../../api/securityOpsApi';
 
-// ============================================================================
-// DATA TYPES & INTERFACES
-// ============================================================================
+// Passenger & Security Ops: everything on this screen comes from the backend. Clearance scans,
+// incidents and lounge visits are saved on the server; a write the server refuses shows its reason.
 
-export type ClearanceStatus = 'CLEARED' | 'FLAGGED_REVIEW' | 'DENIED' | 'BOARDED';
-export type VerificationMethod = 'BIOMETRIC_EGATE' | 'BARCODE_SCAN' | 'OFFICER_MANUAL';
-export type GateBoardingStatus = 'LOCKED' | 'BOARDING_STARTED' | 'FINAL_CALL' | 'BOARDING_CLOSED' | 'PUSHBACK_READY';
-export type LostFoundStatus = 'NEW_REPORT' | 'SEARCHING' | 'MATCHED' | 'READY_FOR_COLLECTION' | 'RETURNED';
-export type IncidentSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-export type IncidentStatus = 'INVESTIGATING' | 'ESCALATED' | 'RESOLVED';
+type Tab = 'overview' | 'security-screening' | 'clearance' | 'lost-found' | 'incidents' | 'lounges' | 'notifications' | 'profile';
+const TABS: Tab[] = ['security-screening', 'clearance', 'lost-found', 'incidents', 'lounges', 'notifications', 'profile'];
 
-export interface PassengerRecord {
-  pnr: string;
-  name: string;
-  flightNumber: string;
-  seat: string;
-  cabinClass: 'FIRST' | 'BUSINESS' | 'ECONOMY';
-  gate: string;
-  clearanceStatus: ClearanceStatus;
-  verificationMethod: VerificationMethod;
-  specialAssistance: string;
-  passportLast4: string;
-  boardingTime?: string;
-  notes?: string;
-}
+const FONT = "'Outfit', sans-serif";
+const CARD_SX = { borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' } as const;
 
-export interface GateFlightReadiness {
-  flightNumber: string;
-  airline: string;
-  destination: string;
-  gate: string;
-  terminal: string;
-  scheduledDeparture: string;
-  boardingStatus: GateBoardingStatus;
-  bookedPassengers: number;
-  checkedInPassengers: number;
-  boardedPassengers: number;
-  securityCleared: boolean;
-  cabinCleaningCleared: boolean;
-  maintenanceReleased: boolean;
-  fuelingCompleted: boolean;
-}
+const CLEARANCE_LABEL: Record<ClearanceStatus, string> = {
+  APPROVED: 'Approved',
+  FLAGGED_SECURITY: 'Flagged',
+  DENIED: 'Denied',
+  BOARDED: 'Boarded',
+};
+const CLEARANCE_COLOR: Record<ClearanceStatus, { bg: string; fg: string }> = {
+  APPROVED: { bg: '#DCFCE7', fg: '#15803D' },
+  FLAGGED_SECURITY: { bg: '#FEF3C7', fg: '#B45309' },
+  DENIED: { bg: '#FEE2E2', fg: '#B91C1C' },
+  BOARDED: { bg: '#E0F2FE', fg: '#0369A1' },
+};
+const METHOD_LABEL: Record<VerificationMethod, string> = {
+  BARCODE_SCANNER: 'Barcode scanner',
+  BIOMETRIC_FACIAL: 'Facial biometric',
+  PASSPORT_CHIP_READER: 'Passport chip',
+};
+const SEVERITY_COLOR: Record<IncidentSeverity, { bg: string; fg: string }> = {
+  CRITICAL: { bg: '#FEE2E2', fg: '#B91C1C' },
+  HIGH: { bg: '#FFEDD5', fg: '#C2410C' },
+  MEDIUM: { bg: '#FEF3C7', fg: '#B45309' },
+  LOW: { bg: '#F1F5F9', fg: '#475569' },
+};
+const LF_STATUSES = ['LOGGED_SECURITY_INTAKE', 'ITEM_LOCATED_VAULTED', 'READY_FOR_COLLECTION', 'DISPOSED_AUCTIONED'];
+const LF_CATEGORIES = ['ELECTRONICS', 'BAGGAGE', 'DOCUMENTS', 'CLOTHING', 'JEWELRY', 'VALUABLES', 'KEYS', 'OTHER'];
 
-export interface LostFoundItem {
-  id: string;
-  title: string;
-  category: 'ELECTRONICS' | 'BAGGAGE' | 'DOCUMENTS' | 'VALUABLES' | 'CLOTHING';
-  locationFound: string;
-  reportedBy: string;
-  contactNumber: string;
-  linkedPnr?: string;
-  flightNumber?: string;
-  status: LostFoundStatus;
-  reportedDate: string;
-  description: string;
-  color: string;
-  storageLocker: string;
-}
+const pretty = (s?: string | null) => (s ? s.replace(/_/g, ' ') : '');
+const clock = (iso?: string | null) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+};
 
-export interface SecurityIncident {
-  id: string;
-  title: string;
-  location: string;
-  flightNumber?: string;
-  severity: IncidentSeverity;
-  status: IncidentStatus;
-  reportedAt: string;
-  assignedOfficer: string;
-  description: string;
-}
+const StatusChip: React.FC<{ status?: ClearanceStatus }> = ({ status }) =>
+  status ? (
+    <Chip label={CLEARANCE_LABEL[status]} size="small" sx={{ bgcolor: CLEARANCE_COLOR[status].bg, color: CLEARANCE_COLOR[status].fg, fontWeight: 800, fontSize: '0.68rem' }} />
+  ) : (
+    <Chip label="Not scanned" size="small" sx={{ bgcolor: '#F1F5F9', color: '#64748B', fontWeight: 700, fontSize: '0.68rem' }} />
+  );
 
-export interface LoungeRecord {
-  id: string;
-  name: string;
-  terminal: string;
-  capacity: number;
-  currentGuests: number;
-  status: 'NORMAL' | 'BUSY' | 'NEAR_CAPACITY';
-  eligibleClasses: string[];
-}
+const Stat: React.FC<{ value: React.ReactNode; label: string; hint?: string; tone?: string; onClick?: () => void }> = ({ value, label, hint, tone = '#0F2942', onClick }) => (
+  <Card
+    elevation={0}
+    onClick={onClick}
+    sx={{ ...CARD_SX, p: 2.5, cursor: onClick ? 'pointer' : 'default', '&:hover': onClick ? { borderColor: tone } : undefined }}
+  >
+    <Typography sx={{ fontFamily: FONT, fontWeight: 800, fontSize: '2rem', lineHeight: 1.1, color: tone }}>{value}</Typography>
+    <Typography sx={{ fontFamily: FONT, fontWeight: 700, fontSize: '0.84rem', color: '#475569', mt: 0.5 }}>{label}</Typography>
+    {hint && <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8', mt: 0.3 }}>{hint}</Typography>}
+  </Card>
+);
 
-export interface LoungeVisitLog {
-  id: string;
-  pnr: string;
-  passengerName: string;
-  flightNumber: string;
-  loungeName: string;
-  accessTier: string;
-  timestamp: string;
-}
+const Heading: React.FC<{ title: string; sub?: string; action?: React.ReactNode }> = ({ title, sub, action }) => (
+  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5, gap: 2, flexWrap: 'wrap' }}>
+    <Box>
+      <Typography variant="h4" sx={{ fontFamily: FONT, fontWeight: 800, color: '#0F2942' }}>
+        {title}
+      </Typography>
+      {sub && <Typography sx={{ fontSize: '0.86rem', color: '#64748B' }}>{sub}</Typography>}
+    </Box>
+    {action}
+  </Box>
+);
 
-// ============================================================================
-// INITIAL MOCK DATA
-// ============================================================================
-
-const INITIAL_FLIGHTS_GATE: GateFlightReadiness[] = [
-  {
-    flightNumber: 'AI-203',
-    airline: 'Air India',
-    destination: 'London Heathrow (LHR)',
-    gate: 'Gate A12',
-    terminal: 'Central Terminal (Concourse B)',
-    scheduledDeparture: '14:45 Local',
-    boardingStatus: 'BOARDING_STARTED',
-    bookedPassengers: 160,
-    checkedInPassengers: 158,
-    boardedPassengers: 142,
-    securityCleared: true,
-    cabinCleaningCleared: true,
-    maintenanceReleased: true,
-    fuelingCompleted: true,
-  },
-  {
-    flightNumber: '6E-521',
-    airline: 'IndiGo',
-    destination: 'Singapore Changi (SIN)',
-    gate: 'Gate B04',
-    terminal: 'Central Terminal (Concourse A)',
-    scheduledDeparture: '15:20 Local',
-    boardingStatus: 'LOCKED',
-    bookedPassengers: 180,
-    checkedInPassengers: 174,
-    boardedPassengers: 0,
-    securityCleared: false, // Security sweep pending!
-    cabinCleaningCleared: true,
-    maintenanceReleased: true,
-    fuelingCompleted: true,
-  },
-  {
-    flightNumber: 'UK-901',
-    airline: 'Vistara',
-    destination: 'Dubai International (DXB)',
-    gate: 'Gate C08',
-    terminal: 'Central Terminal (Concourse C)',
-    scheduledDeparture: '16:00 Local',
-    boardingStatus: 'LOCKED',
-    bookedPassengers: 144,
-    checkedInPassengers: 130,
-    boardedPassengers: 0,
-    securityCleared: false,
-    cabinCleaningCleared: false,
-    maintenanceReleased: true,
-    fuelingCompleted: false,
-  },
-  {
-    flightNumber: 'SPH-102',
-    airline: 'Saphire Executive',
-    destination: 'Frankfurt (FRA)',
-    gate: 'Gate A02',
-    terminal: 'Central Terminal (Concourse A)',
-    scheduledDeparture: '13:50 Local',
-    boardingStatus: 'PUSHBACK_READY',
-    bookedPassengers: 220,
-    checkedInPassengers: 220,
-    boardedPassengers: 220,
-    securityCleared: true,
-    cabinCleaningCleared: true,
-    maintenanceReleased: true,
-    fuelingCompleted: true,
-  },
-];
-
-const INITIAL_PASSENGERS: PassengerRecord[] = [
-  {
-    pnr: 'PNR-AI203-01',
-    name: 'Lord Harrison Sterling',
-    flightNumber: 'AI-203',
-    seat: '02A',
-    cabinClass: 'FIRST',
-    gate: 'Gate A12',
-    clearanceStatus: 'BOARDED',
-    verificationMethod: 'BIOMETRIC_EGATE',
-    specialAssistance: 'VIP Protocol',
-    passportLast4: '9841',
-    boardingTime: '14:05',
-    notes: 'Diplomatic fast-track approved',
-  },
-  {
-    pnr: 'PNR-AI203-02',
-    name: 'Dr. Evelyn Morales',
-    flightNumber: 'AI-203',
-    seat: '14C',
-    cabinClass: 'BUSINESS',
-    gate: 'Gate A12',
-    clearanceStatus: 'BOARDED',
-    verificationMethod: 'BIOMETRIC_EGATE',
-    specialAssistance: 'None',
-    passportLast4: '3312',
-    boardingTime: '14:12',
-  },
-  {
-    pnr: 'PNR-AI203-03',
-    name: 'Vikramaditya Rao',
-    flightNumber: 'AI-203',
-    seat: '28D',
-    cabinClass: 'ECONOMY',
-    gate: 'Gate A12',
-    clearanceStatus: 'FLAGGED_REVIEW',
-    verificationMethod: 'OFFICER_MANUAL',
-    specialAssistance: 'None',
-    passportLast4: '8820',
-    notes: 'Secondary luggage inspection flag at checkpoint C',
-  },
-  {
-    pnr: 'PNR-AI203-04',
-    name: 'Amira Benali',
-    flightNumber: 'AI-203',
-    seat: '08F',
-    cabinClass: 'BUSINESS',
-    gate: 'Gate A12',
-    clearanceStatus: 'CLEARED',
-    verificationMethod: 'BARCODE_SCAN',
-    specialAssistance: 'None',
-    passportLast4: '4190',
-  },
-  {
-    pnr: 'PNR-6E521-01',
-    name: 'Kenji Takahashi',
-    flightNumber: '6E-521',
-    seat: '12B',
-    cabinClass: 'ECONOMY',
-    gate: 'Gate B04',
-    clearanceStatus: 'CLEARED',
-    verificationMethod: 'BIOMETRIC_EGATE',
-    specialAssistance: 'None',
-    passportLast4: '7734',
-  },
-  {
-    pnr: 'PNR-6E521-02',
-    name: 'Marcus Vance',
-    flightNumber: '6E-521',
-    seat: '18A',
-    cabinClass: 'ECONOMY',
-    gate: 'Gate B04',
-    clearanceStatus: 'DENIED',
-    verificationMethod: 'OFFICER_MANUAL',
-    specialAssistance: 'None',
-    passportLast4: '1092',
-    notes: 'Transit visa expiration discrepancy. Handed to immigration.',
-  },
-  {
-    pnr: 'PNR-UK901-01',
-    name: 'Pooja Sundaram',
-    flightNumber: 'UK-901',
-    seat: '04A',
-    cabinClass: 'BUSINESS',
-    gate: 'Gate C08',
-    clearanceStatus: 'CLEARED',
-    verificationMethod: 'BIOMETRIC_EGATE',
-    specialAssistance: 'WCHR Wheelchair Request',
-    passportLast4: '5561',
-  },
-];
-
-const INITIAL_LOST_FOUND: LostFoundItem[] = [
-  {
-    id: 'LF-2024-089',
-    title: 'Apple iPad Pro 11" Space Grey',
-    category: 'ELECTRONICS',
-    locationFound: 'Concourse B Security Checkpoint',
-    reportedBy: 'Public Portal - Priya Sharma',
-    contactNumber: '+91 98765 43210',
-    linkedPnr: 'PNR-AI203-03',
-    flightNumber: 'AI-203',
-    status: 'MATCHED',
-    reportedDate: 'Today, 11:20 AM',
-    description: 'Black magnetic folio cover, sticker of NASA on back casing.',
-    color: 'Space Grey',
-    storageLocker: 'Locker B-14',
-  },
-  {
-    id: 'LF-2024-090',
-    title: 'Samsonite Hard-Shell Carry-On (Navy)',
-    category: 'BAGGAGE',
-    locationFound: 'Gate A12 Seating Area Stand 4',
-    reportedBy: 'Gate Agent Aarav',
-    contactNumber: 'Airside Staff Extension 402',
-    flightNumber: 'AI-203',
-    status: 'READY_FOR_COLLECTION',
-    reportedDate: 'Today, 12:45 PM',
-    description: 'Left near charging kiosk. Luggage tag reads Harrison Sterling.',
-    color: 'Navy Blue',
-    storageLocker: 'Secure Vault A',
-  },
-  {
-    id: 'LF-2024-091',
-    title: 'Leather Passport Holder with Visa Documents',
-    category: 'DOCUMENTS',
-    locationFound: 'Concourse A Duty Free',
-    reportedBy: 'Public Portal - Kenji Takahashi',
-    contactNumber: '+81 90 1234 5678',
-    linkedPnr: 'PNR-6E521-01',
-    flightNumber: '6E-521',
-    status: 'NEW_REPORT',
-    reportedDate: 'Today, 13:10 PM',
-    description: 'Tan leather passport case holding Japanese passport & boarding stub.',
-    color: 'Tan Brown',
-    storageLocker: 'Intake Desk Shelf 2',
-  },
-  {
-    id: 'LF-2024-092',
-    title: 'Bose Noise Cancelling Headphones 700',
-    category: 'ELECTRONICS',
-    locationFound: 'Plaza Premium Lounge Quiet Zone',
-    reportedBy: 'Lounge Concierge David',
-    contactNumber: 'Plaza Reception Ext 911',
-    status: 'SEARCHING',
-    reportedDate: 'Today, 09:30 AM',
-    description: 'Triple Midnight special edition in black travel case.',
-    color: 'Triple Midnight',
-    storageLocker: 'Locker C-03',
-  },
-  {
-    id: 'LF-2024-085',
-    title: 'Gold Wristwatch (Seiko Presage)',
-    category: 'VALUABLES',
-    locationFound: 'Security Screening Tray Scanner 4',
-    reportedBy: 'Officer Aarav Li',
-    contactNumber: '+91 94441 22334',
-    status: 'RETURNED',
-    reportedDate: 'Yesterday, 17:40 PM',
-    description: 'Classic gold automatic timepiece with alligator brown strap.',
-    color: 'Champagne Gold',
-    storageLocker: 'Archived Release',
-  },
-];
-
-const INITIAL_INCIDENTS: SecurityIncident[] = [
-  {
-    id: 'INC-881',
-    title: 'Unattended Carry-On Luggage at Gate A12',
-    location: 'Gate A12 Departures Concourse Stand 4',
-    severity: 'HIGH',
-    status: 'INVESTIGATING',
-    reportedAt: '12 mins ago',
-    assignedOfficer: 'Officer Elena Wong',
-    description: 'K9 bomb disposal unit dispatched. Secondary perimeter cordon established.',
-  },
-  {
-    id: 'INC-882',
-    title: 'Secondary Watchlist Identity Review: SPH-102',
-    location: 'Concourse A International Border E-Gate 02',
-    severity: 'MEDIUM',
-    status: 'INVESTIGATING',
-    reportedAt: '25 mins ago',
-    assignedOfficer: 'Officer Priya Rao',
-    description: 'Passenger biometric mismatch triggered automated border review flag.',
-  },
-  {
-    id: 'INC-883',
-    title: 'Biometric E-Gate Reader #4 Optical Timeout',
-    location: 'Central Terminal Concourse B E-Gates',
-    severity: 'LOW',
-    status: 'INVESTIGATING',
-    reportedAt: '42 mins ago',
-    assignedOfficer: 'Tech Support Team B',
-    description: 'Sensor recalibration in progress. 5 adjacent lanes operational.',
-  },
-];
-
-const INITIAL_LOUNGES: LoungeRecord[] = [
-  {
-    id: 'LNG-01',
-    name: 'Saphire First Class Presidential Suite',
-    terminal: 'Concourse B',
-    capacity: 60,
-    currentGuests: 48,
-    status: 'BUSY',
-    eligibleClasses: ['First Class', 'Diplomatic VIP'],
-  },
-  {
-    id: 'LNG-02',
-    name: 'Maharaja Business Lounge',
-    terminal: 'Concourse B',
-    capacity: 150,
-    currentGuests: 112,
-    status: 'NORMAL',
-    eligibleClasses: ['Business Class', 'Star Alliance Gold'],
-  },
-  {
-    id: 'LNG-03',
-    name: 'Plaza Premium Airside Oasis',
-    terminal: 'Concourse A',
-    capacity: 120,
-    currentGuests: 64,
-    status: 'NORMAL',
-    eligibleClasses: ['Priority Pass', 'All Ticketed Pass Holders'],
-  },
-  {
-    id: 'LNG-04',
-    name: 'Executive Quiet Sanctuary',
-    terminal: 'Concourse C',
-    capacity: 40,
-    currentGuests: 38,
-    status: 'NEAR_CAPACITY',
-    eligibleClasses: ['First Class', 'Corporate Members'],
-  },
-];
-
-const INITIAL_LOUNGE_VISITS: LoungeVisitLog[] = [
-  {
-    id: 'VST-101',
-    pnr: 'PNR-AI203-01',
-    passengerName: 'Lord Harrison Sterling',
-    flightNumber: 'AI-203',
-    loungeName: 'Saphire First Class Presidential Suite',
-    accessTier: 'First Class VIP',
-    timestamp: '13:15 Local',
-  },
-  {
-    id: 'VST-102',
-    pnr: 'PNR-AI203-02',
-    passengerName: 'Dr. Evelyn Morales',
-    flightNumber: 'AI-203',
-    loungeName: 'Maharaja Business Lounge',
-    accessTier: 'Business Class',
-    timestamp: '13:30 Local',
-  },
-  {
-    id: 'VST-103',
-    pnr: 'PNR-UK901-01',
-    passengerName: 'Pooja Sundaram',
-    flightNumber: 'UK-901',
-    loungeName: 'Maharaja Business Lounge',
-    accessTier: 'Business Class',
-    timestamp: '13:45 Local',
-  },
-];
-
-// ============================================================================
-// MAIN PASSENGER & SECURITY OPERATIONS DASHBOARD
-// ============================================================================
+const head = (label: string, align?: 'right') => (
+  <TableCell align={align} sx={{ fontWeight: 800, color: '#64748B', fontSize: '0.74rem' }}>
+    {label}
+  </TableCell>
+);
 
 export const PassengerSecurityOpsDashboard: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // URL Hash Tab State
-  const [activeTab, setActiveTab] = useState<'overview' | 'boarding' | 'security-screening' | 'clearance' | 'lost-found' | 'incidents' | 'lounges' | 'notifications' | 'profile'>('overview');
-
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
   useEffect(() => {
-    const hash = location.hash.replace('#', '');
-    if (['boarding', 'security-screening', 'clearance', 'lost-found', 'incidents', 'lounges', 'notifications', 'profile'].includes(hash)) {
-      setActiveTab(hash as any);
-    } else {
-      setActiveTab('overview');
-    }
+    const hash = location.hash.replace('#', '') as Tab;
+    setActiveTab(TABS.includes(hash) ? hash : 'overview');
   }, [location.hash]);
+  const go = (tab: Tab) => navigate(tab === 'overview' ? '/dashboard/passenger-security' : `/dashboard/passenger-security#${tab}`);
 
-  // Core Reactive States
-  const [flightsGate, setFlightsGate] = useState<GateFlightReadiness[]>(INITIAL_FLIGHTS_GATE);
-  const [selectedFlightNumber, setSelectedFlightNumber] = useState<string>('AI-203');
-  const [passengers, setPassengers] = useState<PassengerRecord[]>(INITIAL_PASSENGERS);
-  const [lostFoundList, setLostFoundList] = useState<LostFoundItem[]>(INITIAL_LOST_FOUND);
-  const [incidents, setIncidents] = useState<SecurityIncident[]>(INITIAL_INCIDENTS);
-  const [lounges] = useState<LoungeRecord[]>(INITIAL_LOUNGES);
-  const [loungeVisits, setLoungeVisits] = useState<LoungeVisitLog[]>(INITIAL_LOUNGE_VISITS);
+  // ---- shared data ----
+  const [gateFlights, setGateFlights] = useState<GateFlight[]>([]);
+  const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
+  const [counts, setCounts] = useState<Record<ClearanceStatus, number>>({ APPROVED: 0, FLAGGED_SECURITY: 0, DENIED: 0, BOARDED: 0 });
+  const [lounges, setLounges] = useState<Lounge[]>([]);
+  const [incidentList, setIncidentList] = useState<Incident[]>([]);
+  const [incidentTotal, setIncidentTotal] = useState(0);
+  const [loadFailed, setLoadFailed] = useState<string | null>(null);
 
-  // Cross-dashboard synchronizer with aocsDataStore and Live Database
-  useEffect(() => {
-    let isMounted = true;
-
-    // Fetch live Lost & Found records from Table #39 in PostgreSQL
-    lostFoundApi.getAll({ size: 50 })
-      .then((res: any) => {
-        if (!isMounted) return;
-        const items = Array.isArray(res) ? res : res?.content || [];
-        if (items.length > 0) {
-          const mappedBackend: LostFoundItem[] = items.map((it: LostFoundItemData) => ({
-            id: it.referenceCode || `LF-2026-${String(it.itemId).padStart(4, '0')}`,
-            title: it.itemName,
-            category: (it.category as any) || 'OTHER',
-            locationFound: it.foundLocationDetail || it.foundLocationType || 'Central Concourse',
-            reportedBy: it.claimantName || 'Security Intake',
-            contactNumber: it.claimantContactPhone || 'N/A',
-            flightNumber: it.flightNumber,
-            status: (it.status as LostFoundStatus) || 'NEW_REPORT',
-            reportedDate: it.createdAt ? new Date(it.createdAt).toLocaleDateString() : 'Today',
-            description: it.colorAndDescription || 'Cataloged in database',
-            color: 'Standard',
-            storageLocker: it.storageVaultLocation || 'Vault Locker 01',
-          }));
-
-          setLostFoundList((prev) => {
-            const combined = [...mappedBackend];
-            for (const p of prev) {
-              if (!combined.some((c) => c.id === p.id)) {
-                combined.push(p);
-              }
-            }
-            return combined;
-          });
-        }
-      })
-      .catch((err) => {
-        console.warn('Backend lost and found sync fallback:', err);
-      });
-
-    const syncFromStore = () => {
-      // 1. Sync turnaround prerequisites from aocsDataStore
-      setFlightsGate((prev) =>
-        prev.map((f) => {
-          const prereqs = aocsDataStore.getFlightPrerequisites(f.flightNumber);
-          const allCleared = prereqs.cleaning && prereqs.refueling && prereqs.maintenance && prereqs.security;
-          return {
-            ...f,
-            cabinCleaningCleared: prereqs.cleaning,
-            fuelingCompleted: prereqs.refueling,
-            maintenanceReleased: prereqs.maintenance,
-            securityCleared: prereqs.security,
-            // Auto unlock boarding status if all prerequisites cleared
-            boardingStatus: f.boardingStatus === 'LOCKED' && allCleared ? 'BOARDING_STARTED' : f.boardingStatus,
-          };
-        })
-      );
-
-      // 2. Sync public Lost & Found reports
-      const storeLostItems = aocsDataStore.getLostFound();
-      if (storeLostItems.length > 0) {
-        setLostFoundList((prev) => {
-          const existingIds = new Set(prev.map((i) => i.id));
-          const newFromStore: LostFoundItem[] = storeLostItems
-            .filter((item) => !existingIds.has(item.id))
-            .map((item) => ({
-              id: item.id,
-              title: item.title || item.itemName || 'Misplaced Property',
-              category: (item.category as any) || 'BAGGAGE',
-              locationFound: item.locationFound,
-              reportedBy: item.reportedBy || item.contactName || 'Passenger Submission',
-              contactNumber: item.contactNumber || item.contactEmail || 'N/A',
-              flightNumber: item.flightNumber,
-              status: (item.status as LostFoundStatus) || 'NEW_REPORT',
-              reportedDate: 'Public Portal Intake',
-              description: item.description,
-              color: 'N/A',
-              storageLocker: 'Public Intake Queue',
-            }));
-          return [...newFromStore, ...prev];
-        });
-      }
-    };
-
-    syncFromStore();
-    const unsub = aocsDataStore.subscribe(syncFromStore);
-    return () => {
-      isMounted = false;
-      unsub();
-    };
+  const loadCore = useCallback(async () => {
+    try {
+      const [flightsRes, cps, approved, flagged, denied, boarded, loungeRes, incidentRes] = await Promise.all([
+        securityOpsApi.getGateFlights(12),
+        securityOpsApi.getCheckpoints(),
+        securityOpsApi.getClearanceLog('APPROVED', 0, 1),
+        securityOpsApi.getClearanceLog('FLAGGED_SECURITY', 0, 1),
+        securityOpsApi.getClearanceLog('DENIED', 0, 1),
+        securityOpsApi.getClearanceLog('BOARDED', 0, 1),
+        securityOpsApi.getLounges(),
+        securityOpsApi.getIncidents('', 0, 50),
+      ]);
+      setGateFlights(flightsRes);
+      setCheckpoints(cps);
+      setCounts({ APPROVED: approved.totalElements, FLAGGED_SECURITY: flagged.totalElements, DENIED: denied.totalElements, BOARDED: boarded.totalElements });
+      setLounges(loungeRes);
+      setIncidentList(incidentRes.content);
+      setIncidentTotal(incidentRes.totalElements);
+      setLoadFailed(null);
+    } catch (e) {
+      setLoadFailed(describeApiError(e));
+    }
   }, []);
+  useEffect(() => {
+    loadCore();
+  }, [loadCore]);
 
-  // Filter States for Passenger Table
+  const openIncidents = incidentList.filter((i) => i.status !== 'RESOLVED');
+
+  // ---- screening: selected flight + manifest ----
+  const [selectedFlightId, setSelectedFlightId] = useState<number | ''>('');
+  const [manifest, setManifest] = useState<ManifestEntry[]>([]);
+  const [manifestLoading, setManifestLoading] = useState(false);
   const [passengerSearch, setPassengerSearch] = useState('');
-  const [passengerFilterStatus, setPassengerFilterStatus] = useState<string>('ALL');
+  const [passengerFilter, setPassengerFilter] = useState<string>('ALL');
+  const selectedFlight = gateFlights.find((f) => f.flightId === selectedFlightId);
 
-  // Filter States for Lost & Found Table
-  const [lfSearch, setLfSearch] = useState('');
-  const [lfCategoryFilter, setLfCategoryFilter] = useState<string>('ALL');
+  useEffect(() => {
+    if (selectedFlightId === '' && gateFlights.length) setSelectedFlightId(gateFlights[0].flightId);
+  }, [gateFlights, selectedFlightId]);
 
-  // Modal 1: Boarding Pass Inspection Dialog
-  const [selectedPassenger, setSelectedPassenger] = useState<PassengerRecord | null>(null);
-  const [passModalOpen, setPassModalOpen] = useState(false);
-
-  // Modal 2: Lost & Found Review & Match Dialog
-  const [selectedLfItem, setSelectedLfItem] = useState<LostFoundItem | null>(null);
-  const [lfModalOpen, setLfModalOpen] = useState(false);
-
-  // Modal 3: Log New Found Item Dialog (Internal Officer Intake)
-  const [newLfModalOpen, setNewLfModalOpen] = useState(false);
-  const [newLfTitle, setNewLfTitle] = useState('');
-  const [newLfCategory, setNewLfCategory] = useState<'ELECTRONICS' | 'BAGGAGE' | 'DOCUMENTS' | 'VALUABLES' | 'CLOTHING'>('ELECTRONICS');
-  const [newLfLocation, setNewLfLocation] = useState('');
-  const [newLfDescription, setNewLfDescription] = useState('');
-  const [newLfLocker, setNewLfLocker] = useState('');
-
-  // Modal 4: Log Security Incident Dialog
-  const [incidentModalOpen, setIncidentModalOpen] = useState(false);
-  const [incidentTitle, setIncidentTitle] = useState('');
-  const [incidentLocation, setIncidentLocation] = useState('');
-  const [incidentSeverity, setIncidentSeverity] = useState<IncidentSeverity>('MEDIUM');
-  const [incidentDescription, setIncidentDescription] = useState('');
-
-  // Active Flight Object
-  const currentFlight = flightsGate.find((f) => f.flightNumber === selectedFlightNumber) || flightsGate[0];
-
-  // ============================================================================
-  // BOARDING CONTROL ACTIONS
-  // ============================================================================
-
-  const handleStartBoarding = (flightNum: string) => {
-    const flight = flightsGate.find((f) => f.flightNumber === flightNum);
-    if (!flight) return;
-
-    // Prerequisite Check
-    if (!flight.securityCleared || !flight.cabinCleaningCleared || !flight.maintenanceReleased || !flight.fuelingCompleted) {
-      toast.error(`Cannot start boarding for ${flightNum}: Turnaround clearances incomplete!`);
-      return;
+  const loadManifest = useCallback(async (flightId: number) => {
+    setManifestLoading(true);
+    try {
+      setManifest(await securityOpsApi.getManifest(flightId));
+    } catch (e) {
+      toast.error(`Could not load the manifest: ${describeApiError(e)}`);
+      setManifest([]);
+    } finally {
+      setManifestLoading(false);
     }
+  }, []);
+  useEffect(() => {
+    if (selectedFlightId !== '') loadManifest(selectedFlightId);
+  }, [selectedFlightId, loadManifest]);
 
-    setFlightsGate((prev) =>
-      prev.map((f) =>
-        f.flightNumber === flightNum
-          ? { ...f, boardingStatus: 'BOARDING_STARTED' }
-          : f
-      )
-    );
-
-    aocsDataStore.logAuditEvent(
-      'FLIGHT',
-      `Passenger boarding turnstiles opened at ${flight.gate} for ${flightNum} (${flight.destination})`,
-      flightNum,
-      user?.fullName || 'Boarding Gate Agent'
-    );
-
-    toast.success(`Boarding gate turnstiles activated for Flight ${flightNum}!`);
-  };
-
-  const handleFinalCall = (flightNum: string) => {
-    setFlightsGate((prev) =>
-      prev.map((f) =>
-        f.flightNumber === flightNum
-          ? { ...f, boardingStatus: 'FINAL_CALL' }
-          : f
-      )
-    );
-
-    aocsDataStore.logAuditEvent(
-      'FLIGHT',
-      `FINAL CALL broadcasted for flight ${flightNum} at ${currentFlight.gate}`,
-      flightNum,
-      user?.fullName || 'Gate Agent'
-    );
-
-    toast.success(`FINAL CALL broadcasted across concourse and terminal PAs for ${flightNum}!`);
-  };
-
-  const handleCloseBoarding = (flightNum: string) => {
-    setFlightsGate((prev) =>
-      prev.map((f) =>
-        f.flightNumber === flightNum
-          ? { ...f, boardingStatus: 'BOARDING_CLOSED' }
-          : f
-      )
-    );
-
-    aocsDataStore.logAuditEvent(
-      'FLIGHT',
-      `Boarding closed for flight ${flightNum}. Reconciling manifest.`,
-      flightNum,
-      user?.fullName || 'Gate Agent'
-    );
-
-    toast.success(`Boarding closed for ${flightNum}. Reconciling final passenger load manifest.`);
-  };
-
-  const handleMarkPushbackReady = (flightNum: string) => {
-    setFlightsGate((prev) =>
-      prev.map((f) =>
-        f.flightNumber === flightNum
-          ? { ...f, boardingStatus: 'PUSHBACK_READY' }
-          : f
-      )
-    );
-
-    aocsDataStore.logAuditEvent(
-      'FLIGHT',
-      `Flight ${flightNum} marked PUSHBACK READY at gate ${currentFlight.gate}. Ready for tug assignment.`,
-      flightNum,
-      user?.fullName || 'Gate Supervisor'
-    );
-
-    toast.success(`Flight ${flightNum} marked PUSHBACK READY! Handed off to Ground Ops & AOCC.`);
-  };
-
-  const handleClearPrerequisite = (flightNum: string, field: 'securityCleared' | 'cabinCleaningCleared' | 'maintenanceReleased' | 'fuelingCompleted') => {
-    const taskTypeMap = {
-      cabinCleaningCleared: 'CLEANING',
-      fuelingCompleted: 'REFUELING',
-      maintenanceReleased: 'MAINTENANCE',
-      securityCleared: 'SECURITY',
-    } as const;
-
-    // Cross-dashboard update
-    aocsDataStore.updateTurnaroundTask(
-      flightNum,
-      taskTypeMap[field],
-      'COMPLETED',
-      user?.fullName || 'Airside Supervisor'
-    );
-
-    aocsDataStore.logAuditEvent(
-      'SECURITY',
-      `Prerequisite clearance '${field}' certified for flight ${flightNum}`,
-      flightNum,
-      user?.fullName || 'Security Supervisor'
-    );
-
-    setFlightsGate((prev) =>
-      prev.map((f) =>
-        f.flightNumber === flightNum
-          ? { ...f, [field]: true }
-          : f
-      )
-    );
-    toast.success(`Prerequisite '${field}' signed off and propagated across airport network.`);
-  };
-
-  // ============================================================================
-  // PASSENGER ACTIONS
-  // ============================================================================
-
-  const handlePassengerStatusChange = (pnr: string, newStatus: ClearanceStatus) => {
-    setPassengers((prev) =>
-      prev.map((p) => {
-        if (p.pnr === pnr) {
-          return {
-            ...p,
-            clearanceStatus: newStatus,
-            boardingTime: newStatus === 'BOARDED' ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : p.boardingTime,
-          };
-        }
-        return p;
-      })
-    );
-
-    // If boarded, increment the flight's boarded counter
-    if (newStatus === 'BOARDED') {
-      setFlightsGate((prev) =>
-        prev.map((f) =>
-          f.flightNumber === currentFlight.flightNumber
-            ? { ...f, boardedPassengers: Math.min(f.bookedPassengers, f.boardedPassengers + 1) }
-            : f
-        )
-      );
-      toast.success(`Passenger ${pnr} verified & boarded.`);
-    } else if (newStatus === 'FLAGGED_REVIEW') {
-      aocsDataStore.logAuditEvent('SECURITY', `Passenger ${pnr} flagged for secondary screening at gate ${currentFlight.gate}`, currentFlight.flightNumber, user?.fullName || 'Gate Agent');
-      toast.error(`Passenger ${pnr} flagged for secondary security screening.`);
-    } else {
-      toast.success(`Passenger status updated to ${newStatus}.`);
-    }
-  };
-
-  // ============================================================================
-  // LOST & FOUND ACTIONS
-  // ============================================================================
-
-  const handleSaveNewFoundItem = () => {
-    if (!newLfTitle.trim() || !newLfLocation.trim()) {
-      toast.error('Title and location found are required.');
-      return;
-    }
-
-    const newItem: LostFoundItem = {
-      id: `LF-2024-${Math.floor(100 + Math.random() * 900)}`,
-      title: newLfTitle,
-      category: newLfCategory,
-      locationFound: newLfLocation,
-      reportedBy: `Officer ${user?.name || 'Aarav Patel'}`,
-      contactNumber: 'Security Office Ext 204',
-      status: 'SEARCHING',
-      reportedDate: 'Just now',
-      description: newLfDescription || 'Retrieved from airside concourse.',
-      color: 'Standard',
-      storageLocker: newLfLocker || 'Locker Sec-01',
-    };
-
-    setLostFoundList((prev) => [newItem, ...prev]);
-
-    // Backend database persistence (Table #39)
-    lostFoundApi.reportFound({
-      itemName: newLfTitle,
-      category: newLfCategory,
-      colorAndDescription: newLfDescription || 'Retrieved from airside concourse.',
-      foundLocationType: 'CONCOURSE',
-      terminalId: 1,
-      foundLocationDetail: newLfLocation,
-      finderType: 'SECURITY_OFFICER',
-      loggedByUserId: user?.userId || 1,
-      storageVaultLocation: newLfLocker || 'Locker Sec-01',
-    }).catch((err) => console.warn('Backend report lost item fallback:', err));
-
-    // Cross-dashboard bridge
-    aocsDataStore.reportLostItem({
-      category: newLfCategory,
-      itemName: newLfTitle,
-      description: newLfDescription || 'Retrieved from airside concourse.',
-      locationFound: newLfLocation,
-      contactName: `Officer ${user?.name || 'Aarav Patel'}`,
-      contactEmail: 'security@saphire-airport.internal',
-    });
-
-    aocsDataStore.logAuditEvent(
-      'SECURITY',
-      `Found item intake logged: ${newLfTitle} found at ${newLfLocation}`,
-      undefined,
-      user?.fullName || 'Security Officer'
-    );
-
-    setNewLfModalOpen(false);
-    setNewLfTitle('');
-    setNewLfLocation('');
-    setNewLfDescription('');
-    setNewLfLocker('');
-    toast.success(`Found item ${newItem.id} cataloged into secure storage!`);
-  };
-
-  const handleUpdateLfStatus = (itemId: string, newStatus: LostFoundStatus) => {
-    setLostFoundList((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, status: newStatus } : item
-      )
-    );
-    if (selectedLfItem && selectedLfItem.id === itemId) {
-      setSelectedLfItem((prev) => (prev ? { ...prev, status: newStatus } : null));
-    }
-
-    if (newStatus === 'RETURNED') {
-      aocsDataStore.resolveLostItem(itemId);
-    }
-
-    aocsDataStore.logAuditEvent(
-      'SECURITY',
-      `Lost & Found record ${itemId} updated to ${newStatus.replace(/_/g, ' ')}`,
-      undefined,
-      user?.fullName || 'Security Officer'
-    );
-
-    toast.success(`Item ${itemId} status updated to ${newStatus.replace(/_/g, ' ')}!`);
-  };
-
-  // ============================================================================
-  // INCIDENT ACTIONS
-  // ============================================================================
-
-  const handleSaveIncident = () => {
-    if (!incidentTitle.trim() || !incidentLocation.trim()) {
-      toast.error('Incident title and location are required.');
-      return;
-    }
-
-    const newInc: SecurityIncident = {
-      id: `INC-${Math.floor(800 + Math.random() * 199)}`,
-      title: incidentTitle,
-      location: incidentLocation,
-      severity: incidentSeverity,
-      status: 'INVESTIGATING',
-      reportedAt: 'Just now',
-      assignedOfficer: user?.name || 'Officer Aarav Li',
-      description: incidentDescription || 'Incident reported by airside checkpoint.',
-    };
-
-    setIncidents((prev) => [newInc, ...prev]);
-
-    // Cross-dashboard incident logging
-    aocsDataStore.logIncident({
-      title: incidentTitle,
-      severity: incidentSeverity,
-      location: incidentLocation,
-      description: incidentDescription,
-    });
-
-    aocsDataStore.logAuditEvent(
-      'SECURITY',
-      `SECURITY DISPATCH [${incidentSeverity}]: ${incidentTitle} at ${incidentLocation}`,
-      undefined,
-      user?.fullName || 'Security Officer'
-    );
-
-    setIncidentModalOpen(false);
-    setIncidentTitle('');
-    setIncidentLocation('');
-    setIncidentDescription('');
-    toast.success(`Security incident ${newInc.id} logged and dispatched!`);
-  };
-
-  const handleResolveIncident = (incidentId: string) => {
-    setIncidents((prev) =>
-      prev.map((inc) =>
-        inc.id === incidentId ? { ...inc, status: 'RESOLVED' } : inc
-      )
-    );
-
-    aocsDataStore.resolveIncident(incidentId);
-    aocsDataStore.logAuditEvent(
-      'SECURITY',
-      `Incident ${incidentId} resolved and logged in security audit`,
-      undefined,
-      user?.fullName || 'Security Supervisor'
-    );
-
-    toast.success(`Incident ${incidentId} resolved and logged in security audit.`);
-  };
-
-  // Filtered Passenger List
-  const filteredPassengers = passengers.filter((p) => {
-    const matchesSearch =
-      p.name.toLowerCase().includes(passengerSearch.toLowerCase()) ||
-      p.pnr.toLowerCase().includes(passengerSearch.toLowerCase()) ||
-      p.seat.toLowerCase().includes(passengerSearch.toLowerCase()) ||
-      p.flightNumber.toLowerCase().includes(passengerSearch.toLowerCase());
-    const matchesStatus =
-      passengerFilterStatus === 'ALL' || p.clearanceStatus === passengerFilterStatus;
+  const filteredManifest = manifest.filter((m) => {
+    const q = passengerSearch.trim().toLowerCase();
+    const matchesSearch = !q || m.name.toLowerCase().includes(q) || m.pnr.toLowerCase().includes(q) || (m.seat ?? '').toLowerCase().includes(q);
+    const matchesStatus = passengerFilter === 'ALL' || (passengerFilter === 'NONE' ? !m.clearanceStatus : m.clearanceStatus === passengerFilter);
     return matchesSearch && matchesStatus;
   });
 
-  // Filtered Lost & Found List
-  const filteredLostFound = lostFoundList.filter((item) => {
-    const matchesSearch =
-      item.title.toLowerCase().includes(lfSearch.toLowerCase()) ||
-      item.id.toLowerCase().includes(lfSearch.toLowerCase()) ||
-      item.locationFound.toLowerCase().includes(lfSearch.toLowerCase()) ||
-      (item.linkedPnr && item.linkedPnr.toLowerCase().includes(lfSearch.toLowerCase()));
-    const matchesCategory =
-      lfCategoryFilter === 'ALL' || item.category === lfCategoryFilter;
-    return matchesSearch && matchesCategory;
-  });
+  // ---- clearance dialog ----
+  const [scanTarget, setScanTarget] = useState<ManifestEntry | null>(null);
+  const [scanStatus, setScanStatus] = useState<ClearanceStatus>('APPROVED');
+  const [scanMethod, setScanMethod] = useState<VerificationMethod>('BARCODE_SCANNER');
+  const [scanCheckpoint, setScanCheckpoint] = useState<number | ''>('');
+  const [scanReason, setScanReason] = useState('');
+  const [scanBusy, setScanBusy] = useState(false);
+
+  const openScan = (m: ManifestEntry, status: ClearanceStatus) => {
+    setScanTarget(m);
+    setScanStatus(status);
+    setScanReason('');
+    setScanCheckpoint((cur) => cur || checkpoints.find((c) => c.type === 'BOARDING_GATE')?.checkpointId || checkpoints[0]?.checkpointId || '');
+  };
+  const submitScan = async () => {
+    if (!scanTarget || scanCheckpoint === '') return;
+    setScanBusy(true);
+    try {
+      const entry = await securityOpsApi.logClearance({
+        passengerId: scanTarget.passengerId,
+        clearanceStatus: scanStatus,
+        verificationMethod: scanMethod,
+        checkpointId: scanCheckpoint,
+        denialReason: scanStatus === 'DENIED' ? scanReason : undefined,
+      });
+      aocsDataStore.logAuditEvent('SECURITY', `Passenger ${entry.pnr} ${CLEARANCE_LABEL[scanStatus].toLowerCase()} on ${entry.flightNumber} at ${entry.checkpoint}`, entry.flightNumber, user?.fullName || user?.name || 'Security Officer');
+      toast.success(`${entry.passenger}: ${CLEARANCE_LABEL[entry.clearanceStatus].toLowerCase()}`);
+      setScanTarget(null);
+      if (selectedFlightId !== '') loadManifest(selectedFlightId);
+      loadCore();
+      loadLog(logPage);
+    } catch (e) {
+      toast.error(`Scan was NOT saved: ${describeApiError(e)}`);
+    } finally {
+      setScanBusy(false);
+    }
+  };
+
+  // ---- clearance log ----
+  const [logStatus, setLogStatus] = useState<string>('');
+  const [logPage, setLogPage] = useState(0);
+  const [log, setLog] = useState<{ rows: ClearanceEntry[]; total: number; pages: number }>({ rows: [], total: 0, pages: 1 });
+  const loadLog = useCallback(
+    async (page: number) => {
+      try {
+        const res = await securityOpsApi.getClearanceLog(logStatus, page, 15);
+        setLog({ rows: res.content, total: res.totalElements, pages: Math.max(1, res.totalPages) });
+      } catch (e) {
+        toast.error(`Could not load the clearance log: ${describeApiError(e)}`);
+      }
+    },
+    [logStatus]
+  );
+  useEffect(() => {
+    loadLog(logPage);
+  }, [loadLog, logPage]);
+
+  // ---- overview: recent flagged / denied ----
+  const [attention, setAttention] = useState<ClearanceEntry[]>([]);
+  useEffect(() => {
+    Promise.all([securityOpsApi.getClearanceLog('DENIED', 0, 4), securityOpsApi.getClearanceLog('FLAGGED_SECURITY', 0, 4)])
+      .then(([d, f]) => setAttention([...d.content, ...f.content].sort((a, b) => b.scannedAt.localeCompare(a.scannedAt)).slice(0, 6)))
+      .catch(() => setAttention([]));
+  }, [counts]);
+
+  // ---- incidents ----
+  const [incidentOpen, setIncidentOpen] = useState(false);
+  const [incTitle, setIncTitle] = useState('');
+  const [incLocation, setIncLocation] = useState('');
+  const [incSeverity, setIncSeverity] = useState<IncidentSeverity>('MEDIUM');
+  const [incDescription, setIncDescription] = useState('');
+  const [incFlightId, setIncFlightId] = useState<number | ''>('');
+  const saveIncident = async () => {
+    if (!incTitle.trim() || !incLocation.trim()) {
+      toast.error('Title and location are required.');
+      return;
+    }
+    try {
+      const inc = await securityOpsApi.createIncident({
+        title: incTitle,
+        location: incLocation,
+        severity: incSeverity,
+        description: incDescription || undefined,
+        flightId: incFlightId === '' ? undefined : incFlightId,
+      });
+      aocsDataStore.logAuditEvent('SECURITY', `SECURITY DISPATCH [${inc.severity}]: ${inc.title} at ${inc.location}`, inc.flightNumber, user?.fullName || user?.name || 'Security Officer');
+      toast.success(`Incident #${inc.incidentId} logged`);
+      setIncidentOpen(false);
+      setIncTitle('');
+      setIncLocation('');
+      setIncDescription('');
+      setIncFlightId('');
+      loadCore();
+    } catch (e) {
+      toast.error(`Incident was NOT logged: ${describeApiError(e)}`);
+    }
+  };
+  const changeIncident = async (inc: Incident, status: IncidentStatus) => {
+    try {
+      await securityOpsApi.updateIncidentStatus(inc.incidentId, status);
+      toast.success(`Incident #${inc.incidentId} is now ${status.toLowerCase()}`);
+      loadCore();
+    } catch (e) {
+      toast.error(`Incident was NOT updated: ${describeApiError(e)}`);
+    }
+  };
+
+  // ---- lounges ----
+  const [visits, setVisits] = useState<{ rows: LoungeVisit[]; total: number }>({ rows: [], total: 0 });
+  const [visitTarget, setVisitTarget] = useState<ManifestEntry | null>(null);
+  const [visitLounge, setVisitLounge] = useState('');
+  const loadVisits = useCallback(() => {
+    securityOpsApi
+      .getLoungeVisits(0, 15)
+      .then((res) => setVisits({ rows: res.content, total: res.totalElements }))
+      .catch((e) => toast.error(`Could not load lounge visits: ${describeApiError(e)}`));
+  }, []);
+  useEffect(() => {
+    loadVisits();
+  }, [loadVisits]);
+  const submitVisit = async () => {
+    if (!visitTarget || !visitLounge) return;
+    try {
+      const v = await securityOpsApi.logLoungeVisit(visitLounge, visitTarget.passengerId);
+      toast.success(`${v.passenger} logged into ${v.lounge}`);
+      setVisitTarget(null);
+      loadVisits();
+      loadCore();
+    } catch (e) {
+      toast.error(`Visit was NOT logged: ${describeApiError(e)}`);
+    }
+  };
+
+  // ---- lost & found (live) ----
+  const [lfItems, setLfItems] = useState<LostFoundItemData[]>([]);
+  const [lfTotal, setLfTotal] = useState(0);
+  const [lfPage, setLfPage] = useState(0);
+  const [lfSearch, setLfSearch] = useState('');
+  const [lfStatus, setLfStatus] = useState('');
+  const [lfNewOpen, setLfNewOpen] = useState(false);
+  const [lfName, setLfName] = useState('');
+  const [lfCategory, setLfCategory] = useState('ELECTRONICS');
+  const [lfLocation, setLfLocation] = useState('');
+  const [lfDescription, setLfDescription] = useState('');
+  const [lfVault, setLfVault] = useState('');
+  const [claimItem, setClaimItem] = useState<LostFoundItemData | null>(null);
+  const [claimName, setClaimName] = useState('');
+  const [claimEmail, setClaimEmail] = useState('');
+  const [claimNotes, setClaimNotes] = useState('');
+
+  const loadLostFound = useCallback(
+    async (page: number) => {
+      try {
+        const res = await lostFoundApi.getAll({ page, size: 15, search: lfSearch.trim(), status: lfStatus || undefined });
+        setLfItems(res.content ?? []);
+        setLfTotal(res.totalElements ?? 0);
+      } catch (e) {
+        toast.error(`Could not load lost & found: ${describeApiError(e)}`);
+      }
+    },
+    [lfSearch, lfStatus]
+  );
+  useEffect(() => {
+    const handle = setTimeout(() => loadLostFound(lfPage), 250);
+    return () => clearTimeout(handle);
+  }, [loadLostFound, lfPage]);
+
+  const saveLostFound = async () => {
+    if (!lfName.trim() || !lfLocation.trim() || !lfDescription.trim()) {
+      toast.error('Item name, where it was found and a description are required.');
+      return;
+    }
+    try {
+      const created = await lostFoundApi.reportFound({
+        itemName: lfName,
+        category: lfCategory,
+        colorAndDescription: lfDescription,
+        foundLocationType: 'CONCOURSE',
+        terminalId: 1,
+        foundLocationDetail: lfLocation,
+        finderType: 'SECURITY_OFFICER',
+        storageVaultLocation: lfVault || undefined,
+      });
+      aocsDataStore.logAuditEvent('SECURITY', `Found item logged: ${lfName} at ${lfLocation} (${created.referenceCode})`, undefined, user?.fullName || user?.name || 'Security Officer');
+      toast.success(`Item logged as ${created.referenceCode}`);
+      setLfNewOpen(false);
+      setLfName('');
+      setLfLocation('');
+      setLfDescription('');
+      setLfVault('');
+      loadLostFound(0);
+      setLfPage(0);
+    } catch (e) {
+      toast.error(`Item was NOT logged: ${describeApiError(e)}`);
+    }
+  };
+  const changeLfStatus = async (item: LostFoundItemData, status: string) => {
+    try {
+      const updated = await lostFoundApi.updateStatus(item.itemId, status);
+      setLfItems((prev) => prev.map((i) => (i.itemId === item.itemId ? { ...i, status: updated.status } : i)));
+      toast.success(`${item.referenceCode} is now ${pretty(status).toLowerCase()}`);
+    } catch (e) {
+      toast.error(`Status was NOT changed: ${describeApiError(e)}`);
+    }
+  };
+  const submitClaim = async () => {
+    if (!claimItem || !claimName.trim() || !claimEmail.trim() || !claimNotes.trim()) {
+      toast.error('Claimant name, email and verification notes are required.');
+      return;
+    }
+    try {
+      await lostFoundApi.submitClaim(claimItem.itemId, { claimantName: claimName, claimantContactEmail: claimEmail, claimVerificationNotes: claimNotes });
+      toast.success(`${claimItem.referenceCode} released to ${claimName}`);
+      setClaimItem(null);
+      setClaimName('');
+      setClaimEmail('');
+      setClaimNotes('');
+      loadLostFound(lfPage);
+    } catch (e) {
+      toast.error(`Claim was NOT recorded: ${describeApiError(e)}`);
+    }
+  };
+
+  // ---------------------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------------------
+  const readiness = (f: GateFlight) => (f.tasksTotal ? Math.round((f.tasksCompleted / f.tasksTotal) * 100) : 0);
+
+  const flightsTable = (
+    <Card elevation={0} sx={{ ...CARD_SX, overflow: 'hidden' }}>
+      <TableContainer>
+        <Table size="small">
+          <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+            <TableRow>
+              {head('FLIGHT')}
+              {head('GATE')}
+              {head('PASSENGERS')}
+              {head('CLEARANCE')}
+              {head('TURNAROUND')}
+              {head('', 'right')}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {gateFlights.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} sx={{ color: '#64748B' }}>
+                  No flights are boarding or delayed at the gate right now.
+                </TableCell>
+              </TableRow>
+            )}
+            {gateFlights.map((f) => (
+              <TableRow key={f.flightId} hover>
+                <TableCell>
+                  <Typography sx={{ fontWeight: 800, color: '#0F2942' }}>{f.flightNumber}</Typography>
+                  <Typography sx={{ fontSize: '0.74rem', color: '#64748B' }}>
+                    {f.airline} → {f.destination} · {f.flightStatus}
+                  </Typography>
+                </TableCell>
+                <TableCell>{f.gate ? <Chip label={f.gate} size="small" sx={{ fontWeight: 700, bgcolor: '#F1F5F9' }} /> : '—'}</TableCell>
+                <TableCell sx={{ fontSize: '0.8rem', color: '#334155' }}>
+                  {f.booked} booked · {f.boardingPasses} passes
+                </TableCell>
+                <TableCell sx={{ fontSize: '0.78rem' }}>
+                  <span style={{ color: '#15803D', fontWeight: 700 }}>{f.approved} ok</span> ·{' '}
+                  <span style={{ color: '#0369A1', fontWeight: 700 }}>{f.boarded} boarded</span> ·{' '}
+                  <span style={{ color: '#B45309', fontWeight: 700 }}>{f.flagged} flagged</span> ·{' '}
+                  <span style={{ color: '#B91C1C', fontWeight: 700 }}>{f.denied} denied</span>
+                </TableCell>
+                <TableCell sx={{ minWidth: 130 }}>
+                  <LinearProgress variant="determinate" value={readiness(f)} sx={{ height: 6, borderRadius: 3, mb: 0.4 }} />
+                  <Typography sx={{ fontSize: '0.7rem', color: f.tasksBlocked ? '#B91C1C' : '#64748B' }}>
+                    {f.tasksCompleted}/{f.tasksTotal} tasks{f.tasksBlocked ? ` · ${f.tasksBlocked} blocked` : ''}
+                  </Typography>
+                </TableCell>
+                <TableCell align="right">
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => {
+                      setSelectedFlightId(f.flightId);
+                      go('security-screening');
+                    }}
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '7px' }}
+                  >
+                    Screen
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Card>
+  );
 
   return (
     <DashboardLayout activeRole="passenger-security">
-      {/* ========================================================================= */}
-      {/* HEADER: TITLE & OPERATIONAL STATUS                                        */}
-      {/* ========================================================================= */}
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', md: 'center' },
-          gap: 2,
-          mb: 3.5,
-        }}
-      >
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-            <Typography variant="h5" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
-              Aviation Security Operations Center (ASOC)
-            </Typography>
-            <Chip
-              label="AIRSIDE SECURITY COMMAND"
-              size="small"
-              sx={{
-                height: 22,
-                fontSize: '0.66rem',
-                fontWeight: 800,
-                backgroundColor: '#EFF6FF',
-                color: '#0284C7',
-                border: '1px solid #BAE6FD',
-              }}
-            />
-          </Box>
-          <Typography sx={{ fontSize: '0.84rem', color: '#64748B', mt: 0.5, fontFamily: "'Outfit', sans-serif" }}>
-            Airside checkpoint verification, biometric passenger screening, threat mitigation, and property security intake.
-          </Typography>
-        </Box>
-
-        {/* Action Buttons: Kept strictly on a single horizontal row */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0, flexWrap: 'nowrap' }}>
-          <Button
-            variant="outlined"
-            onClick={() => setNewLfModalOpen(true)}
-            startIcon={<Plus size={15} />}
-            sx={{
-              borderColor: '#E2E8F0',
-              color: '#0F2942',
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.82rem',
-              borderRadius: '9px',
-              px: 1.8,
-              py: 0.85,
-              backgroundColor: '#FFFFFF',
-              boxShadow: 'none',
-              whiteSpace: 'nowrap',
-              '&:hover': { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
-            }}
-          >
-            Intake Found Item
-          </Button>
-
-          <Button
-            variant="contained"
-            onClick={() => setIncidentModalOpen(true)}
-            startIcon={<ShieldAlert size={15} />}
-            sx={{
-              backgroundColor: '#0F2942',
-              color: '#FFFFFF',
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.82rem',
-              borderRadius: '9px',
-              px: 2,
-              py: 0.85,
-              boxShadow: 'none',
-              whiteSpace: 'nowrap',
-              '&:hover': { backgroundColor: '#1E3A5F', boxShadow: 'none' },
-            }}
-          >
-            Log Security Incident
-          </Button>
-        </Box>
-      </Box>
-
-      {/* ========================================================================= */}
-      {/* 4 DEDICATED AVIATION SECURITY KPI METRIC CARDS                            */}
-      {/* ========================================================================= */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
-          gap: 2.5,
-          mb: 3.5,
-        }}
-      >
-        {/* KPI 1: Checkpoint Throughput */}
-        <Card
-          onClick={() => navigate('/dashboard/passenger-security#security-screening')}
-          sx={{
-            p: 2.5,
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            borderRadius: '14px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            '&:hover': { transform: 'translateY(-2px)', borderColor: '#0284C7' },
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <Box>
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                CHECKPOINT SCREENING
-              </Typography>
-              <Typography variant="h4" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942', mt: 0.6 }}>
-                1,420
-              </Typography>
-            </Box>
-            <Box sx={{ p: 1.2, borderRadius: '10px', backgroundColor: '#F0F9FF', color: '#0284C7' }}>
-              <ShieldCheck size={20} />
-            </Box>
-          </Box>
-          <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Chip label="8 LANES ACTIVE" size="small" sx={{ height: 20, fontSize: '0.62rem', fontWeight: 800, backgroundColor: '#E0F2FE', color: '#0369A1', borderRadius: '4px' }} />
-            <Typography sx={{ fontSize: '0.74rem', color: '#64748B' }}>Concourses A, B & C</Typography>
-          </Box>
+      {loadFailed && (
+        <Card elevation={0} sx={{ ...CARD_SX, p: 2, mb: 2, borderColor: '#FECACA', bgcolor: '#FEF2F2' }}>
+          <Typography sx={{ color: '#991B1B', fontWeight: 700, fontSize: '0.86rem' }}>Some data could not be loaded: {loadFailed}</Typography>
         </Card>
-
-        {/* KPI 2: Biometric E-Gate Match Rate */}
-        <Card
-          onClick={() => navigate('/dashboard/passenger-security#clearance')}
-          sx={{
-            p: 2.5,
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            borderRadius: '14px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            '&:hover': { transform: 'translateY(-2px)', borderColor: '#16A34A' },
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <Box>
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                BIOMETRIC E-GATE MATCH
-              </Typography>
-              <Typography variant="h4" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942', mt: 0.6 }}>
-                99.4%
-              </Typography>
-            </Box>
-            <Box sx={{ p: 1.2, borderRadius: '10px', backgroundColor: '#F0FDF4', color: '#16A34A' }}>
-              <CheckCircle2 size={20} />
-            </Box>
-          </Box>
-          <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#16A34A' }}>
-              Automated facial matching nominal
-            </Typography>
-            <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8' }}>
-              · 0.6% rerouted
-            </Typography>
-          </Box>
-        </Card>
-
-        {/* KPI 3: Secondary Inspection Holds */}
-        <Card
-          onClick={() => navigate('/dashboard/passenger-security#clearance')}
-          sx={{
-            p: 2.5,
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            borderRadius: '14px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            '&:hover': { transform: 'translateY(-2px)', borderColor: '#D97706' },
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <Box>
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                SECONDARY SCREENING
-              </Typography>
-              <Typography variant="h4" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942', mt: 0.6 }}>
-                3 Holds
-              </Typography>
-            </Box>
-            <Box sx={{ p: 1.2, borderRadius: '10px', backgroundColor: '#FFFBEB', color: '#D97706' }}>
-              <ShieldAlert size={20} />
-            </Box>
-          </Box>
-          <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#D97706' }}>
-              Watchlist & visa verification
-            </Typography>
-            <Typography sx={{ fontSize: '0.74rem', color: '#64748B' }}>· Immigration desk active</Typography>
-          </Box>
-        </Card>
-
-        {/* KPI 4: Security Alerts & Incidents */}
-        <Card
-          onClick={() => navigate('/dashboard/passenger-security#incidents')}
-          sx={{
-            p: 2.5,
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            borderRadius: '14px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            '&:hover': { transform: 'translateY(-2px)', borderColor: '#EF4444' },
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <Box>
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                ACTIVE ALERTS & INCIDENTS
-              </Typography>
-              <Typography variant="h4" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#EF4444', mt: 0.6 }}>
-                {incidents.filter((i) => i.status !== 'RESOLVED').length}
-              </Typography>
-            </Box>
-            <Box sx={{ p: 1.2, borderRadius: '10px', backgroundColor: '#FEF2F2', color: '#EF4444' }}>
-              <ShieldAlert size={20} />
-            </Box>
-          </Box>
-          <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Chip
-              label={`${incidents.filter((i) => (i.severity === 'CRITICAL' || i.severity === 'HIGH') && i.status !== 'RESOLVED').length} HIGH PRIORITY`}
-              size="small"
-              sx={{ height: 20, fontSize: '0.62rem', fontWeight: 800, backgroundColor: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}
-            />
-            <Typography sx={{ fontSize: '0.74rem', color: '#64748B' }}>Airside dispatch monitoring</Typography>
-          </Box>
-        </Card>
-      </Box>
-
-      {/* Contextual Subview Breadcrumb (When routed via sidebar hash) */}
-      {activeTab !== 'overview' && (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            mb: 3,
-            p: 1.5,
-            px: 2.2,
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            borderRadius: '12px',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Typography sx={{ fontSize: '0.84rem', color: '#64748B', fontWeight: 600 }}>
-              Active Workspace Subview:
-            </Typography>
-            <Chip
-              label={activeTab.toUpperCase().replace(/-/g, ' ')}
-              size="small"
-              sx={{ fontWeight: 800, fontSize: '0.72rem', backgroundColor: '#EFF6FF', color: '#0284C7', border: '1px solid #BAE6FD' }}
-            />
-          </Box>
-          <Button
-            size="small"
-            onClick={() => {
-              setActiveTab('overview');
-              navigate('/dashboard/passenger-security');
-            }}
-            startIcon={<Sliders size={14} />}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.8rem',
-              color: '#0F2942',
-              backgroundColor: '#F8FAFC',
-              border: '1px solid #E2E8F0',
-              borderRadius: '8px',
-              px: 1.6,
-              '&:hover': { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1' },
-            }}
-          >
-            Return to Operations Console
-          </Button>
-        </Box>
       )}
 
-      {/* ========================================================================= */}
-      {/* TAB 1: OVERVIEW / OPERATIONS CONSOLE                                      */}
-      {/* ========================================================================= */}
-      {(activeTab === 'overview' || activeTab === 'boarding' || activeTab === 'security-screening') && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5, mb: 4 }}>
-          {/* SECTION: AIRSIDE SECURITY VERIFICATION & CHECKPOINT SCREENING */}
-          <Card
-            sx={{
-              p: 3,
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #E2E8F0',
-              borderRadius: '16px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-            }}
-          >
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 2, mb: 3 }}>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
-                    Airside Security Verification & Checkpoint Screening
-                  </Typography>
-                  <Chip
-                    label={currentFlight.securityCleared ? 'SECURITY SWEEP CLEARED' : 'SWEEP IN PROGRESS'}
-                    size="small"
-                    sx={{
-                      fontWeight: 800,
-                      fontSize: '0.7rem',
-                      backgroundColor: currentFlight.securityCleared ? '#DCFCE7' : '#FEF3C7',
-                      color: currentFlight.securityCleared ? '#15803D' : '#B45309',
-                      borderRadius: '4px',
-                    }}
-                  />
-                </Box>
-                <Typography sx={{ fontSize: '0.82rem', color: '#64748B', mt: 0.5 }}>
-                  Aviation security enforcement: Authorize pre-flight cabin security sweeps, certify explosive detection (K9), and verify biometric e-Gate clearance.
-                </Typography>
-              </Box>
+      {/* ===================== OVERVIEW ===================== */}
+      {activeTab === 'overview' && (
+        <Box>
+          <Heading
+            title="Passenger & Security Operations"
+            sub={`Signed in as ${user?.name ?? 'officer'} · live clearance, incidents, lost property and lounges`}
+            action={
+              <Button variant="contained" startIcon={<Plus size={16} />} onClick={() => setIncidentOpen(true)} sx={{ bgcolor: '#DC2626', textTransform: 'none', fontWeight: 700, borderRadius: '8px', '&:hover': { bgcolor: '#B91C1C' } }}>
+                Log Incident
+              </Button>
+            }
+          />
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(5, 1fr)' }, gap: 2, mb: 3 }}>
+            <Stat value={counts.APPROVED.toLocaleString()} label="Approved scans" tone="#15803D" onClick={() => { setLogStatus('APPROVED'); setLogPage(0); go('clearance'); }} />
+            <Stat value={counts.BOARDED.toLocaleString()} label="Boarded" tone="#0369A1" onClick={() => { setLogStatus('BOARDED'); setLogPage(0); go('clearance'); }} />
+            <Stat value={counts.FLAGGED_SECURITY.toLocaleString()} label="Flagged for review" tone="#B45309" onClick={() => { setLogStatus('FLAGGED_SECURITY'); setLogPage(0); go('clearance'); }} />
+            <Stat value={counts.DENIED.toLocaleString()} label="Denied" tone="#B91C1C" onClick={() => { setLogStatus('DENIED'); setLogPage(0); go('clearance'); }} />
+            <Stat value={openIncidents.length} label="Open incidents" hint={`${incidentTotal} logged in all`} tone={openIncidents.length ? '#DC2626' : '#15803D'} onClick={() => go('incidents')} />
+          </Box>
 
-              {/* Flight Selector */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748B' }}>
-                  ACTIVE FLIGHT:
-                </Typography>
-                <TextField
-                  select
-                  size="small"
-                  value={selectedFlightNumber}
-                  onChange={(e) => setSelectedFlightNumber(e.target.value)}
-                  sx={{
-                    width: 220,
-                    backgroundColor: '#F8FAFC',
-                    borderRadius: '8px',
-                    '& .MuiOutlinedInput-root': {
-                      fontFamily: "'Outfit', sans-serif",
-                      fontWeight: 700,
-                      fontSize: '0.86rem',
-                      color: '#0F2942',
-                    },
-                  }}
-                >
-                  {flightsGate.map((f) => (
-                    <MenuItem key={f.flightNumber} value={f.flightNumber} sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.86rem' }}>
-                      {f.flightNumber} · {f.gate} ({f.airline})
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Box>
-            </Box>
+          <Typography sx={{ fontFamily: FONT, fontWeight: 800, color: '#0F2942', mb: 1.2 }}>Flights at the gate</Typography>
+          {flightsTable}
 
-            {/* Flight & Gate Telemetry */}
-            <Box
-              sx={{
-                p: 2.5,
-                backgroundColor: '#F8FAFC',
-                border: '1px solid #E2E8F0',
-                borderRadius: '12px',
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' },
-                gap: 2,
-                mb: 3,
-              }}
-            >
-              <Box>
-                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>FLIGHT & DESTINATION</Typography>
-                <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.05rem', color: '#0F2942', mt: 0.3 }}>
-                  {currentFlight.flightNumber} · {currentFlight.airline}
-                </Typography>
-                <Typography sx={{ fontSize: '0.78rem', color: '#0284C7', fontWeight: 600 }}>
-                  {currentFlight.destination}
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>ASSIGNED GATE & CONCOURSE</Typography>
-                <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.05rem', color: '#0F2942', mt: 0.3 }}>
-                  {currentFlight.gate}
-                </Typography>
-                <Typography sx={{ fontSize: '0.78rem', color: '#64748B' }}>
-                  {currentFlight.terminal.replace(/Terminal [12]/g, 'Central Terminal')} · STD {currentFlight.scheduledDeparture}
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>BIOMETRIC E-GATE CLEARANCE</Typography>
-                <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.05rem', color: '#0F2942', mt: 0.3 }}>
-                  Facial Match Cleared
-                </Typography>
-                <Typography sx={{ fontSize: '0.78rem', color: '#0284C7', fontWeight: 600 }}>
-                  Turnstiles Linked · Secure Airside Corridor
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>CABIN & APRON SWEEP</Typography>
-                <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.05rem', color: currentFlight.securityCleared ? '#15803D' : '#D97706', mt: 0.3 }}>
-                  {currentFlight.securityCleared ? 'K9 Certified Clear' : 'Sweep In Progress'}
-                </Typography>
-                <Typography sx={{ fontSize: '0.78rem', color: '#64748B' }}>
-                  Explosive Detection Unit · Patrol Standby
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Prerequisites Checklist Banner */}
-            <Box
-              sx={{
-                p: 2.2,
-                borderRadius: '12px',
-                border: '1px solid',
-                borderColor: currentFlight.securityCleared ? '#BBF7D0' : '#FCA5A5',
-                backgroundColor: currentFlight.securityCleared ? '#F0FDF4' : '#FEF2F2',
-                mb: 3,
-              }}
-            >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {currentFlight.securityCleared ? (
-                    <ShieldCheck size={18} color="#16A34A" />
-                  ) : (
-                    <ShieldAlert size={18} color="#DC2626" />
+          <Typography sx={{ fontFamily: FONT, fontWeight: 800, color: '#0F2942', mt: 3, mb: 1.2 }}>Latest denied and flagged scans</Typography>
+          <Card elevation={0} sx={{ ...CARD_SX, overflow: 'hidden' }}>
+            <TableContainer>
+              <Table size="small">
+                <TableBody>
+                  {attention.length === 0 && (
+                    <TableRow>
+                      <TableCell sx={{ color: '#64748B' }}>Nothing flagged or denied.</TableCell>
+                    </TableRow>
                   )}
-                  <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '0.92rem', color: currentFlight.securityCleared ? '#166534' : '#991B1B' }}>
-                    {currentFlight.securityCleared
-                      ? '✓ AIRSIDE SECURITY SWEEP VERIFIED: Pre-flight cabin and perimeter clearances certified'
-                      : '⚠ AIRSIDE SECURITY SWEEP PENDING: Cabin sweep & explosive inspection required'}
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Security Sweeps & Verification Status */}
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
-                <Chip
-                  icon={currentFlight.securityCleared ? <Check size={14} /> : <AlertTriangle size={14} />}
-                  label={`Cabin Security Sweep: ${currentFlight.securityCleared ? 'CLEARED' : 'PENDING'}`}
-                  size="small"
-                  onClick={() => !currentFlight.securityCleared && handleClearPrerequisite(currentFlight.flightNumber, 'securityCleared')}
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: '0.76rem',
-                    cursor: !currentFlight.securityCleared ? 'pointer' : 'default',
-                    backgroundColor: currentFlight.securityCleared ? '#DCFCE7' : '#FEE2E2',
-                    color: currentFlight.securityCleared ? '#15803D' : '#B91C1C',
-                    border: '1px solid',
-                    borderColor: currentFlight.securityCleared ? '#86EFAC' : '#FCA5A5',
-                    borderRadius: '4px',
-                  }}
-                />
-
-                <Chip
-                  icon={<Check size={14} />}
-                  label="K9 Explosive Detection: VERIFIED"
-                  size="small"
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: '0.76rem',
-                    backgroundColor: '#DCFCE7',
-                    color: '#15803D',
-                    border: '1px solid #86EFAC',
-                    borderRadius: '4px',
-                  }}
-                />
-
-                <Chip
-                  icon={<Check size={14} />}
-                  label="Biometric E-Gates: ONLINE"
-                  size="small"
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: '0.76rem',
-                    backgroundColor: '#DCFCE7',
-                    color: '#15803D',
-                    border: '1px solid #86EFAC',
-                    borderRadius: '4px',
-                  }}
-                />
-
-                <Chip
-                  icon={<Check size={14} />}
-                  label="Ramp Perimeter Watch: SECURE"
-                  size="small"
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: '0.76rem',
-                    backgroundColor: '#DCFCE7',
-                    color: '#15803D',
-                    border: '1px solid #86EFAC',
-                    borderRadius: '4px',
-                  }}
-                />
-              </Box>
-            </Box>
-
-            {/* Aviation Security Enforcement Actions */}
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
-              <Button
-                variant="contained"
-                onClick={() => handleClearPrerequisite(currentFlight.flightNumber, 'securityCleared')}
-                startIcon={<ShieldCheck size={16} />}
-                sx={{
-                  backgroundColor: '#0F2942',
-                  color: '#FFFFFF',
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  fontSize: '0.84rem',
-                  borderRadius: '9px',
-                  px: 2.5,
-                  py: 1,
-                  boxShadow: 'none',
-                  '&:hover': { backgroundColor: '#1E3A5F', boxShadow: 'none' },
-                }}
-              >
-                {currentFlight.securityCleared ? 'Re-Certify Security Release' : 'Certify Airside Security Release'}
-              </Button>
-
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  toast.error(`Secondary screening hold flagged for Flight ${currentFlight.flightNumber}.`);
-                  aocsDataStore.logAuditEvent('SECURITY', `Secondary screening hold flagged for ${currentFlight.flightNumber}`, currentFlight.flightNumber, user?.name || 'Elena Wong');
-                }}
-                startIcon={<AlertTriangle size={16} />}
-                sx={{
-                  borderColor: '#F59E0B',
-                  color: '#D97706',
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  fontSize: '0.84rem',
-                  borderRadius: '9px',
-                  px: 2.5,
-                  py: 1,
-                  '&:hover': { backgroundColor: '#FFFBEB', borderColor: '#D97706' },
-                }}
-              >
-                Flag Secondary Screening Hold
-              </Button>
-
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  toast.success(`K9 Explosive Detection Sweep dispatched to ${currentFlight.gate} stand.`);
-                  aocsDataStore.logAuditEvent('SECURITY', `K9 sweep dispatched to ${currentFlight.gate} for ${currentFlight.flightNumber}`, currentFlight.flightNumber, user?.name || 'Elena Wong');
-                }}
-                startIcon={<Radio size={16} />}
-                sx={{
-                  borderColor: '#0284C7',
-                  color: '#0284C7',
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  fontSize: '0.84rem',
-                  borderRadius: '9px',
-                  px: 2.5,
-                  py: 1,
-                  '&:hover': { backgroundColor: '#F0F9FF', borderColor: '#0369A1' },
-                }}
-              >
-                Dispatch K9 Sweep Patrol
-              </Button>
-
-              <Button
-                variant="outlined"
-                onClick={() => setIncidentModalOpen(true)}
-                startIcon={<ShieldAlert size={16} />}
-                sx={{
-                  borderColor: '#EF4444',
-                  color: '#DC2626',
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  fontSize: '0.84rem',
-                  borderRadius: '9px',
-                  px: 2.5,
-                  py: 1,
-                  '&:hover': { backgroundColor: '#FEF2F2', borderColor: '#B91C1C' },
-                }}
-              >
-                Log Security Incident
-              </Button>
-            </Box>
+                  {attention.map((a) => (
+                    <TableRow key={a.clearanceId}>
+                      <TableCell sx={{ fontWeight: 700 }}>{a.passenger}</TableCell>
+                      <TableCell>{a.flightNumber}</TableCell>
+                      <TableCell>
+                        <StatusChip status={a.clearanceStatus} />
+                      </TableCell>
+                      <TableCell sx={{ color: '#64748B', fontSize: '0.8rem' }}>{a.denialReason || METHOD_LABEL[a.verificationMethod]}</TableCell>
+                      <TableCell sx={{ color: '#94A3B8', fontSize: '0.78rem' }}>{clock(a.scannedAt)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Card>
         </Box>
       )}
 
-      {/* ========================================================================= */}
-      {/* TAB 2 / MAIN: PASSENGER MANIFEST & CLEARANCE MONITOR                      */}
-      {/* ========================================================================= */}
-      {(activeTab === 'overview' || activeTab === 'clearance') && (
-        <Card
-          sx={{
-            p: 3,
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            borderRadius: '16px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-            mb: 4,
-          }}
-        >
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 2, mb: 3 }}>
-            <Box>
-              <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
-                Live Passenger Security & Boarding Clearance Manifest
-              </Typography>
-              <Typography sx={{ fontSize: '0.82rem', color: '#64748B', mt: 0.3 }}>
-                E-Gate biometric records, watchlist inspection flags, and seat allocations for departure flights.
-              </Typography>
-            </Box>
-
-            {/* Filter & Search Bar */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-              <TextField
-                size="small"
-                placeholder="Search PNR, name, seat..."
-                value={passengerSearch}
-                onChange={(e) => setPassengerSearch(e.target.value)}
-                slotProps={{
-                  input: {
-                    startAdornment: <Search size={16} color="#94A3B8" style={{ marginRight: 8 }} />,
-                    sx: { fontFamily: "'Outfit', sans-serif", fontSize: '0.84rem' },
-                  },
-                }}
-                sx={{ width: { xs: '100%', sm: 220 }, backgroundColor: '#F8FAFC', borderRadius: '8px' }}
-              />
-
-              <TextField
-                select
-                size="small"
-                value={passengerFilterStatus}
-                onChange={(e) => setPassengerFilterStatus(e.target.value)}
-                sx={{
-                  width: 170,
-                  backgroundColor: '#F8FAFC',
-                  borderRadius: '8px',
-                  '& .MuiOutlinedInput-root': {
-                    fontFamily: "'Outfit', sans-serif",
-                    fontWeight: 600,
-                    fontSize: '0.84rem',
-                  },
-                }}
-              >
-                <MenuItem value="ALL">All Statuses</MenuItem>
-                <MenuItem value="CLEARED">Cleared</MenuItem>
-                <MenuItem value="BOARDED">Boarded</MenuItem>
-                <MenuItem value="FLAGGED_REVIEW">Flagged for Review</MenuItem>
-                <MenuItem value="DENIED">Denied</MenuItem>
-              </TextField>
-            </Box>
+      {/* ===================== SECURITY SCREENING ===================== */}
+      {activeTab === 'security-screening' && (
+        <Box>
+          <Heading title="Security Screening" sub="Scan passengers against the flight's manifest. Each scan is saved with the checkpoint and method." />
+          <Box sx={{ display: 'flex', gap: 2, mb: 2.5, flexWrap: 'wrap' }}>
+            <FormControl size="small" sx={{ minWidth: 280 }}>
+              <InputLabel>Flight</InputLabel>
+              <Select value={selectedFlightId} label="Flight" onChange={(e) => setSelectedFlightId(Number(e.target.value))}>
+                {gateFlights.map((f) => (
+                  <MenuItem key={f.flightId} value={f.flightId}>
+                    {f.flightNumber} → {f.destination} ({f.gate ?? 'no gate'})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField
+              size="small"
+              placeholder="Search name, PNR or seat"
+              value={passengerSearch}
+              onChange={(e) => setPassengerSearch(e.target.value)}
+              slotProps={{ input: { startAdornment: <InputAdornment position="start"><Search size={16} color="#94A3B8" /></InputAdornment> } }}
+              sx={{ minWidth: 260 }}
+            />
+            <Select size="small" value={passengerFilter} onChange={(e) => setPassengerFilter(e.target.value)} sx={{ minWidth: 170 }}>
+              <MenuItem value="ALL">All passengers</MenuItem>
+              <MenuItem value="NONE">Not scanned</MenuItem>
+              <MenuItem value="APPROVED">Approved</MenuItem>
+              <MenuItem value="BOARDED">Boarded</MenuItem>
+              <MenuItem value="FLAGGED_SECURITY">Flagged</MenuItem>
+              <MenuItem value="DENIED">Denied</MenuItem>
+            </Select>
           </Box>
 
-          <TableContainer sx={{ borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-            <Table>
-              <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
-                <TableRow>
-                  <TableCell sx={{ color: '#64748B', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.75rem' }}>PNR RECORD</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.75rem' }}>PASSENGER NAME</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.75rem' }}>SEAT & CABIN</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.75rem' }}>FLIGHT / GATE</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.75rem' }}>VERIFICATION METHOD</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.75rem' }}>STATUS</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.75rem', textAlign: 'right' }}>ACTIONS</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredPassengers.length === 0 ? (
+          {selectedFlight && (
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2, mb: 2.5 }}>
+              <Stat value={selectedFlight.booked} label="Booked passengers" hint={`${selectedFlight.boardingPasses} boarding passes issued`} />
+              <Stat value={`${selectedFlight.approved + selectedFlight.boarded}`} label="Cleared or boarded" tone="#15803D" />
+              <Stat value={selectedFlight.flagged + selectedFlight.denied} label="Flagged or denied" tone={selectedFlight.flagged + selectedFlight.denied ? '#B45309' : '#15803D'} />
+              <Stat value={`${selectedFlight.tasksCompleted}/${selectedFlight.tasksTotal}`} label="Turnaround tasks done" hint={selectedFlight.tasksBlocked ? `${selectedFlight.tasksBlocked} blocked` : 'none blocked'} tone={selectedFlight.tasksBlocked ? '#B91C1C' : '#0F2942'} />
+            </Box>
+          )}
+
+          <Card elevation={0} sx={{ ...CARD_SX, overflow: 'hidden' }}>
+            {manifestLoading && <LinearProgress />}
+            <TableContainer>
+              <Table size="small">
+                <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                   <TableRow>
-                    <TableCell colSpan={7} sx={{ textAlign: 'center', py: 4, color: '#94A3B8', fontSize: '0.85rem' }}>
-                      No passengers match the specified filters.
-                    </TableCell>
+                    {head('PASSENGER')}
+                    {head('PNR')}
+                    {head('SEAT')}
+                    {head('PASSPORT')}
+                    {head('LATEST SCAN')}
+                    {head('', 'right')}
                   </TableRow>
-                ) : (
-                  filteredPassengers.map((p) => (
-                    <TableRow key={p.pnr} hover sx={{ '&:hover': { backgroundColor: '#F8FAFC' } }}>
-                      <TableCell sx={{ fontFamily: "'Inter', monospace", fontWeight: 700, fontSize: '0.84rem', color: '#0284C7' }}>
-                        {p.pnr}
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                          <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.86rem', color: '#0F2942' }}>
-                            {p.name}
-                          </Typography>
-                          {p.specialAssistance !== 'None' && (
-                            <Typography sx={{ fontSize: '0.72rem', color: '#7C3AED', fontWeight: 600 }}>
-                              {p.specialAssistance}
-                            </Typography>
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontFamily: "'Inter', monospace", fontWeight: 700, fontSize: '0.82rem', color: '#0F2942' }}>
-                          {p.seat}
-                        </Typography>
-                        <Typography sx={{ fontSize: '0.7rem', color: '#64748B' }}>
-                          {p.cabinClass}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.84rem', color: '#0F2942' }}>
-                          {p.flightNumber}
-                        </Typography>
-                        <Typography sx={{ fontSize: '0.72rem', color: '#64748B' }}>
-                          {p.gate}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={p.verificationMethod.replace(/_/g, ' ')}
-                          size="small"
-                          sx={{
-                            height: 22,
-                            fontSize: '0.68rem',
-                            fontWeight: 700,
-                            backgroundColor:
-                              p.verificationMethod === 'BIOMETRIC_EGATE'
-                                ? '#EFF6FF'
-                                : p.verificationMethod === 'BARCODE_SCAN'
-                                ? '#F5F3FF'
-                                : '#FEF3C7',
-                            color:
-                              p.verificationMethod === 'BIOMETRIC_EGATE'
-                                ? '#0284C7'
-                                : p.verificationMethod === 'BARCODE_SCAN'
-                                ? '#7C3AED'
-                                : '#B45309',
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={p.clearanceStatus.replace(/_/g, ' ')}
-                          size="small"
-                          sx={{
-                            height: 22,
-                            fontSize: '0.68rem',
-                            fontWeight: 800,
-                            backgroundColor:
-                              p.clearanceStatus === 'BOARDED'
-                                ? '#DCFCE7'
-                                : p.clearanceStatus === 'CLEARED'
-                                ? '#E0F2FE'
-                                : p.clearanceStatus === 'FLAGGED_REVIEW'
-                                ? '#FEF3C7'
-                                : '#FEE2E2',
-                            color:
-                              p.clearanceStatus === 'BOARDED'
-                                ? '#15803D'
-                                : p.clearanceStatus === 'CLEARED'
-                                ? '#0369A1'
-                                : p.clearanceStatus === 'FLAGGED_REVIEW'
-                                ? '#B45309'
-                                : '#B91C1C',
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ textAlign: 'right' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
-                          <Tooltip title="View Boarding Pass & Details">
-                            <IconButton
-                              size="small"
-                              onClick={() => {
-                                setSelectedPassenger(p);
-                                setPassModalOpen(true);
-                              }}
-                              sx={{ color: '#0284C7', backgroundColor: '#F0F9FF', '&:hover': { backgroundColor: '#E0F2FE' } }}
-                            >
-                              <Eye size={15} />
-                            </IconButton>
-                          </Tooltip>
-
-                          {p.clearanceStatus !== 'BOARDED' && (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              onClick={() => handlePassengerStatusChange(p.pnr, 'BOARDED')}
-                              sx={{
-                                fontSize: '0.72rem',
-                                py: 0.3,
-                                px: 1.2,
-                                textTransform: 'none',
-                                fontWeight: 700,
-                                borderColor: '#E2E8F0',
-                                color: '#0F2942',
-                                '&:hover': { backgroundColor: '#F0FDF4', borderColor: '#16A34A', color: '#16A34A' },
-                              }}
-                            >
-                              Board
-                            </Button>
-                          )}
-
-                          {p.clearanceStatus === 'FLAGGED_REVIEW' ? (
-                            <Button
-                              size="small"
-                              variant="contained"
-                              onClick={() => handlePassengerStatusChange(p.pnr, 'CLEARED')}
-                              sx={{
-                                fontSize: '0.72rem',
-                                py: 0.3,
-                                px: 1.2,
-                                textTransform: 'none',
-                                fontWeight: 700,
-                                backgroundColor: '#16A34A',
-                                boxShadow: 'none',
-                                '&:hover': { backgroundColor: '#15803D', boxShadow: 'none' },
-                              }}
-                            >
-                              Clear
-                            </Button>
-                          ) : (
-                            <Button
-                              size="small"
-                              variant="text"
-                              onClick={() => handlePassengerStatusChange(p.pnr, 'FLAGGED_REVIEW')}
-                              sx={{
-                                fontSize: '0.72rem',
-                                py: 0.3,
-                                px: 1,
-                                textTransform: 'none',
-                                fontWeight: 700,
-                                color: '#D97706',
-                                '&:hover': { backgroundColor: '#FEF3C7' },
-                              }}
-                            >
-                              Flag
-                            </Button>
-                          )}
-                        </Box>
+                </TableHead>
+                <TableBody>
+                  {filteredManifest.length === 0 && !manifestLoading && (
+                    <TableRow>
+                      <TableCell colSpan={6} sx={{ color: '#64748B' }}>
+                        No passengers match.
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Card>
-      )}
-
-      {/* ========================================================================= */}
-      {/* TAB 3 / BRIDGE: LOST & FOUND COMMAND CENTER                               */}
-      {/* ========================================================================= */}
-      {(activeTab === 'overview' || activeTab === 'lost-found') && (
-        <Card
-          sx={{
-            p: 3,
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            borderRadius: '16px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-            mb: 4,
-          }}
-        >
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 2, mb: 3 }}>
-            <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
-                  Lost & Found
-                </Typography>
-              </Box>
-              <Typography sx={{ fontSize: '0.82rem', color: '#64748B', mt: 0.3 }}>
-                Custody registry of misplaced property and passenger claims.
-              </Typography>
-            </Box>
-
-            {/* Search & Category Filter */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-              <TextField
-                size="small"
-                placeholder="Search lost items, PNR, locker..."
-                value={lfSearch}
-                onChange={(e) => setLfSearch(e.target.value)}
-                slotProps={{
-                  input: {
-                    startAdornment: <Search size={16} color="#94A3B8" style={{ marginRight: 8 }} />,
-                    sx: { fontFamily: "'Outfit', sans-serif", fontSize: '0.84rem' },
-                  },
-                }}
-                sx={{ width: { xs: '100%', sm: 220 }, backgroundColor: '#F8FAFC', borderRadius: '8px' }}
-              />
-
-              <TextField
-                select
-                size="small"
-                value={lfCategoryFilter}
-                onChange={(e) => setLfCategoryFilter(e.target.value)}
-                sx={{
-                  width: 170,
-                  backgroundColor: '#F8FAFC',
-                  borderRadius: '8px',
-                  '& .MuiOutlinedInput-root': {
-                    fontFamily: "'Outfit', sans-serif",
-                    fontWeight: 600,
-                    fontSize: '0.84rem',
-                  },
-                }}
-              >
-                <MenuItem value="ALL">All Categories</MenuItem>
-                <MenuItem value="ELECTRONICS">Electronics</MenuItem>
-                <MenuItem value="BAGGAGE">Baggage / Luggage</MenuItem>
-                <MenuItem value="DOCUMENTS">Documents & Passports</MenuItem>
-                <MenuItem value="VALUABLES">Valuables & Jewelry</MenuItem>
-                <MenuItem value="CLOTHING">Clothing & Accessories</MenuItem>
-              </TextField>
-
-              <Button
-                variant="contained"
-                onClick={() => setNewLfModalOpen(true)}
-                startIcon={<Plus size={15} />}
-                sx={{
-                  backgroundColor: '#0284C7',
-                  color: '#FFFFFF',
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  fontSize: '0.8rem',
-                  borderRadius: '8px',
-                  px: 2,
-                  boxShadow: 'none',
-                  '&:hover': { backgroundColor: '#0369A1', boxShadow: 'none' },
-                }}
-              >
-                Log Found
-              </Button>
-            </Box>
-          </Box>
-
-          {/* Lost & Found Item Table */}
-          <TableContainer sx={{ borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-            <Table>
-              <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
-                <TableRow>
-                  <TableCell sx={{ color: '#64748B', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.75rem' }}>ITEM ID</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.75rem' }}>DESCRIPTION & CATEGORY</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.75rem' }}>LOCATION FOUND</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.75rem' }}>REPORTED BY / CONTACT</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.75rem' }}>STORAGE LOCKER</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.75rem' }}>MATCH STATUS</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.75rem', textAlign: 'right' }}>ACTION</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredLostFound.map((item) => (
-                  <TableRow key={item.id} hover sx={{ '&:hover': { backgroundColor: '#F8FAFC' } }}>
-                    <TableCell sx={{ fontFamily: "'Inter', monospace", fontWeight: 700, fontSize: '0.84rem', color: '#0F2942' }}>
-                      {item.id}
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.86rem', color: '#0F2942' }}>
-                        {item.title}
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.3 }}>
-                        <Chip
-                          label={item.category}
-                          size="small"
-                          sx={{ height: 18, fontSize: '0.62rem', fontWeight: 800, backgroundColor: '#F1F5F9', color: '#475569' }}
-                        />
-                        {item.linkedPnr && (
-                          <Chip
-                            label={`PNR: ${item.linkedPnr}`}
-                            size="small"
-                            sx={{ height: 18, fontSize: '0.62rem', fontWeight: 800, backgroundColor: '#E0F2FE', color: '#0369A1' }}
-                          />
+                  )}
+                  {filteredManifest.map((m) => (
+                    <TableRow key={m.passengerId} hover>
+                      <TableCell>
+                        <Typography sx={{ fontWeight: 700, color: '#0F2942' }}>{m.name}</Typography>
+                        <Typography sx={{ fontSize: '0.72rem', color: '#64748B' }}>{m.nationality}</Typography>
+                      </TableCell>
+                      <TableCell sx={{ fontFamily: 'monospace' }}>{m.pnr}</TableCell>
+                      <TableCell>
+                        {m.seat ?? '—'} <span style={{ color: '#94A3B8', fontSize: '0.72rem' }}>{pretty(m.cabinClass)}</span>
+                      </TableCell>
+                      <TableCell sx={{ fontFamily: 'monospace', color: '#64748B' }}>•••• {m.passportLast4}</TableCell>
+                      <TableCell>
+                        <StatusChip status={m.clearanceStatus} />
+                        {m.denialReason && <Typography sx={{ fontSize: '0.7rem', color: '#B91C1C' }}>{m.denialReason}</Typography>}
+                        {m.scannedAt && <Typography sx={{ fontSize: '0.7rem', color: '#94A3B8' }}>{clock(m.scannedAt)}</Typography>}
+                      </TableCell>
+                      <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                        {!m.boardingPassId ? (
+                          <Typography sx={{ fontSize: '0.72rem', color: '#94A3B8' }}>Not checked in</Typography>
+                        ) : (
+                          <>
+                            <Button size="small" onClick={() => openScan(m, 'APPROVED')} sx={{ textTransform: 'none', fontWeight: 700, color: '#15803D' }}>Approve</Button>
+                            <Button size="small" onClick={() => openScan(m, 'FLAGGED_SECURITY')} sx={{ textTransform: 'none', fontWeight: 700, color: '#B45309' }}>Flag</Button>
+                            <Button size="small" onClick={() => openScan(m, 'DENIED')} sx={{ textTransform: 'none', fontWeight: 700, color: '#B91C1C' }}>Deny</Button>
+                            <Button size="small" onClick={() => { setVisitTarget(m); setVisitLounge(lounges[0]?.name ?? ''); }} sx={{ textTransform: 'none', fontWeight: 700, color: '#475569' }}>Lounge</Button>
+                          </>
                         )}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                        <MapPin size={14} color="#64748B" />
-                        <Typography sx={{ fontSize: '0.82rem', color: '#475569' }}>
-                          {item.locationFound}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#0F2942' }}>
-                        {item.reportedBy}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.72rem', color: '#64748B' }}>
-                        {item.contactNumber}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={item.storageLocker}
-                        size="small"
-                        sx={{ height: 22, fontSize: '0.7rem', fontWeight: 700, backgroundColor: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F2942' }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={item.status.replace(/_/g, ' ')}
-                        size="small"
-                        sx={{
-                          height: 22,
-                          fontSize: '0.68rem',
-                          fontWeight: 800,
-                          backgroundColor:
-                            item.status === 'MATCHED'
-                              ? '#FEF3C7'
-                              : item.status === 'READY_FOR_COLLECTION'
-                              ? '#DCFCE7'
-                              : item.status === 'RETURNED'
-                              ? '#F1F5F9'
-                              : '#E0F2FE',
-                          color:
-                            item.status === 'MATCHED'
-                              ? '#B45309'
-                              : item.status === 'READY_FOR_COLLECTION'
-                              ? '#15803D'
-                              : item.status === 'RETURNED'
-                              ? '#64748B'
-                              : '#0284C7',
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell sx={{ textAlign: 'right' }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => {
-                          setSelectedLfItem(item);
-                          setLfModalOpen(true);
-                        }}
-                        sx={{
-                          fontSize: '0.74rem',
-                          py: 0.4,
-                          px: 1.4,
-                          textTransform: 'none',
-                          fontWeight: 700,
-                          borderColor: '#E2E8F0',
-                          color: '#0284C7',
-                          '&:hover': { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' },
-                        }}
-                      >
-                        Review / Match
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Card>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
+        </Box>
       )}
 
-      {/* ========================================================================= */}
-      {/* TAB 4: INCIDENTS & AIRSIDE SECURITY MONITOR                               */}
-      {/* ========================================================================= */}
-      {(activeTab === 'overview' || activeTab === 'incidents') && (
-        <Card
-          sx={{
-            p: 3,
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            borderRadius: '16px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-            mb: 4,
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
-            <Box>
-              <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
-                Airside Security & Checkpoint Incidents
-              </Typography>
-              <Typography sx={{ fontSize: '0.82rem', color: '#64748B', mt: 0.3 }}>
-                Immediate dispatch queue for turnstile overrides, unaccompanied baggage sweeps, and VIP clearances.
-              </Typography>
-            </Box>
-
-            <Button
-              variant="outlined"
-              onClick={() => setIncidentModalOpen(true)}
-              startIcon={<Plus size={15} />}
-              sx={{
-                borderColor: '#E2E8F0',
-                color: '#0F2942',
-                textTransform: 'none',
-                fontWeight: 700,
-                fontSize: '0.8rem',
-                borderRadius: '8px',
-                px: 2,
-                '&:hover': { borderColor: '#CBD5E1', backgroundColor: '#F8FAFC' },
-              }}
-            >
-              Report Incident
-            </Button>
+      {/* ===================== CLEARANCE LOG ===================== */}
+      {activeTab === 'clearance' && (
+        <Box>
+          <Heading title="Passenger Clearance Log" sub={`${log.total.toLocaleString()} scans${logStatus ? ` · ${CLEARANCE_LABEL[logStatus as ClearanceStatus]?.toLowerCase()} only` : ''}, newest first`} />
+          <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+            {[['', 'All'], ['APPROVED', 'Approved'], ['BOARDED', 'Boarded'], ['FLAGGED_SECURITY', 'Flagged'], ['DENIED', 'Denied']].map(([value, label]) => (
+              <Chip
+                key={value || 'all'}
+                label={label}
+                clickable
+                onClick={() => { setLogStatus(value); setLogPage(0); }}
+                sx={{ fontWeight: 700, bgcolor: logStatus === value ? '#0F2942' : '#F8FAFC', color: logStatus === value ? '#FFF' : '#475569', border: '1px solid #E2E8F0' }}
+              />
+            ))}
           </Box>
+          <Card elevation={0} sx={{ ...CARD_SX, overflow: 'hidden' }}>
+            <TableContainer>
+              <Table size="small">
+                <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                  <TableRow>
+                    {head('WHEN')}
+                    {head('PASSENGER')}
+                    {head('FLIGHT')}
+                    {head('RESULT')}
+                    {head('METHOD')}
+                    {head('CHECKPOINT')}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {log.rows.map((r) => (
+                    <TableRow key={r.clearanceId} hover>
+                      <TableCell sx={{ color: '#64748B', fontSize: '0.78rem' }}>{clock(r.scannedAt)}</TableCell>
+                      <TableCell>
+                        <Typography sx={{ fontWeight: 700 }}>{r.passenger}</Typography>
+                        <Typography sx={{ fontSize: '0.7rem', color: '#94A3B8', fontFamily: 'monospace' }}>{r.pnr}</Typography>
+                      </TableCell>
+                      <TableCell>{r.flightNumber}</TableCell>
+                      <TableCell>
+                        <StatusChip status={r.clearanceStatus} />
+                        {r.denialReason && <Typography sx={{ fontSize: '0.7rem', color: '#B91C1C' }}>{r.denialReason}</Typography>}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '0.8rem' }}>{METHOD_LABEL[r.verificationMethod]}</TableCell>
+                      <TableCell sx={{ fontSize: '0.8rem', color: '#64748B' }}>{r.checkpoint}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mt: 2 }}>
+            <Button disabled={logPage === 0} onClick={() => setLogPage((p) => p - 1)} sx={{ textTransform: 'none' }}>Previous</Button>
+            <Typography sx={{ fontSize: '0.8rem', color: '#64748B' }}>Page {logPage + 1} of {log.pages}</Typography>
+            <Button disabled={logPage + 1 >= log.pages} onClick={() => setLogPage((p) => p + 1)} sx={{ textTransform: 'none' }}>Next</Button>
+          </Box>
+        </Box>
+      )}
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2.5 }}>
-            {incidents.map((inc) => (
-              <Box
-                key={inc.id}
-                sx={{
-                  p: 2.5,
-                  borderRadius: '12px',
-                  border: '1px solid',
-                  borderColor: inc.severity === 'HIGH' ? '#FECACA' : inc.severity === 'MEDIUM' ? '#FED7AA' : '#E2E8F0',
-                  backgroundColor: inc.severity === 'HIGH' ? '#FFF5F5' : inc.severity === 'MEDIUM' ? '#FFFBF5' : '#F8FAFC',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                    <Chip
-                      label={inc.severity}
-                      size="small"
-                      sx={{
-                        height: 20,
-                        fontSize: '0.64rem',
-                        fontWeight: 800,
-                        backgroundColor: inc.severity === 'HIGH' ? '#FEE2E2' : inc.severity === 'MEDIUM' ? '#FFEDD5' : '#F1F5F9',
-                        color: inc.severity === 'HIGH' ? '#B91C1C' : inc.severity === 'MEDIUM' ? '#C2410C' : '#475569',
-                      }}
-                    />
-                    <Typography sx={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600 }}>
-                      {inc.reportedAt}
+      {/* ===================== LOST & FOUND ===================== */}
+      {activeTab === 'lost-found' && (
+        <Box>
+          <Heading
+            title="Lost & Found"
+            sub={`${lfTotal.toLocaleString()} items on record`}
+            action={
+              <Button variant="contained" startIcon={<Plus size={16} />} onClick={() => setLfNewOpen(true)} sx={{ bgcolor: '#0F2942', textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}>
+                Log Found Item
+              </Button>
+            }
+          />
+          <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+            <TextField
+              size="small"
+              placeholder="Search item, reference or location"
+              value={lfSearch}
+              onChange={(e) => { setLfSearch(e.target.value); setLfPage(0); }}
+              slotProps={{ input: { startAdornment: <InputAdornment position="start"><Search size={16} color="#94A3B8" /></InputAdornment> } }}
+              sx={{ minWidth: 300 }}
+            />
+            <Select size="small" displayEmpty value={lfStatus} onChange={(e) => { setLfStatus(e.target.value); setLfPage(0); }} sx={{ minWidth: 230 }}>
+              <MenuItem value="">All statuses</MenuItem>
+              {[...LF_STATUSES, 'CLAIMED_RETURNED'].map((s) => (
+                <MenuItem key={s} value={s}>{pretty(s)}</MenuItem>
+              ))}
+            </Select>
+          </Box>
+          <Card elevation={0} sx={{ ...CARD_SX, overflow: 'hidden' }}>
+            <TableContainer>
+              <Table size="small">
+                <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                  <TableRow>
+                    {head('REFERENCE')}
+                    {head('ITEM')}
+                    {head('FOUND AT')}
+                    {head('VAULT')}
+                    {head('STATUS')}
+                    {head('', 'right')}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {lfItems.map((it) => (
+                    <TableRow key={it.itemId} hover>
+                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>{it.referenceCode}</TableCell>
+                      <TableCell>
+                        <Typography sx={{ fontWeight: 700 }}>{it.itemName}</Typography>
+                        <Typography sx={{ fontSize: '0.72rem', color: '#64748B' }}>{pretty(it.category)} · {it.colorAndDescription}</Typography>
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '0.8rem' }}>
+                        {pretty(it.foundLocationType)}
+                        <Typography sx={{ fontSize: '0.7rem', color: '#94A3B8' }}>{it.foundLocationDetail}</Typography>
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '0.8rem' }}>{it.storageVaultLocation || '—'}</TableCell>
+                      <TableCell>
+                        {it.status === 'CLAIMED_RETURNED' ? (
+                          <Chip label="Returned" size="small" sx={{ bgcolor: '#DCFCE7', color: '#15803D', fontWeight: 800, fontSize: '0.68rem' }} />
+                        ) : (
+                          <Select size="small" value={it.status} onChange={(e) => changeLfStatus(it, e.target.value)} sx={{ fontSize: '0.74rem', minWidth: 190 }}>
+                            {LF_STATUSES.map((s) => (
+                              <MenuItem key={s} value={s} sx={{ fontSize: '0.78rem' }}>{pretty(s)}</MenuItem>
+                            ))}
+                          </Select>
+                        )}
+                      </TableCell>
+                      <TableCell align="right">
+                        {it.status !== 'CLAIMED_RETURNED' && it.status !== 'DISPOSED_AUCTIONED' && (
+                          <Button size="small" onClick={() => setClaimItem(it)} sx={{ textTransform: 'none', fontWeight: 700 }}>Release to owner</Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mt: 2 }}>
+            <Button disabled={lfPage === 0} onClick={() => setLfPage((p) => p - 1)} sx={{ textTransform: 'none' }}>Previous</Button>
+            <Typography sx={{ fontSize: '0.8rem', color: '#64748B' }}>Page {lfPage + 1} of {Math.max(1, Math.ceil(lfTotal / 15))}</Typography>
+            <Button disabled={(lfPage + 1) * 15 >= lfTotal} onClick={() => setLfPage((p) => p + 1)} sx={{ textTransform: 'none' }}>Next</Button>
+          </Box>
+        </Box>
+      )}
+
+      {/* ===================== INCIDENTS ===================== */}
+      {activeTab === 'incidents' && (
+        <Box>
+          <Heading
+            title="Security Incidents"
+            sub={`${openIncidents.length} open · ${incidentTotal} logged in all`}
+            action={
+              <Button variant="contained" startIcon={<Plus size={16} />} onClick={() => setIncidentOpen(true)} sx={{ bgcolor: '#DC2626', textTransform: 'none', fontWeight: 700, borderRadius: '8px', '&:hover': { bgcolor: '#B91C1C' } }}>
+                Log Incident
+              </Button>
+            }
+          />
+          {incidentList.length === 0 && <Typography sx={{ color: '#64748B' }}>No incidents have been logged.</Typography>}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {incidentList.map((inc) => (
+              <Card key={inc.incidentId} elevation={0} sx={{ ...CARD_SX, p: 2.5, opacity: inc.status === 'RESOLVED' ? 0.7 : 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+                  <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                      <Chip label={inc.severity} size="small" sx={{ bgcolor: SEVERITY_COLOR[inc.severity].bg, color: SEVERITY_COLOR[inc.severity].fg, fontWeight: 800, fontSize: '0.66rem' }} />
+                      <Chip label={inc.status} size="small" sx={{ fontWeight: 700, fontSize: '0.66rem' }} />
+                      <Typography sx={{ fontFamily: FONT, fontWeight: 800, color: '#0F2942' }}>#{inc.incidentId} · {inc.title}</Typography>
+                    </Box>
+                    <Typography sx={{ fontSize: '0.8rem', color: '#64748B' }}>
+                      {inc.location}{inc.flightNumber ? ` · flight ${inc.flightNumber}` : ''} · reported by {inc.reportedBy ?? 'unknown'} · {clock(inc.reportedAt)}
                     </Typography>
+                    {inc.description && <Typography sx={{ fontSize: '0.84rem', color: '#334155', mt: 0.8 }}>{inc.description}</Typography>}
                   </Box>
-
-                  <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '0.94rem', color: '#0F2942', mb: 0.5 }}>
-                    {inc.title}
-                  </Typography>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1 }}>
-                    <MapPin size={13} color="#64748B" />
-                    <Typography sx={{ fontSize: '0.78rem', color: '#475569', fontWeight: 600 }}>
-                      {inc.location} {inc.flightNumber && `· ${inc.flightNumber}`}
-                    </Typography>
-                  </Box>
-
-                  <Typography sx={{ fontSize: '0.78rem', color: '#64748B', lineHeight: 1.4, mb: 2 }}>
-                    {inc.description}
-                  </Typography>
-                </Box>
-
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1.5, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-                  <Typography sx={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600 }}>
-                    Assigned: {inc.assignedOfficer}
-                  </Typography>
-
-                  {inc.status !== 'RESOLVED' ? (
-                    <Button
-                      size="small"
-                      variant="contained"
-                      onClick={() => handleResolveIncident(inc.id)}
-                      sx={{
-                        fontSize: '0.72rem',
-                        py: 0.3,
-                        px: 1.2,
-                        textTransform: 'none',
-                        fontWeight: 700,
-                        backgroundColor: '#16A34A',
-                        boxShadow: 'none',
-                        '&:hover': { backgroundColor: '#15803D', boxShadow: 'none' },
-                      }}
-                    >
-                      Resolve
-                    </Button>
-                  ) : (
-                    <Chip label="RESOLVED" size="small" sx={{ height: 20, fontSize: '0.62rem', fontWeight: 800, backgroundColor: '#DCFCE7', color: '#15803D' }} />
+                  {inc.status !== 'RESOLVED' && (
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                      {inc.status === 'INVESTIGATING' && (
+                        <Button size="small" variant="outlined" onClick={() => changeIncident(inc, 'ESCALATED')} sx={{ textTransform: 'none', fontWeight: 700 }}>Escalate</Button>
+                      )}
+                      <Button size="small" variant="contained" onClick={() => changeIncident(inc, 'RESOLVED')} sx={{ textTransform: 'none', fontWeight: 700, bgcolor: '#10B981', '&:hover': { bgcolor: '#059669' } }}>Resolve</Button>
+                    </Box>
                   )}
                 </Box>
-              </Box>
+              </Card>
             ))}
           </Box>
-        </Card>
+        </Box>
       )}
 
-      {/* ========================================================================= */}
-      {/* TAB 5: LOUNGE VISITS & OCCUPANCY MONITOR                                  */}
-      {/* ========================================================================= */}
-      {(activeTab === 'overview' || activeTab === 'lounges') && (
-        <Card
-          sx={{
-            p: 3,
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            borderRadius: '16px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-            mb: 4,
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Box>
-              <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
-                VIP & Business Lounge Occupancy Telemetry
-              </Typography>
-              <Typography sx={{ fontSize: '0.82rem', color: '#64748B', mt: 0.3 }}>
-                Live headcount, turnstile access logs, and seating thresholds across Terminals 1 & 2.
-              </Typography>
-            </Box>
+      {/* ===================== LOUNGES ===================== */}
+      {activeTab === 'lounges' && (
+        <Box>
+          <Heading title="Lounge Activity" sub="Visit counts per lounge, from the lounge access log. Capacity is not tracked." />
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2, mb: 3 }}>
+            {lounges.map((l) => (
+              <Stat key={l.name} value={l.visits.toLocaleString()} label={l.name} hint={`${l.distinctPassengers.toLocaleString()} different passengers`} />
+            ))}
           </Box>
-
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2.5, mb: 3.5 }}>
-            {lounges.map((lounge) => {
-              const occupancyPct = Math.round((lounge.currentGuests / lounge.capacity) * 100);
-              return (
-                <Box
-                  key={lounge.id}
-                  sx={{
-                    p: 2.5,
-                    borderRadius: '12px',
-                    border: '1px solid #E2E8F0',
-                    backgroundColor: '#F8FAFC',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                      <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748B' }}>
-                        {lounge.terminal}
-                      </Typography>
-                      <Chip
-                        label={lounge.status.replace(/_/g, ' ')}
-                        size="small"
-                        sx={{
-                          height: 20,
-                          fontSize: '0.62rem',
-                          fontWeight: 800,
-                          backgroundColor:
-                            lounge.status === 'NEAR_CAPACITY'
-                              ? '#FEE2E2'
-                              : lounge.status === 'BUSY'
-                              ? '#FEF3C7'
-                              : '#DCFCE7',
-                          color:
-                            lounge.status === 'NEAR_CAPACITY'
-                              ? '#B91C1C'
-                              : lounge.status === 'BUSY'
-                              ? '#B45309'
-                              : '#15803D',
-                        }}
-                      />
-                    </Box>
-
-                    <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '0.94rem', color: '#0F2942', mb: 1 }}>
-                      {lounge.name}
-                    </Typography>
-
-                    <Typography sx={{ fontSize: '0.74rem', color: '#64748B', mb: 2 }}>
-                      {lounge.eligibleClasses.join(' · ')}
-                    </Typography>
-                  </Box>
-
-                  <Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.8 }}>
-                      <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: '#0F2942' }}>
-                        {lounge.currentGuests} / {lounge.capacity}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: occupancyPct > 85 ? '#EF4444' : '#0284C7' }}>
-                        {occupancyPct}%
-                      </Typography>
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={occupancyPct}
-                      sx={{
-                        height: 6,
-                        borderRadius: 3,
-                        backgroundColor: '#E2E8F0',
-                        '& .MuiLinearProgress-bar': {
-                          backgroundColor: occupancyPct > 85 ? '#EF4444' : '#0284C7',
-                        },
-                      }}
-                    />
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
-
-          {/* Recent Lounge Entry Log */}
-          <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '0.9rem', color: '#0F2942', mb: 1.5 }}>
-            Recent Lounge Access Authorizations
-          </Typography>
-          <TableContainer sx={{ borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-            <Table size="small">
-              <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
-                <TableRow>
-                  <TableCell sx={{ color: '#64748B', fontWeight: 700, fontSize: '0.75rem' }}>ENTRY ID</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontWeight: 700, fontSize: '0.75rem' }}>PASSENGER</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontWeight: 700, fontSize: '0.75rem' }}>FLIGHT / PNR</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontWeight: 700, fontSize: '0.75rem' }}>LOUNGE NAME</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontWeight: 700, fontSize: '0.75rem' }}>ACCESS TIER</TableCell>
-                  <TableCell sx={{ color: '#64748B', fontWeight: 700, fontSize: '0.75rem' }}>TIMESTAMP</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loungeVisits.map((v) => (
-                  <TableRow key={v.id} hover>
-                    <TableCell sx={{ fontFamily: "'Inter', monospace", fontWeight: 700, fontSize: '0.8rem', color: '#0284C7' }}>
-                      {v.id}
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.84rem', color: '#0F2942' }}>
-                      {v.passengerName}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: '0.8rem', color: '#64748B' }}>
-                      {v.flightNumber} ({v.pnr})
-                    </TableCell>
-                    <TableCell sx={{ fontSize: '0.82rem', color: '#0F2942' }}>
-                      {v.loungeName}
-                    </TableCell>
-                    <TableCell>
-                      <Chip label={v.accessTier} size="small" sx={{ height: 20, fontSize: '0.66rem', fontWeight: 700, backgroundColor: '#EFF6FF', color: '#0284C7' }} />
-                    </TableCell>
-                    <TableCell sx={{ fontSize: '0.8rem', color: '#64748B' }}>
-                      {v.timestamp}
-                    </TableCell>
+          <Typography sx={{ fontFamily: FONT, fontWeight: 800, color: '#0F2942', mb: 1.2 }}>Latest visits ({visits.total.toLocaleString()} in all)</Typography>
+          <Card elevation={0} sx={{ ...CARD_SX, overflow: 'hidden' }}>
+            <TableContainer>
+              <Table size="small">
+                <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                  <TableRow>
+                    {head('LOUNGE')}
+                    {head('PASSENGER')}
+                    {head('PNR')}
+                    {head('FLIGHT')}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Card>
+                </TableHead>
+                <TableBody>
+                  {visits.rows.map((v) => (
+                    <TableRow key={v.visitId} hover>
+                      <TableCell>{v.lounge}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>{v.passenger}</TableCell>
+                      <TableCell sx={{ fontFamily: 'monospace' }}>{v.pnr}</TableCell>
+                      <TableCell>{v.flightNumber}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
+          <Typography sx={{ fontSize: '0.78rem', color: '#94A3B8', mt: 1 }}>Log a visit from a passenger's row on the Security Screening tab.</Typography>
+        </Box>
       )}
 
-      {/* ========================================================================= */}
-      {/* TAB 6: NOTIFICATIONS & SECURITY BULLETINS                                 */}
-      {/* ========================================================================= */}
+      {/* ===================== NOTIFICATIONS ===================== */}
       {activeTab === 'notifications' && (
-        <Card sx={{ p: 3.5, backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '16px', mb: 4 }}>
-          <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942', mb: 1 }}>
-            Airside Security Bulletins & Operational Directives
-          </Typography>
-          <Typography sx={{ fontSize: '0.82rem', color: '#64748B', mb: 3 }}>
-            Official alerts broadcasted to Security Officers, Gate Agents, and Immigration desks.
-          </Typography>
-
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {[
-              { id: 1, level: 'CRITICAL', title: 'Security Sweep Mandate Gate B04', detail: 'IndiGo 6E-521 turnstiles locked pending canine team sweep. Clearance required prior to boarding commencement.', time: '8 mins ago' },
-              { id: 2, level: 'WARNING', title: 'E-Gate Optical Sensor Calibration Advisory', detail: 'Concourse Central Turnstile 4 experiencing 120ms optical latency. Routine recalibration ongoing.', time: '24 mins ago' },
-              { id: 3, level: 'INFO', title: 'Diplomatic VIP Delegations Arriving', detail: 'Lord Harrison Sterling and 4 diplomatic attachés expedited via Saphire Presidential Suite.', time: '48 mins ago' },
-              { id: 4, level: 'INFO', title: 'Lost & Found Public Portal Sync', detail: '14 inquiries submitted by passengers in the last 2 hours. 4 high-probability matches identified.', time: '1 hour ago' },
-            ].map((n) => (
-              <Box
-                key={n.id}
-                sx={{
-                  p: 2.2,
-                  borderRadius: '12px',
-                  border: '1px solid #E2E8F0',
-                  backgroundColor: n.level === 'CRITICAL' ? '#FEF2F2' : n.level === 'WARNING' ? '#FFFBEB' : '#F8FAFC',
-                }}
-              >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.8 }}>
-                  <Chip
-                    label={n.level}
-                    size="small"
-                    sx={{
-                      height: 20,
-                      fontSize: '0.64rem',
-                      fontWeight: 800,
-                      backgroundColor: n.level === 'CRITICAL' ? '#FEE2E2' : n.level === 'WARNING' ? '#FEF3C7' : '#E0F2FE',
-                      color: n.level === 'CRITICAL' ? '#B91C1C' : n.level === 'WARNING' ? '#B45309' : '#0369A1',
-                    }}
-                  />
-                  <Typography sx={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600 }}>{n.time}</Typography>
-                </Box>
-                <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '0.92rem', color: '#0F2942', mb: 0.4 }}>
-                  {n.title}
-                </Typography>
-                <Typography sx={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.5 }}>
-                  {n.detail}
-                </Typography>
-              </Box>
+        <Box>
+          <Heading title="Alerts" sub="Open incidents, blocked turnaround tasks at the gate, and the latest flagged scans" />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {openIncidents.length === 0 && gateFlights.every((f) => !f.tasksBlocked) && attention.length === 0 && (
+              <Typography sx={{ color: '#64748B' }}>No alerts right now.</Typography>
+            )}
+            {openIncidents.map((inc) => (
+              <Card key={`i${inc.incidentId}`} elevation={0} sx={{ ...CARD_SX, p: 2.2, borderColor: '#FECACA', bgcolor: '#FEF2F2' }}>
+                <Typography sx={{ fontWeight: 800, color: '#991B1B' }}>{inc.severity} incident: {inc.title}</Typography>
+                <Typography sx={{ fontSize: '0.82rem', color: '#7F1D1D' }}>{inc.location} · {clock(inc.reportedAt)}</Typography>
+              </Card>
+            ))}
+            {gateFlights.filter((f) => f.tasksBlocked).map((f) => (
+              <Card key={`f${f.flightId}`} elevation={0} sx={{ ...CARD_SX, p: 2.2, borderColor: '#FDE68A', bgcolor: '#FFFBEB' }}>
+                <Typography sx={{ fontWeight: 800, color: '#92400E' }}>{f.flightNumber}: {f.tasksBlocked} blocked turnaround task(s)</Typography>
+                <Typography sx={{ fontSize: '0.82rem', color: '#78350F' }}>Gate {f.gate ?? '—'} · {f.tasksCompleted}/{f.tasksTotal} tasks done</Typography>
+              </Card>
+            ))}
+            {attention.map((a) => (
+              <Card key={`a${a.clearanceId}`} elevation={0} sx={{ ...CARD_SX, p: 2.2 }}>
+                <Typography sx={{ fontWeight: 800, color: '#0F2942' }}>{a.passenger} · {CLEARANCE_LABEL[a.clearanceStatus]} on {a.flightNumber}</Typography>
+                <Typography sx={{ fontSize: '0.82rem', color: '#64748B' }}>{a.denialReason || METHOD_LABEL[a.verificationMethod]} · {clock(a.scannedAt)}</Typography>
+              </Card>
             ))}
           </Box>
-        </Card>
+        </Box>
       )}
 
-      {/* ========================================================================= */}
-      {/* TAB 7: OFFICER PROFILE                                                    */}
-      {/* ========================================================================= */}
+      {/* ===================== PROFILE ===================== */}
       {activeTab === 'profile' && (
-        <Card sx={{ p: 4, backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '16px', maxWidth: 700, mb: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, mb: 3.5 }}>
-            <Box
-              sx={{
-                width: 64,
-                height: 64,
-                borderRadius: '50%',
-                backgroundColor: '#0F2942',
-                color: '#FFFFFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.4rem',
-                fontWeight: 800,
-                fontFamily: "'Outfit', sans-serif",
-              }}
-            >
-              AP
-            </Box>
-            <Box>
-              <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
-                {user?.name || 'Officer Aarav Patel'}
-              </Typography>
-              <Typography sx={{ fontSize: '0.84rem', color: '#0284C7', fontWeight: 700 }}>
-                Senior Security Officer · Airside Operations Command
-              </Typography>
-              <Typography sx={{ fontSize: '0.78rem', color: '#64748B', mt: 0.3 }}>
-                Station: Central Terminal Security Control · Airside Level 1 Clearance
-              </Typography>
-            </Box>
-          </Box>
-
-          <Divider sx={{ mb: 3 }} />
-
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2.5 }}>
-            <Box>
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748B' }}>STAFF ID</Typography>
-              <Typography sx={{ fontFamily: "'Inter', monospace", fontWeight: 700, fontSize: '0.9rem', color: '#0F2942' }}>
-                SEC-9042-IN
-              </Typography>
-            </Box>
-            <Box>
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748B' }}>ROLE / RBAC</Typography>
-              <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.9rem', color: '#0F2942' }}>
-                SECURITY_OFFICER
-              </Typography>
-            </Box>
-            <Box>
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748B' }}>AIRSIDE CLEARANCE</Typography>
-              <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.9rem', color: '#16A34A' }}>
-                ALPHA-1 FULL AIRSIDE ACCESS
-              </Typography>
-            </Box>
-            <Box>
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748B' }}>CURRENT SHIFT</Typography>
-              <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.9rem', color: '#0F2942' }}>
-                Shift B · 08:00 - 16:30 Local
-              </Typography>
-            </Box>
-          </Box>
-        </Card>
+        <Box>
+          <Heading title="Officer Profile" />
+          <Card elevation={0} sx={{ ...CARD_SX, p: 3, maxWidth: 560 }}>
+            {[
+              ['Name', user?.name],
+              ['Username', user?.username],
+              ['Email', user?.email],
+              ['Role', pretty(user?.roleName)],
+              ['Department', pretty(user?.departmentName)],
+            ].map(([label, value]) => (
+              <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', py: 1, borderBottom: '1px solid #F1F5F9' }}>
+                <Typography sx={{ color: '#64748B', fontSize: '0.86rem' }}>{label}</Typography>
+                <Typography sx={{ fontWeight: 700, color: '#0F2942' }}>{value || '—'}</Typography>
+              </Box>
+            ))}
+          </Card>
+        </Box>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL 1: PASSENGER BOARDING PASS INSPECTION DIALOG                        */}
-      {/* ========================================================================= */}
-      <Dialog
-        open={passModalOpen}
-        onClose={() => setPassModalOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: '16px',
-              p: 1,
-              backgroundColor: '#FFFFFF',
-              boxShadow: '0 24px 60px rgba(15, 41, 66, 0.16)',
-            },
-          },
-        }}
-      >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-          <Box>
-            <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.1rem', color: '#0F2942' }}>
-              Digital Boarding Pass & Security Stamp
-            </Typography>
-            <Typography sx={{ fontSize: '0.76rem', color: '#64748B' }}>
-              Official carrier boarding credential & biometric verification record.
-            </Typography>
+      {/* ===================== DIALOGS ===================== */}
+      <Dialog open={!!scanTarget} onClose={() => setScanTarget(null)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontFamily: FONT, fontWeight: 800 }}>Record scan: {scanTarget?.name}</DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Result</InputLabel>
+              <Select value={scanStatus} label="Result" onChange={(e) => setScanStatus(e.target.value as ClearanceStatus)}>
+                {(Object.keys(CLEARANCE_LABEL) as ClearanceStatus[]).map((s) => (
+                  <MenuItem key={s} value={s}>{CLEARANCE_LABEL[s]}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Verified by</InputLabel>
+              <Select value={scanMethod} label="Verified by" onChange={(e) => setScanMethod(e.target.value as VerificationMethod)}>
+                {(Object.keys(METHOD_LABEL) as VerificationMethod[]).map((m) => (
+                  <MenuItem key={m} value={m}>{METHOD_LABEL[m]}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Checkpoint</InputLabel>
+              <Select value={scanCheckpoint} label="Checkpoint" onChange={(e) => setScanCheckpoint(Number(e.target.value))}>
+                {checkpoints.map((c) => (
+                  <MenuItem key={c.checkpointId} value={c.checkpointId}>{c.name} ({pretty(c.type)})</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            {scanStatus === 'DENIED' && (
+              <TextField size="small" label="Reason for denial (required)" value={scanReason} onChange={(e) => setScanReason(e.target.value)} slotProps={{ htmlInput: { maxLength: 100 } }} />
+            )}
           </Box>
-          <IconButton size="small" onClick={() => setPassModalOpen(false)}>
-            <X size={18} color="#64748B" />
-          </IconButton>
-        </DialogTitle>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setScanTarget(null)} sx={{ textTransform: 'none', color: '#64748B' }}>Cancel</Button>
+          <Button variant="contained" disabled={scanBusy || (scanStatus === 'DENIED' && !scanReason.trim())} onClick={submitScan} sx={{ textTransform: 'none', fontWeight: 700, bgcolor: '#0F2942' }}>Save scan</Button>
+        </DialogActions>
+      </Dialog>
 
-        <DialogContent sx={{ pt: 2 }}>
-          {selectedPassenger && (
-            <Box
-              sx={{
-                p: 3,
-                borderRadius: '14px',
-                border: '1px solid #E2E8F0',
-                backgroundColor: '#F8FAFC',
-              }}
-            >
-              {/* Header Airline */}
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5, pb: 2, borderBottom: '1px dashed #CBD5E1' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Plane size={20} color="#0284C7" />
-                  <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.05rem', color: '#0F2942' }}>
-                    {selectedPassenger.flightNumber} · SAPHIRE CARRIER ALLIANCE
-                  </Typography>
-                </Box>
-                <Chip
-                  label={selectedPassenger.cabinClass}
-                  size="small"
-                  sx={{ height: 22, fontSize: '0.68rem', fontWeight: 800, backgroundColor: '#0F2942', color: '#FFFFFF' }}
-                />
-              </Box>
-
-              {/* Passenger Info Grid */}
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2, mb: 2.5 }}>
-                <Box>
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>PASSENGER NAME</Typography>
-                  <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1rem', color: '#0F2942' }}>
-                    {selectedPassenger.name}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>PNR RECORD</Typography>
-                  <Typography sx={{ fontFamily: "'Inter', monospace", fontWeight: 800, fontSize: '1rem', color: '#0284C7' }}>
-                    {selectedPassenger.pnr}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>ASSIGNED SEAT</Typography>
-                  <Typography sx={{ fontFamily: "'Inter', monospace", fontWeight: 800, fontSize: '1.2rem', color: '#0F2942' }}>
-                    {selectedPassenger.seat}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>GATE NUMBER</Typography>
-                  <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.2rem', color: '#0284C7' }}>
-                    {selectedPassenger.gate}
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Biometrics & Verification */}
-              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', mb: 2.5 }}>
-                <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748B', mb: 1 }}>
-                  SECURITY CLEARANCE STATUS
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Chip
-                    label={selectedPassenger.clearanceStatus.replace(/_/g, ' ')}
-                    size="small"
-                    sx={{
-                      fontWeight: 800,
-                      fontSize: '0.72rem',
-                      backgroundColor:
-                        selectedPassenger.clearanceStatus === 'BOARDED' ? '#DCFCE7' : '#E0F2FE',
-                      color:
-                        selectedPassenger.clearanceStatus === 'BOARDED' ? '#15803D' : '#0369A1',
-                    }}
-                  />
-                  <Typography sx={{ fontSize: '0.76rem', color: '#64748B' }}>
-                    Method: {selectedPassenger.verificationMethod.replace(/_/g, ' ')}
-                  </Typography>
-                </Box>
-                {selectedPassenger.notes && (
-                  <Typography sx={{ fontSize: '0.75rem', color: '#D97706', mt: 1, fontWeight: 600 }}>
-                    ⚠ Inspection Note: {selectedPassenger.notes}
-                  </Typography>
-                )}
-              </Box>
-
-              {/* Barcode Stamp Mock */}
-              <Box sx={{ p: 2, backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '10px', textAlign: 'center' }}>
-                <Box
-                  sx={{
-                    height: 48,
-                    background: 'repeating-linear-gradient(90deg, #0F2942, #0F2942 2px, transparent 2px, transparent 4px, #0F2942 4px, #0F2942 8px, transparent 8px, transparent 10px)',
-                    mb: 1,
-                  }}
-                />
-                <Typography sx={{ fontFamily: "'Inter', monospace", fontSize: '0.74rem', color: '#64748B', letterSpacing: '0.12em' }}>
-                  *SAPHIRE-AOCS-{selectedPassenger.pnr}-{selectedPassenger.seat}*
-                </Typography>
-              </Box>
+      <Dialog open={incidentOpen} onClose={() => setIncidentOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontFamily: FONT, fontWeight: 800 }}>Log security incident</DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField size="small" label="Title" value={incTitle} onChange={(e) => setIncTitle(e.target.value)} slotProps={{ htmlInput: { maxLength: 150 } }} />
+            <TextField size="small" label="Location" value={incLocation} onChange={(e) => setIncLocation(e.target.value)} slotProps={{ htmlInput: { maxLength: 150 } }} />
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <FormControl size="small">
+                <InputLabel>Severity</InputLabel>
+                <Select value={incSeverity} label="Severity" onChange={(e) => setIncSeverity(e.target.value as IncidentSeverity)}>
+                  {(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as IncidentSeverity[]).map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+                </Select>
+              </FormControl>
+              <FormControl size="small">
+                <InputLabel>Flight (optional)</InputLabel>
+                <Select value={incFlightId} label="Flight (optional)" onChange={(e) => setIncFlightId(String(e.target.value) === '' ? '' : Number(e.target.value))}>
+                  <MenuItem value=""><em>None</em></MenuItem>
+                  {gateFlights.map((f) => <MenuItem key={f.flightId} value={f.flightId}>{f.flightNumber}</MenuItem>)}
+                </Select>
+              </FormControl>
             </Box>
-          )}
-        </DialogContent>
-
-        <DialogActions sx={{ p: 2 }}>
-          <Button
-            onClick={() => setPassModalOpen(false)}
-            sx={{ textTransform: 'none', fontWeight: 700, color: '#64748B' }}
-          >
-            Close
-          </Button>
-          {selectedPassenger && selectedPassenger.clearanceStatus !== 'BOARDED' && (
-            <Button
-              variant="contained"
-              onClick={() => {
-                handlePassengerStatusChange(selectedPassenger.pnr, 'BOARDED');
-                setPassModalOpen(false);
-              }}
-              sx={{
-                backgroundColor: '#16A34A',
-                textTransform: 'none',
-                fontWeight: 700,
-                boxShadow: 'none',
-                '&:hover': { backgroundColor: '#15803D', boxShadow: 'none' },
-              }}
-            >
-              Verify & Board Passenger
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
-
-      {/* ========================================================================= */}
-      {/* MODAL 2: LOST & FOUND REVIEW & MATCH DIALOG                               */}
-      {/* ========================================================================= */}
-      <Dialog
-        open={lfModalOpen}
-        onClose={() => setLfModalOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: '16px',
-              p: 1,
-              backgroundColor: '#FFFFFF',
-              boxShadow: '0 24px 60px rgba(15, 41, 66, 0.16)',
-            },
-          },
-        }}
-      >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-          <Box>
-            <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.1rem', color: '#0F2942' }}>
-              Lost & Found Item Verification
-            </Typography>
-            <Typography sx={{ fontSize: '0.76rem', color: '#64748B' }}>
-              Review public passenger report and match against verified airside inventory.
-            </Typography>
+            <TextField size="small" label="What happened" multiline rows={3} value={incDescription} onChange={(e) => setIncDescription(e.target.value)} />
           </Box>
-          <IconButton size="small" onClick={() => setLfModalOpen(false)}>
-            <X size={18} color="#64748B" />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent sx={{ pt: 2 }}>
-          {selectedLfItem && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Box sx={{ p: 2.2, backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                  <Typography sx={{ fontFamily: "'Inter', monospace", fontWeight: 800, fontSize: '0.9rem', color: '#0284C7' }}>
-                    {selectedLfItem.id}
-                  </Typography>
-                  <Chip
-                    label={selectedLfItem.category}
-                    size="small"
-                    sx={{ height: 20, fontSize: '0.66rem', fontWeight: 800, backgroundColor: '#E0F2FE', color: '#0369A1' }}
-                  />
-                </Box>
-                <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.05rem', color: '#0F2942', mb: 0.5 }}>
-                  {selectedLfItem.title}
-                </Typography>
-                <Typography sx={{ fontSize: '0.82rem', color: '#475569', lineHeight: 1.5, mb: 1.5 }}>
-                  {selectedLfItem.description}
-                </Typography>
-
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1.5, pt: 1.5, borderTop: '1px solid #E2E8F0' }}>
-                  <Box>
-                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>LOCATION RETRIEVED</Typography>
-                    <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#0F2942' }}>
-                      {selectedLfItem.locationFound}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>STORAGE LOCKER</Typography>
-                    <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#0F2942' }}>
-                      {selectedLfItem.storageLocker}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>REPORTED BY</Typography>
-                    <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#0F2942' }}>
-                      {selectedLfItem.reportedBy}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>CONTACT NUMBER</Typography>
-                    <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#0F2942' }}>
-                      {selectedLfItem.contactNumber}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Box>
-
-              {/* Status Selector */}
-              <Box>
-                <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: '#0F2942', mb: 1 }}>
-                  UPDATE OPERATIONAL RESOLUTION STATUS
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {(['SEARCHING', 'MATCHED', 'READY_FOR_COLLECTION', 'RETURNED'] as LostFoundStatus[]).map((st) => (
-                    <Button
-                      key={st}
-                      size="small"
-                      variant={selectedLfItem.status === st ? 'contained' : 'outlined'}
-                      onClick={() => handleUpdateLfStatus(selectedLfItem.id, st)}
-                      sx={{
-                        textTransform: 'none',
-                        fontSize: '0.76rem',
-                        fontWeight: 700,
-                        backgroundColor: selectedLfItem.status === st ? '#0F2942' : 'transparent',
-                        borderColor: '#E2E8F0',
-                        color: selectedLfItem.status === st ? '#FFFFFF' : '#0F2942',
-                        '&:hover': {
-                          backgroundColor: selectedLfItem.status === st ? '#1E3A5F' : '#F8FAFC',
-                          borderColor: '#CBD5E1',
-                        },
-                      }}
-                    >
-                      {st.replace(/_/g, ' ')}
-                    </Button>
-                  ))}
-                </Box>
-              </Box>
-            </Box>
-          )}
         </DialogContent>
-
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setLfModalOpen(false)} sx={{ textTransform: 'none', fontWeight: 700, color: '#64748B' }}>
-            Done
-          </Button>
+          <Button onClick={() => setIncidentOpen(false)} sx={{ textTransform: 'none', color: '#64748B' }}>Cancel</Button>
+          <Button variant="contained" onClick={saveIncident} startIcon={<AlertTriangle size={15} />} sx={{ textTransform: 'none', fontWeight: 700, bgcolor: '#DC2626', '&:hover': { bgcolor: '#B91C1C' } }}>Log incident</Button>
         </DialogActions>
       </Dialog>
 
-      {/* ========================================================================= */}
-      {/* MODAL 3: INTAKE NEW FOUND ITEM (INTERNAL OFFICER)                         */}
-      {/* ========================================================================= */}
-      <Dialog
-        open={newLfModalOpen}
-        onClose={() => setNewLfModalOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: '16px',
-              p: 1,
-              backgroundColor: '#FFFFFF',
-              boxShadow: '0 24px 60px rgba(15, 41, 66, 0.16)',
-            },
-          },
-        }}
-      >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-          <Box>
-            <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.1rem', color: '#0F2942' }}>
-              Log Found Item (Airside / Terminal Intake)
-            </Typography>
-            <Typography sx={{ fontSize: '0.76rem', color: '#64748B' }}>
-              Register items retrieved from aircraft cabins, gate lounges, or security screening.
-            </Typography>
+      <Dialog open={!!visitTarget} onClose={() => setVisitTarget(null)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontFamily: FONT, fontWeight: 800 }}>Log lounge visit: {visitTarget?.name}</DialogTitle>
+        <DialogContent dividers>
+          <FormControl size="small" fullWidth sx={{ mt: 1 }}>
+            <InputLabel>Lounge</InputLabel>
+            <Select value={visitLounge} label="Lounge" onChange={(e) => setVisitLounge(e.target.value)}>
+              {lounges.map((l) => <MenuItem key={l.name} value={l.name}>{l.name}</MenuItem>)}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setVisitTarget(null)} sx={{ textTransform: 'none', color: '#64748B' }}>Cancel</Button>
+          <Button variant="contained" onClick={submitVisit} sx={{ textTransform: 'none', fontWeight: 700, bgcolor: '#0F2942' }}>Log visit</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={lfNewOpen} onClose={() => setLfNewOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontFamily: FONT, fontWeight: 800 }}>Log found item</DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField size="small" label="Item" value={lfName} onChange={(e) => setLfName(e.target.value)} />
+            <FormControl size="small">
+              <InputLabel>Category</InputLabel>
+              <Select value={lfCategory} label="Category" onChange={(e) => setLfCategory(e.target.value)}>
+                {LF_CATEGORIES.map((c) => <MenuItem key={c} value={c}>{pretty(c)}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <TextField size="small" label="Found where" value={lfLocation} onChange={(e) => setLfLocation(e.target.value)} />
+            <TextField size="small" label="Colour and description" multiline rows={2} value={lfDescription} onChange={(e) => setLfDescription(e.target.value)} />
+            <TextField size="small" label="Vault location (optional)" value={lfVault} onChange={(e) => setLfVault(e.target.value)} />
           </Box>
-          <IconButton size="small" onClick={() => setNewLfModalOpen(false)}>
-            <X size={18} color="#64748B" />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <TextField
-            label="Item Name / Title"
-            fullWidth
-            size="small"
-            placeholder="e.g. Sony WH-1000XM5 Headphones in Silver"
-            value={newLfTitle}
-            onChange={(e) => setNewLfTitle(e.target.value)}
-          />
-
-          <TextField
-            select
-            label="Category"
-            fullWidth
-            size="small"
-            value={newLfCategory}
-            onChange={(e) => setNewLfCategory(e.target.value as any)}
-          >
-            <MenuItem value="ELECTRONICS">Electronics</MenuItem>
-            <MenuItem value="BAGGAGE">Baggage / Luggage</MenuItem>
-            <MenuItem value="DOCUMENTS">Documents & Passports</MenuItem>
-            <MenuItem value="VALUABLES">Valuables & Jewelry</MenuItem>
-            <MenuItem value="CLOTHING">Clothing & Accessories</MenuItem>
-          </TextField>
-
-          <TextField
-            label="Location Found"
-            fullWidth
-            size="small"
-            placeholder="e.g. Concourse B Gate 12 Standby Lounge"
-            value={newLfLocation}
-            onChange={(e) => setNewLfLocation(e.target.value)}
-          />
-
-          <TextField
-            label="Storage Locker / Vault Identifier"
-            fullWidth
-            size="small"
-            placeholder="e.g. Locker Sec-04 / Shelf A2"
-            value={newLfLocker}
-            onChange={(e) => setNewLfLocker(e.target.value)}
-          />
-
-          <TextField
-            label="Detailed Description & Distinguishing Marks"
-            fullWidth
-            multiline
-            rows={3}
-            size="small"
-            placeholder="Describe condition, brand, color, stickers, contents..."
-            value={newLfDescription}
-            onChange={(e) => setNewLfDescription(e.target.value)}
-          />
         </DialogContent>
-
-        <DialogActions sx={{ p: 2.5, pt: 1 }}>
-          <Button onClick={() => setNewLfModalOpen(false)} sx={{ color: '#64748B', fontWeight: 600, textTransform: 'none' }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSaveNewFoundItem}
-            sx={{
-              backgroundColor: '#0F2942',
-              color: '#FFFFFF',
-              fontWeight: 700,
-              textTransform: 'none',
-              borderRadius: '8px',
-              px: 3,
-              '&:hover': { backgroundColor: '#1E3A5F' },
-            }}
-          >
-            Catalog Item
-          </Button>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setLfNewOpen(false)} sx={{ textTransform: 'none', color: '#64748B' }}>Cancel</Button>
+          <Button variant="contained" onClick={saveLostFound} sx={{ textTransform: 'none', fontWeight: 700, bgcolor: '#0F2942' }}>Save item</Button>
         </DialogActions>
       </Dialog>
 
-      {/* ========================================================================= */}
-      {/* MODAL 4: LOG SECURITY INCIDENT DIALOG                                     */}
-      {/* ========================================================================= */}
-      <Dialog
-        open={incidentModalOpen}
-        onClose={() => setIncidentModalOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: { borderRadius: '16px', p: 1 },
-          },
-        }}
-      >
-        <DialogTitle sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
-          Dispatch Security Incident Report
-        </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-          <TextField
-            label="Incident Title / Nature of Event"
-            fullWidth
-            size="small"
-            placeholder="e.g. Unattended Baggage / Biometric Mismatch"
-            value={incidentTitle}
-            onChange={(e) => setIncidentTitle(e.target.value)}
-          />
-
-          <TextField
-            select
-            label="Severity Level"
-            fullWidth
-            size="small"
-            value={incidentSeverity}
-            onChange={(e) => setIncidentSeverity(e.target.value as any)}
-          >
-            <MenuItem value="CRITICAL">Critical (Immediate Evacuation / Lockdown)</MenuItem>
-            <MenuItem value="HIGH">High (K9 Sweep / Escort Required)</MenuItem>
-            <MenuItem value="MEDIUM">Medium (Secondary Screening / Document Issue)</MenuItem>
-            <MenuItem value="LOW">Low (Equipment Sensor Calibration / Routine)</MenuItem>
-          </TextField>
-
-          <TextField
-            label="Location"
-            fullWidth
-            size="small"
-            placeholder="e.g. Concourse B, Stand 14"
-            value={incidentLocation}
-            onChange={(e) => setIncidentLocation(e.target.value)}
-          />
-
-          <TextField
-            label="Incident Narrative & Actions Taken"
-            fullWidth
-            multiline
-            rows={3}
-            size="small"
-            placeholder="Describe findings, individuals involved, officers dispatched..."
-            value={incidentDescription}
-            onChange={(e) => setIncidentDescription(e.target.value)}
-          />
+      <Dialog open={!!claimItem} onClose={() => setClaimItem(null)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontFamily: FONT, fontWeight: 800 }}>Release {claimItem?.referenceCode} to its owner</DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField size="small" label="Owner's name" value={claimName} onChange={(e) => setClaimName(e.target.value)} />
+            <TextField size="small" label="Owner's email" value={claimEmail} onChange={(e) => setClaimEmail(e.target.value)} />
+            <TextField size="small" label="How ownership was verified" multiline rows={2} value={claimNotes} onChange={(e) => setClaimNotes(e.target.value)} />
+          </Box>
         </DialogContent>
-
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setIncidentModalOpen(false)} sx={{ textTransform: 'none', fontWeight: 700, color: '#64748B' }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSaveIncident}
-            sx={{
-              backgroundColor: '#EF4444',
-              textTransform: 'none',
-              fontWeight: 700,
-              boxShadow: 'none',
-              '&:hover': { backgroundColor: '#DC2626', boxShadow: 'none' },
-            }}
-          >
-            Broadcast Incident
-          </Button>
+          <Button onClick={() => setClaimItem(null)} sx={{ textTransform: 'none', color: '#64748B' }}>Cancel</Button>
+          <Button variant="contained" onClick={submitClaim} sx={{ textTransform: 'none', fontWeight: 700, bgcolor: '#10B981', '&:hover': { bgcolor: '#059669' } }}>Release item</Button>
         </DialogActions>
       </Dialog>
     </DashboardLayout>

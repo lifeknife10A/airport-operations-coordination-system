@@ -42,8 +42,13 @@ public class BorderControlController {
 
     @PostMapping("/clearance")
     public ResponseEntity<PassengerClearanceLog> logClearance(@Valid @RequestBody ClearanceLogDTO dto) {
-        Long boardingPassId = dto.getBoardingPassId() != null ? dto.getBoardingPassId() : 1L;
-        Long checkpointId = dto.getCheckpointId() != null ? dto.getCheckpointId() : 1L;
+        // These used to default to id 1, silently attributing a scan to a stranger's boarding pass
+        // and an arbitrary checkpoint. Both are now required.
+        if (dto.getBoardingPassId() == null || dto.getCheckpointId() == null) {
+            throw new com.saphire.aocs.exception.BadRequestException("boardingPassId and checkpointId are required");
+        }
+        Long boardingPassId = dto.getBoardingPassId();
+        Long checkpointId = dto.getCheckpointId();
 
         PassengerClearanceLog log = borderControlService.logClearance(dto.getPassengerId(), dto.getClearanceStatus(),
                 dto.getDenialReason(), dto.getVerificationMethod(), boardingPassId, checkpointId);
