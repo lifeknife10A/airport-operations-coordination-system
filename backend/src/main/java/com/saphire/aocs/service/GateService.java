@@ -98,6 +98,7 @@ public class GateService {
         Flight flight = flightRepository.findByIdForUpdate(dto.getFlightId())
                 .orElseThrow(() -> new ResourceNotFoundException("Flight not found with ID: " + dto.getFlightId()));
 
+        assertWingspanFits(flight, gate);
         assertNoOverlap(flight, gate, stand);
 
         flight.setGate(gate);
@@ -109,6 +110,22 @@ public class GateService {
         log.info("Gate {} assigned to flight {} (id {}){}", gate.getGateNumber(), flight.getFlightNumber(), flight.getFlightId(),
                 stand != null ? ", stand " + stand.getStandNumber() : "");
         return flightService.mapToDTO(saved);
+    }
+
+    /** An aircraft wider than the gate's rated wingspan cannot dock there. Unknown sizes are not blocked. */
+    private void assertWingspanFits(Flight flight, Gate gate) {
+        if (flight.getAircraft() == null || flight.getAircraft().getAircraftType() == null
+                || flight.getAircraft().getAircraftType().getWingspanMeters() == null
+                || gate.getMaxWingspanMeters() == null) {
+            return;
+        }
+        double span = flight.getAircraft().getAircraftType().getWingspanMeters().doubleValue();
+        if (span > gate.getMaxWingspanMeters()) {
+            throw new ConflictException(String.format(
+                    "Flight %s (%s, %.1f m wingspan) does not fit gate %s, which is rated for %.1f m",
+                    flight.getFlightNumber(), flight.getAircraft().getAircraftType().getModelName(), span,
+                    gate.getGateNumber(), gate.getMaxWingspanMeters()));
+        }
     }
 
     private void assertNoOverlap(Flight incoming, Gate gate, Stand stand) {

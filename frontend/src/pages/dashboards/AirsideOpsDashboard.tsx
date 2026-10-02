@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -47,6 +47,10 @@ import { useAuth } from '../../context/AuthContext';
 import { aocsDataStore } from '../../services/aocsDataStore';
 import toast from 'react-hot-toast';
 import { runwayApi, RunwayTelemetryData } from '../../api/runwayApi';
+import { gateApi } from '../../api/gateApi';
+import { airsideApi, OperationalFlightDto, AirsideConflictDto } from '../../api/airsideApi';
+import { describeApiError } from '../../services/aocsDataStore';
+import type { Gate } from '../../types';
 
 // ============================================================================
 // TYPES & DATA STRUCTURES
@@ -75,6 +79,7 @@ const runwayStatusFromBackend = (raw: string | undefined, fallback: RunwayStatus
 
 export interface GateInfo {
   id: string;
+  gateId: number;
   gateNumber: string;
   terminal: string;
   concourse: string;
@@ -89,9 +94,10 @@ export interface GateInfo {
 
 export interface RunwayInfo {
   id: string;
+  runwayId: number;
   runwayCode: string;
   status: RunwayStatus;
-  length: string;
+  ils: string;
   surfaceCondition: string;
   wind: string;
   crosswind: string;
@@ -101,22 +107,25 @@ export interface RunwayInfo {
 
 export interface AirsideFlight {
   id: string;
+  flightId: number;
   flightNumber: string;
   airline: string;
   aircraft: string;
   wingspanMeters: number;
   stand: string;
   gateNumber: string;
-  runwayCode: string; // '28L', '09R', '10L', '27R', or 'UNASSIGNED'
+  runwayCode: string; // e.g. 'RWY-04L', or 'UNASSIGNED'
   flightType: 'DEPARTURE' | 'ARRIVAL';
   time: string; // e.g. '23:40'
-  status: 'SCHEDULED' | 'BOARDING' | 'PUSHBACK' | 'TAXIING' | 'CLEARED';
+  status: 'SCHEDULED' | 'BOARDING' | 'DELAYED' | 'PUSHBACK' | 'TAXIING' | 'CLEARED';
   hasConflict: boolean;
   conflictReason?: string;
 }
 
 export interface OperationalConflict {
   id: string;
+  flightId: number;
+  wingspanMeters?: number;
   flightNumber: string;
   type: 'GATE_CONFLICT' | 'RUNWAY_UNASSIGNED' | 'WINGSPAN_OVERSIZE';
   severity: 'CRITICAL' | 'WARNING';
@@ -129,123 +138,87 @@ export interface OperationalConflict {
 }
 
 // ============================================================================
-// INITIAL SEED DATA
+// LIVE DATA MAPPING (backend -> the shapes this screen renders)
 // ============================================================================
 
-const INITIAL_GATES: GateInfo[] = [
-  // Central Terminal - Concourse A (Domestic Pier - Stands G01 to G14)
-  { id: 'G-A01', gateNumber: 'A01', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G01', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'OCCUPIED', assignedFlightNumber: 'AI-203', aircraft: 'Boeing 787-8', scheduledTime: '23:40' },
-  { id: 'G-A02', gateNumber: 'A02', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G02', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
-  { id: 'G-A03', gateNumber: 'A03', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G03', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'SPH-102', aircraft: 'Airbus A350-900', scheduledTime: '00:15' },
-  { id: 'G-A04', gateNumber: 'A04', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G04', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'UK-901', aircraft: 'Airbus A320neo', scheduledTime: '23:55' },
-  { id: 'G-A05', gateNumber: 'A05', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G05', hasJetbridge: false, maxWingspanMeters: 38.0, status: 'OCCUPIED', assignedFlightNumber: 'AF-225', aircraft: 'Boeing 777-300ER', scheduledTime: '01:10' },
-  { id: 'G-A06', gateNumber: 'A06', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G06', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
-  { id: 'G-A07', gateNumber: 'A07', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G07', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: '6E-521', aircraft: 'Airbus A321neo', scheduledTime: '23:42' },
-  { id: 'G-A08', gateNumber: 'A08', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G08', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'STANDBY' },
-  { id: 'G-A09', gateNumber: 'A09', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G09', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
-  { id: 'G-A10', gateNumber: 'A10', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G10', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'OCCUPIED', assignedFlightNumber: 'BA-142', aircraft: 'Boeing 787-9', scheduledTime: '00:30' },
-  { id: 'G-A11', gateNumber: 'A11', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G11', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'MAINTENANCE' },
-  { id: 'G-A12', gateNumber: 'A12', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G12', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
-  { id: 'G-A13', gateNumber: 'A13', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G13', hasJetbridge: true, maxWingspanMeters: 36.0, status: 'AVAILABLE' },
-  { id: 'G-A14', gateNumber: 'A14', terminal: 'Central Terminal', concourse: 'Concourse A', standNumber: 'Stand G14', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+const EMPTY_AIRSIDE_FLIGHT: AirsideFlight = {
+  id: 'none', flightId: 0, flightNumber: '—', airline: '', aircraft: '', wingspanMeters: 0, stand: '', gateNumber: 'UNASSIGNED',
+  runwayCode: 'UNASSIGNED', flightType: 'DEPARTURE', time: '', status: 'SCHEDULED', hasConflict: false,
+};
+const EMPTY_GATE: GateInfo = {
+  id: 'none', gateId: 0, gateNumber: '—', terminal: '', concourse: '', standNumber: '', hasJetbridge: false, maxWingspanMeters: 0, status: 'AVAILABLE',
+};
 
-  // Central Terminal - Concourse B (Transcontinental Pier - Stands G15 to G30)
-  { id: 'G-B01', gateNumber: 'B01', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G15', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'OCCUPIED', assignedFlightNumber: 'EK-506', aircraft: 'Boeing 777-300ER', scheduledTime: '00:45' },
-  { id: 'G-B02', gateNumber: 'B02', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G16', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
-  { id: 'G-B03', gateNumber: 'B03', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G17', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'LH-760', aircraft: 'Airbus A350-900', scheduledTime: '01:25' },
-  { id: 'G-B04', gateNumber: 'B04', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G18', hasJetbridge: false, maxWingspanMeters: 38.0, status: 'OCCUPIED', assignedFlightNumber: 'QR-557', aircraft: 'Airbus A330-300', scheduledTime: '01:40' },
-  { id: 'G-B05', gateNumber: 'B05', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G19', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
-  { id: 'G-B06', gateNumber: 'B06', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G20', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'SQ-402', aircraft: 'Boeing 787-10', scheduledTime: '02:00' },
-  { id: 'G-B07', gateNumber: 'B07', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G21', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'OCCUPIED', assignedFlightNumber: 'KL-871', aircraft: 'Boeing 777-200', scheduledTime: '02:15' },
-  { id: 'G-B08', gateNumber: 'B08', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G22', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'AVAILABLE' },
-  { id: 'G-B09', gateNumber: 'B09', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G23', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'TG-317', aircraft: 'Airbus A350-900', scheduledTime: '02:30' },
-  { id: 'G-B10', gateNumber: 'B10', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G24', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'OCCUPIED', assignedFlightNumber: 'MH-194', aircraft: 'Airbus A330-200', scheduledTime: '02:45' },
-  { id: 'G-B11', gateNumber: 'B11', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G25', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'STANDBY' },
-  { id: 'G-B12', gateNumber: 'B12', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G26', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
-  { id: 'G-B13', gateNumber: 'B13', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G27', hasJetbridge: true, maxWingspanMeters: 42.0, status: 'AVAILABLE' },
-  { id: 'G-B14', gateNumber: 'B14', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G28', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
-  { id: 'G-B15', gateNumber: 'B15', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G29', hasJetbridge: false, maxWingspanMeters: 36.0, status: 'AVAILABLE' },
-  { id: 'G-B16', gateNumber: 'B16', terminal: 'Central Terminal', concourse: 'Concourse B', standNumber: 'Stand G30', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
+const clockOf = (iso?: string): string => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : `${d.toISOString().slice(11, 16)} UTC`;
+};
 
-  // Central Terminal - Concourse C (Widebody Flagship Pier - Stands G31 to G48)
-  { id: 'G-C01', gateNumber: 'C01', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G31', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'OCCUPIED', assignedFlightNumber: 'EK-201', aircraft: 'Airbus A380-800', scheduledTime: '00:50' },
-  { id: 'G-C02', gateNumber: 'C02', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G32', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
-  { id: 'G-C03', gateNumber: 'C03', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G33', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'AVAILABLE' },
-  { id: 'G-C04', gateNumber: 'C04', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G34', hasJetbridge: true, maxWingspanMeters: 75.0, status: 'OCCUPIED', assignedFlightNumber: 'BA-117', aircraft: 'Boeing 777-300ER', scheduledTime: '01:05' },
-  { id: 'G-C05', gateNumber: 'C05', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G35', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
-  { id: 'G-C06', gateNumber: 'C06', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G36', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'AVAILABLE' },
-  { id: 'G-C07', gateNumber: 'C07', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G37', hasJetbridge: true, maxWingspanMeters: 75.0, status: 'AVAILABLE' },
-  { id: 'G-C08', gateNumber: 'C08', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G38', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'OCCUPIED', assignedFlightNumber: 'SQ-406', aircraft: 'Airbus A350-900', scheduledTime: '01:35' },
-  { id: 'G-C09', gateNumber: 'C09', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G39', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
-  { id: 'G-C10', gateNumber: 'C10', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G40', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
-  { id: 'G-C11', gateNumber: 'C11', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G41', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'AVAILABLE' },
-  { id: 'G-C12', gateNumber: 'C12', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G42', hasJetbridge: true, maxWingspanMeters: 75.0, status: 'OCCUPIED', assignedFlightNumber: 'QR-571', aircraft: 'Boeing 777-200LR', scheduledTime: '01:50' },
-  { id: 'G-C13', gateNumber: 'C13', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G43', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
-  { id: 'G-C14', gateNumber: 'C14', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G44', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'STANDBY' },
-  { id: 'G-C15', gateNumber: 'C15', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G45', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'OCCUPIED', assignedFlightNumber: 'LH-772', aircraft: 'Boeing 747-8', scheduledTime: '02:20' },
-  { id: 'G-C16', gateNumber: 'C16', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G46', hasJetbridge: true, maxWingspanMeters: 75.0, status: 'AVAILABLE' },
-  { id: 'G-C17', gateNumber: 'C17', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G47', hasJetbridge: true, maxWingspanMeters: 65.0, status: 'AVAILABLE' },
-  { id: 'G-C18', gateNumber: 'C18', terminal: 'Central Terminal', concourse: 'Concourse C', standNumber: 'Stand G48', hasJetbridge: true, maxWingspanMeters: 80.0, status: 'AVAILABLE' },
-];
+const toAirsideFlight = (f: OperationalFlightDto, runwayCodeById: Map<number, string>, conflictFlights: Set<string>): AirsideFlight => ({
+  id: `FLT-${f.flightId}`,
+  flightId: f.flightId,
+  flightNumber: f.flightNumber,
+  airline: f.airlineName ?? '',
+  aircraft: f.aircraftType ?? '',
+  wingspanMeters: f.aircraftWingspanMeters ?? 0,
+  stand: f.standNumber ? `Stand ${f.standNumber}` : 'No stand',
+  gateNumber: f.gateNumber ?? 'UNASSIGNED',
+  runwayCode: (f.runwayId && runwayCodeById.get(f.runwayId)) || 'UNASSIGNED',
+  flightType: f.flightType === 'ARRIVAL' ? 'ARRIVAL' : 'DEPARTURE',
+  time: clockOf(f.scheduledDepartureTime),
+  status: f.flightStatus === 'BOARDING' ? 'BOARDING' : f.flightStatus === 'DELAYED' ? 'DELAYED' : 'SCHEDULED',
+  hasConflict: conflictFlights.has(f.flightNumber),
+});
 
-const INITIAL_RUNWAYS: RunwayInfo[] = [
-  { id: 'RWY-28L', runwayCode: '28L', status: 'ACTIVE_CAT_III', length: '3,800m', surfaceCondition: 'DRY (Friction 0.84)', wind: '080° @ 12 kts', crosswind: '3 kts', activeFlightNumber: 'AI-203', queueCount: 2 },
-  { id: 'RWY-09R', runwayCode: '09R', status: 'DEPARTURE_ONLY', length: '3,500m', surfaceCondition: 'DRY (Friction 0.81)', wind: '085° @ 11 kts', crosswind: '4 kts', activeFlightNumber: '6E-521', queueCount: 3 },
-  { id: 'RWY-10L', runwayCode: '10L', status: 'AVAILABLE', length: '3,200m', surfaceCondition: 'NORMAL (Friction 0.80)', wind: '075° @ 10 kts', crosswind: '2 kts', activeFlightNumber: 'SPH-102', queueCount: 1 },
-  { id: 'RWY-27R', runwayCode: '27R', status: 'SWEEP', length: '3,000m', surfaceCondition: 'MAINTENANCE (Radar FOD Scan)', wind: '080° @ 12 kts', crosswind: '3 kts', queueCount: 0 },
-];
+const toGateInfo = (g: Gate, flights: AirsideFlight[]): GateInfo => {
+  const occupant = g.assignedFlightNumber ? flights.find((f) => f.flightNumber === g.assignedFlightNumber) : undefined;
+  return {
+    id: `GATE-${g.gateId}`,
+    gateId: g.gateId,
+    gateNumber: g.gateCode,
+    terminal: g.terminalName,
+    concourse: g.concourse ?? '',
+    standNumber: g.stands?.[0]?.standCode ?? '',
+    hasJetbridge: g.hasJetbridge,
+    maxWingspanMeters: g.maxWingspanMeters ?? 0,
+    status: g.status === 'OCCUPIED' ? 'OCCUPIED' : g.status === 'MAINTENANCE' ? 'MAINTENANCE' : 'AVAILABLE',
+    assignedFlightNumber: g.assignedFlightNumber,
+    aircraft: occupant?.aircraft,
+    scheduledTime: occupant?.time,
+  };
+};
 
-const INITIAL_FLIGHTS: AirsideFlight[] = [
-  { id: 'FLT-203', flightNumber: 'AI-203', airline: 'Air India', aircraft: 'Boeing 787-8', wingspanMeters: 60.1, stand: 'Stand G01', gateNumber: 'A01', runwayCode: '28L', flightType: 'DEPARTURE', time: '23:40', status: 'BOARDING', hasConflict: false },
-  { id: 'FLT-521', flightNumber: '6E-521', airline: 'IndiGo', aircraft: 'Airbus A321neo', wingspanMeters: 35.8, stand: 'Stand G07', gateNumber: 'A07', runwayCode: '09R', flightType: 'DEPARTURE', time: '23:42', status: 'PUSHBACK', hasConflict: false },
-  { id: 'FLT-901', flightNumber: 'UK-901', airline: 'Vistara', aircraft: 'Airbus A320neo', wingspanMeters: 35.8, stand: 'Stand G04', gateNumber: 'A04', runwayCode: 'UNASSIGNED', flightType: 'DEPARTURE', time: '23:55', status: 'SCHEDULED', hasConflict: true, conflictReason: 'Departure in 22 mins with no takeoff runway vector assigned' },
-  { id: 'FLT-102', flightNumber: 'SPH-102', airline: 'Saphire Air', aircraft: 'Airbus A350-900', wingspanMeters: 64.75, stand: 'Stand G03', gateNumber: 'A03', runwayCode: '10L', flightType: 'DEPARTURE', time: '00:15', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-142', flightNumber: 'BA-142', airline: 'British Airways', aircraft: 'Boeing 787-9', wingspanMeters: 60.1, stand: 'Stand G10', gateNumber: 'A10', runwayCode: '28L', flightType: 'DEPARTURE', time: '00:30', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-506', flightNumber: 'EK-506', airline: 'Emirates', aircraft: 'Boeing 777-300ER', wingspanMeters: 64.8, stand: 'Stand G15', gateNumber: 'B01', runwayCode: '09R', flightType: 'DEPARTURE', time: '00:45', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-225', flightNumber: 'AF-225', airline: 'Air France', aircraft: 'Boeing 777-300ER', wingspanMeters: 64.8, stand: 'Stand G05', gateNumber: 'A05', runwayCode: '28L', flightType: 'DEPARTURE', time: '01:10', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-557', flightNumber: 'QR-557', airline: 'Qatar Airways', aircraft: 'Airbus A330-300', wingspanMeters: 60.3, stand: 'Stand G18', gateNumber: 'B04', runwayCode: 'UNASSIGNED', flightType: 'DEPARTURE', time: '01:40', status: 'SCHEDULED', hasConflict: true, conflictReason: 'Runway unassigned for international widebody' },
-  { id: 'FLT-760', flightNumber: 'LH-760', airline: 'Lufthansa', aircraft: 'Airbus A350-900', wingspanMeters: 64.75, stand: 'Stand G17', gateNumber: 'B03', runwayCode: '28L', flightType: 'DEPARTURE', time: '01:25', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-402', flightNumber: 'SQ-402', airline: 'Singapore Airlines', aircraft: 'Boeing 787-10', wingspanMeters: 60.1, stand: 'Stand G20', gateNumber: 'B06', runwayCode: '10L', flightType: 'DEPARTURE', time: '02:00', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-871', flightNumber: 'KL-871', airline: 'KLM Royal Dutch', aircraft: 'Boeing 777-200', wingspanMeters: 60.9, stand: 'Stand G21', gateNumber: 'B07', runwayCode: '09R', flightType: 'DEPARTURE', time: '02:15', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-317', flightNumber: 'TG-317', airline: 'Thai Airways', aircraft: 'Airbus A350-900', wingspanMeters: 64.75, stand: 'Stand G23', gateNumber: 'B09', runwayCode: '28L', flightType: 'DEPARTURE', time: '02:30', status: 'SCHEDULED', hasConflict: false },
-  // Concourse C Flagship Flights
-  { id: 'FLT-201', flightNumber: 'EK-201', airline: 'Emirates', aircraft: 'Airbus A380-800', wingspanMeters: 79.8, stand: 'Stand G31', gateNumber: 'C01', runwayCode: '28L', flightType: 'DEPARTURE', time: '00:50', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-117', flightNumber: 'BA-117', airline: 'British Airways', aircraft: 'Boeing 777-300ER', wingspanMeters: 64.8, stand: 'Stand G34', gateNumber: 'C04', runwayCode: '10L', flightType: 'DEPARTURE', time: '01:05', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-406', flightNumber: 'SQ-406', airline: 'Singapore Airlines', aircraft: 'Airbus A350-900', wingspanMeters: 64.75, stand: 'Stand G38', gateNumber: 'C08', runwayCode: '28L', flightType: 'DEPARTURE', time: '01:35', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-571', flightNumber: 'QR-571', airline: 'Qatar Airways', aircraft: 'Boeing 777-200LR', wingspanMeters: 64.8, stand: 'Stand G42', gateNumber: 'C12', runwayCode: '09R', flightType: 'DEPARTURE', time: '01:50', status: 'SCHEDULED', hasConflict: false },
-  { id: 'FLT-772', flightNumber: 'LH-772', airline: 'Lufthansa', aircraft: 'Boeing 747-8', wingspanMeters: 68.4, stand: 'Stand G45', gateNumber: 'C15', runwayCode: '28L', flightType: 'DEPARTURE', time: '02:20', status: 'SCHEDULED', hasConflict: false },
-];
+const toRunwayInfo = (t: RunwayTelemetryData, flights: AirsideFlight[]): RunwayInfo => ({
+  id: `RWY-${t.runwayId}`,
+  runwayId: t.runwayId,
+  runwayCode: t.runwayCode,
+  status: runwayStatusFromBackend(t.operationalStatus, 'AVAILABLE'),
+  ils: t.activeIlsFrequency || '—',
+  surfaceCondition: `Friction ${Number(t.surfaceFriction).toFixed(2)} · visual range ${t.visualRangeMeters} m`,
+  wind: t.headwindVector || 'No wind data',
+  crosswind: t.crosswindVector || 'No wind data',
+  activeFlightNumber: flights.find((f) => f.runwayCode === t.runwayCode && f.status === 'BOARDING')?.flightNumber,
+  queueCount: t.activeDeparturesCount ?? 0,
+});
 
-const INITIAL_CONFLICTS: OperationalConflict[] = [
-  {
-    id: 'CONF-01',
-    flightNumber: '6E-521',
-    type: 'GATE_CONFLICT',
-    severity: 'CRITICAL',
-    title: 'Stand Timing Contention at Gate A01',
-    description: 'Scheduled turnaround pushback at 23:42 overlaps with AI-203 docked until 23:40. Minimum separation of 15 minutes violated.',
-    affectedGate: 'A01',
-    suggestedGate: 'A02',
-  },
-  {
-    id: 'CONF-02',
-    flightNumber: 'UK-901',
-    type: 'RUNWAY_UNASSIGNED',
-    severity: 'WARNING',
-    title: 'Runway Takeoff Vector Missing',
-    description: 'Vistara UK-901 scheduled for 23:55 has no takeoff vector assigned. Taxi clearance cannot be issued.',
-    suggestedRunway: '10L',
-  },
-  {
-    id: 'CONF-03',
-    flightNumber: 'QR-557',
-    type: 'RUNWAY_UNASSIGNED',
-    severity: 'WARNING',
-    title: 'Widebody Runway Vector Unallocated',
-    description: 'Qatar Airways QR-557 (A330-300) departs at 01:40. Requires Heavy Runway CAT III clearance.',
-    suggestedRunway: '28L',
-  },
-];
+const toConflict = (c: AirsideConflictDto, gates: GateInfo[], index: number): OperationalConflict => {
+  const wingspan = c.aircraftWingspanMeters ?? 0;
+  // Suggest the first free gate that is wide enough. Only a suggestion: the server re-checks on assign.
+  const suggested = gates.find((g) => g.status === 'AVAILABLE' && g.maxWingspanMeters >= wingspan && g.gateNumber !== c.gateNumber);
+  return {
+    id: `CONF-${c.type}-${c.flightId}-${index}`,
+    flightId: c.flightId,
+    wingspanMeters: wingspan || undefined,
+    flightNumber: c.flightNumber,
+    type: c.type,
+    severity: c.severity,
+    title: c.title,
+    description: c.description,
+    affectedGate: c.gateNumber,
+    suggestedGate: suggested?.gateNumber,
+  };
+};
 
 // ============================================================================
 // MAIN COMPONENT
@@ -268,71 +241,50 @@ export const AirsideOpsDashboard: React.FC = () => {
     }
   }, [location.hash]);
 
-  // Core Operational States
-  const [gates, setGates] = useState<GateInfo[]>(INITIAL_GATES);
-  const [runways, setRunways] = useState<RunwayInfo[]>(INITIAL_RUNWAYS);
-  const [flights, setFlights] = useState<AirsideFlight[]>(INITIAL_FLIGHTS);
-  const [conflicts, setConflicts] = useState<OperationalConflict[]>(INITIAL_CONFLICTS);
+  // Core operational state -- everything is loaded from the backend.
+  const [gates, setGates] = useState<GateInfo[]>([]);
+  const [runways, setRunways] = useState<RunwayInfo[]>([]);
+  const [flights, setFlights] = useState<AirsideFlight[]>([]);
+  const [conflicts, setConflicts] = useState<OperationalConflict[]>([]);
+  const [conflictTotal, setConflictTotal] = useState(0);
+  const [flightSummary, setFlightSummary] = useState<Record<string, number>>({});
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Filter for Gate Boards
   const [selectedConcourse, setSelectedConcourse] = useState<'ALL' | 'Concourse A' | 'Concourse B' | 'Concourse C'>('ALL');
   const [gateStatusFilter, setGateStatusFilter] = useState<'ALL' | 'AVAILABLE' | 'OCCUPIED'>('ALL');
+  const [gateTabLimit, setGateTabLimit] = useState(48);
 
-  // Cross-dashboard synchronization with aocsDataStore and Live Runway Telemetry
-  useEffect(() => {
-    let isMounted = true;
-
-    // Fetch live runway telemetry from backend API
-    runwayApi.getAll()
-      .then((data) => {
-        if (!isMounted || !data || data.length === 0) return;
-        setRunways((prev) =>
-          prev.map((r) => {
-            const telemetry = data.find((d) => d.runwayCode === r.runwayCode);
-            if (!telemetry) return r;
-            return {
-              ...r,
-              status: runwayStatusFromBackend(telemetry.operationalStatus, r.status),
-              surfaceCondition: `DRY (Friction ${telemetry.surfaceFriction?.toFixed(2) || '0.84'})`,
-              wind: telemetry.headwindVector || r.wind,
-              crosswind: telemetry.crosswindVector || r.crosswind,
-              queueCount: telemetry.activeDeparturesCount || r.queueCount,
-            };
-          })
-        );
-      })
-      .catch((err) => {
-        console.warn('Backend runway telemetry fallback:', err);
-      });
-
-    const syncFromStore = () => {
-      const storeGates = aocsDataStore.getGates();
-      if (storeGates.length > 0) {
-        setGates((prev) =>
-          prev.map((g) => {
-            const sg = storeGates.find((s) => (s as any).gateCode === g.gateNumber || (s as any).gateNumber === g.gateNumber);
-            if (sg) {
-              return {
-                ...g,
-                status: (sg.status === 'OCCUPIED' ? 'OCCUPIED' : sg.status === 'MAINTENANCE' ? 'MAINTENANCE' : 'AVAILABLE') as GateStatus,
-                assignedFlightNumber: sg.assignedFlightNumber || g.assignedFlightNumber,
-              };
-            }
-            return g;
-          })
-        );
-      }
-    };
-
-    syncFromStore();
-    const unsub = aocsDataStore.subscribe(syncFromStore);
-    return () => {
-      isMounted = false;
-      unsub();
-    };
+  const loadAll = useCallback(async () => {
+    try {
+      const [runwayData, gateData, operational, conflictData, summary] = await Promise.all([
+        runwayApi.getAll(),
+        gateApi.getAllGates(),
+        airsideApi.getOperationalFlights(60),
+        airsideApi.getConflicts(25),
+        airsideApi.getFlightStatusSummary(),
+      ]);
+      const runwayCodeById = new Map(runwayData.map((r) => [r.runwayId, r.runwayCode]));
+      const conflictFlights = new Set(conflictData.items.map((i) => i.flightNumber));
+      const mappedFlights = operational.map((f) => toAirsideFlight(f, runwayCodeById, conflictFlights));
+      const mappedGates = gateData.map((g) => toGateInfo(g, mappedFlights));
+      setFlights(mappedFlights);
+      setGates(mappedGates);
+      setRunways(runwayData.map((r) => toRunwayInfo(r, mappedFlights)));
+      setConflicts(conflictData.items.map((c, i) => toConflict(c, mappedGates, i)));
+      setConflictTotal(conflictData.total);
+      setFlightSummary(summary);
+      setLoadError(null);
+    } catch (e) {
+      setLoadError(describeApiError(e));
+    }
   }, []);
 
-  // Handler: Toggle Runway Operational Mode / Trigger Surface Sweep
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
+
+  // Handler: step a runway through its operating modes. The server decides whether it accepts.
   const handleToggleRunwayMode = async (rwy: RunwayInfo) => {
     const nextStatus: RunwayStatus =
       rwy.status === 'ACTIVE_CAT_III'
@@ -341,82 +293,78 @@ export const AirsideOpsDashboard: React.FC = () => {
         ? 'SWEEP'
         : 'ACTIVE_CAT_III';
 
-    const rwyIdNum = rwy.runwayCode === '28L' ? 1 : rwy.runwayCode === '09R' ? 2 : rwy.runwayCode === '10L' ? 3 : 4;
-
     try {
-      await runwayApi.updateStatus(rwyIdNum, {
-        operationalStatus: RUNWAY_STATUS_TO_BACKEND[nextStatus],
-        surfaceFriction: nextStatus === 'SWEEP' ? 0.72 : 0.85,
-        visualRangeMeters: 1200,
-      });
+      await runwayApi.updateStatus(rwy.runwayId, { operationalStatus: RUNWAY_STATUS_TO_BACKEND[nextStatus] });
     } catch (err) {
-      console.error('Backend runway update failed', err);
-      toast.error(`Runway ${rwy.runwayCode} was NOT changed: the server rejected the update.`);
+      toast.error(`Runway ${rwy.runwayCode} was NOT changed: ${describeApiError(err)}`);
       return;
     }
-
-    setRunways((prev) =>
-      prev.map((r) =>
-        r.id === rwy.id
-          ? {
-              ...r,
-              status: nextStatus,
-              surfaceCondition: nextStatus === 'SWEEP' ? 'MAINTENANCE (Radar FOD Scan)' : 'DRY (Friction 0.85)',
-            }
-          : r
-      )
-    );
-
     toast.success(`Runway ${rwy.runwayCode} mode updated to ${nextStatus.replace(/_/g, ' ')}`);
+    loadAll();
   };
 
   // Interactive Assignment Modal State
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
-  const [selectedFlightForAssignment, setSelectedFlightForAssignment] = useState<AirsideFlight>(flights[0]);
-  const [selectedGateNumber, setSelectedGateNumber] = useState<string>('A02');
-  const [selectedRunwayCode, setSelectedRunwayCode] = useState<string>('28L');
+  const [selectedFlightForAssignment, setSelectedFlightForAssignment] = useState<AirsideFlight>(EMPTY_AIRSIDE_FLIGHT);
+  const [selectedGateNumber, setSelectedGateNumber] = useState<string>('');
+  const [selectedRunwayCode, setSelectedRunwayCode] = useState<string>('');
+  const [assigning, setAssigning] = useState(false);
 
   // Selected Gate Inspector Drawer/Modal
   const [gateDetailModalOpen, setGateDetailModalOpen] = useState(false);
-  const [inspectingGate, setInspectingGate] = useState<GateInfo>(gates[0]);
+  const [inspectingGate, setInspectingGate] = useState<GateInfo>(EMPTY_GATE);
+
+  const firstFreeGateFor = (wingspan: number, exclude?: string) =>
+    gates.find((g) => g.status === 'AVAILABLE' && g.maxWingspanMeters >= wingspan && g.gateNumber !== exclude)?.gateNumber ?? '';
+  const firstOpenRunway = () => runways.find((r) => r.status !== 'SWEEP')?.runwayCode ?? '';
 
   // Handle open assignment flow for a flight
   const handleOpenAssignment = (flight: AirsideFlight) => {
     setSelectedFlightForAssignment(flight);
-    setSelectedGateNumber(flight.gateNumber !== 'UNASSIGNED' ? flight.gateNumber : 'A02');
-    setSelectedRunwayCode(flight.runwayCode !== 'UNASSIGNED' ? flight.runwayCode : '28L');
+    setSelectedGateNumber(flight.gateNumber !== 'UNASSIGNED' ? flight.gateNumber : firstFreeGateFor(flight.wingspanMeters));
+    setSelectedRunwayCode(flight.runwayCode !== 'UNASSIGNED' ? flight.runwayCode : firstOpenRunway());
     setAssignmentModalOpen(true);
   };
 
   // Open modal from conflict resolution
   const handleResolveConflict = (conflict: OperationalConflict) => {
-    const targetFlight = flights.find((f) => f.flightNumber === conflict.flightNumber) || flights[0];
+    const known = flights.find((f) => f.flightNumber === conflict.flightNumber);
+    const targetFlight: AirsideFlight = known ?? {
+      ...EMPTY_AIRSIDE_FLIGHT,
+      id: `FLT-${conflict.flightId}`,
+      flightId: conflict.flightId,
+      flightNumber: conflict.flightNumber,
+      wingspanMeters: conflict.wingspanMeters ?? 0,
+      gateNumber: conflict.affectedGate ?? 'UNASSIGNED',
+    };
     setSelectedFlightForAssignment(targetFlight);
-    if (conflict.suggestedGate) setSelectedGateNumber(conflict.suggestedGate);
-    if (conflict.suggestedRunway) setSelectedRunwayCode(conflict.suggestedRunway);
+    setSelectedGateNumber(conflict.suggestedGate ?? firstFreeGateFor(targetFlight.wingspanMeters, conflict.affectedGate));
+    setSelectedRunwayCode(targetFlight.runwayCode !== 'UNASSIGNED' ? targetFlight.runwayCode : firstOpenRunway());
     setAssignmentModalOpen(true);
   };
 
-  // Real-time Conflict Checker inside Assignment Modal
+  // Pre-flight check inside the assignment modal. The server enforces the same rules; this just
+  // explains them before the click.
   const isConflictDetected = (): { hasConflict: boolean; reason?: string } => {
-    // Check if gate is currently occupied by a different flight
     const targetGate = gates.find((g) => g.gateNumber === selectedGateNumber);
-    if (targetGate && targetGate.status === 'OCCUPIED' && targetGate.assignedFlightNumber !== selectedFlightForAssignment.flightNumber) {
+    if (
+      targetGate &&
+      targetGate.status === 'OCCUPIED' &&
+      targetGate.assignedFlightNumber !== selectedFlightForAssignment.flightNumber
+    ) {
       return {
         hasConflict: true,
-        reason: `Gate ${selectedGateNumber} is currently occupied by flight ${targetGate.assignedFlightNumber} (${targetGate.aircraft}) at ${targetGate.scheduledTime}. Reassigning without buffer causes gate collision!`,
+        reason: `Gate ${selectedGateNumber} is currently occupied by flight ${targetGate.assignedFlightNumber}. The server will check the ground-time overlap when you confirm.`,
       };
     }
 
-    // Check wingspan compatibility
-    if (targetGate && selectedFlightForAssignment.wingspanMeters > targetGate.maxWingspanMeters) {
+    if (targetGate && selectedFlightForAssignment.wingspanMeters > 0 && selectedFlightForAssignment.wingspanMeters > targetGate.maxWingspanMeters) {
       return {
         hasConflict: true,
         reason: `Aircraft wingspan (${selectedFlightForAssignment.wingspanMeters}m) exceeds Gate ${selectedGateNumber} structural limit (${targetGate.maxWingspanMeters}m). Clearance blocked!`,
       };
     }
 
-    // Check runway operational status
     const targetRunway = runways.find((r) => r.runwayCode === selectedRunwayCode);
     if (targetRunway && targetRunway.status === 'SWEEP') {
       return {
@@ -430,67 +378,45 @@ export const AirsideOpsDashboard: React.FC = () => {
 
   const validationResult = isConflictDetected();
 
-  // Confirm and persist assignment
-  const handleConfirmAssignment = () => {
+  // Confirm and persist: the gate and runway are saved on the server; nothing changes here unless it accepts.
+  const handleConfirmAssignment = async () => {
     if (validationResult.hasConflict) {
       toast.error('Cannot proceed: Active assignment conflict must be resolved first.');
       return;
     }
+    const flight = selectedFlightForAssignment;
+    const gate = gates.find((g) => g.gateNumber === selectedGateNumber);
+    const runway = runways.find((r) => r.runwayCode === selectedRunwayCode);
+    if (!flight.flightId || !gate || !runway) {
+      toast.error('Choose a gate and a runway first.');
+      return;
+    }
 
-    // 1. Update Flight
-    const updatedFlights = flights.map((f) => {
-      if (f.id === selectedFlightForAssignment.id) {
-        return {
-          ...f,
-          gateNumber: selectedGateNumber,
-          runwayCode: selectedRunwayCode,
-          hasConflict: false,
-          conflictReason: undefined,
-          status: 'CLEARED' as const,
-        };
+    setAssigning(true);
+    try {
+      if (gate.gateNumber !== flight.gateNumber) {
+        await gateApi.assignGateToFlight({ flightId: flight.flightId, gateId: gate.gateId });
       }
-      return f;
-    });
-    setFlights(updatedFlights);
-
-    // 2. Update Gates: Free old gate if applicable, occupy new gate
-    const updatedGates = gates.map((g) => {
-      if (g.assignedFlightNumber === selectedFlightForAssignment.flightNumber && g.gateNumber !== selectedGateNumber) {
-        return {
-          ...g,
-          status: 'AVAILABLE' as GateStatus,
-          assignedFlightNumber: undefined,
-          aircraft: undefined,
-          scheduledTime: undefined,
-        };
+      if (runway.runwayCode !== flight.runwayCode) {
+        await airsideApi.assignRunway(flight.flightId, runway.runwayId);
       }
-      if (g.gateNumber === selectedGateNumber) {
-        return {
-          ...g,
-          status: 'OCCUPIED' as GateStatus,
-          assignedFlightNumber: selectedFlightForAssignment.flightNumber,
-          aircraft: selectedFlightForAssignment.aircraft,
-          scheduledTime: selectedFlightForAssignment.time,
-        };
-      }
-      return g;
-    });
-    setGates(updatedGates);
+    } catch (e) {
+      toast.error(`Assignment for ${flight.flightNumber} was NOT saved: ${describeApiError(e)}`);
+      loadAll(); // the gate may have been saved before the runway step failed; show the truth
+      setAssigning(false);
+      return;
+    }
 
-    // 3. Clear from conflicts list
-    setConflicts(conflicts.filter((c) => c.flightNumber !== selectedFlightForAssignment.flightNumber));
-
-    // 4. Update unified cross-dashboard store & dispatch audit
-    aocsDataStore.assignGate(selectedFlightForAssignment.flightNumber, selectedGateNumber);
     aocsDataStore.logAuditEvent(
       'GATE',
-      `Vector Cleared: Flight ${selectedFlightForAssignment.flightNumber} assigned to Gate ${selectedGateNumber}, Runway ${selectedRunwayCode}`,
-      selectedFlightForAssignment.flightNumber,
+      `Vector Cleared: Flight ${flight.flightNumber} assigned to Gate ${selectedGateNumber}, Runway ${selectedRunwayCode}`,
+      flight.flightNumber,
       user?.fullName || 'Airside Operations Officer'
     );
-
-    toast.success(`Vector Confirmed: ${selectedFlightForAssignment.flightNumber} ➔ Gate ${selectedGateNumber} ➔ Runway ${selectedRunwayCode}`);
+    toast.success(`Saved: ${flight.flightNumber} ➔ Gate ${selectedGateNumber} ➔ Runway ${selectedRunwayCode}`);
+    setAssigning(false);
     setAssignmentModalOpen(false);
+    loadAll();
   };
 
   // Quick inspect a gate
@@ -531,7 +457,7 @@ export const AirsideOpsDashboard: React.FC = () => {
               }}
             />
             <Typography sx={{ fontSize: '0.76rem', color: '#94A3B8', fontWeight: 600 }}>
-              Live Airport Telemetry • 19 Sep 12:05 IST
+              Live Airport Telemetry • {new Date().toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
             </Typography>
           </Box>
           <Typography variant="h4" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942', letterSpacing: '-0.02em' }}>
@@ -649,15 +575,15 @@ export const AirsideOpsDashboard: React.FC = () => {
         >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <Typography variant="h3" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
-              {flights.length} FLIGHTS
+              {(flightSummary.BOARDING ?? 0) + (flightSummary.DELAYED ?? 0) + (flightSummary.SCHEDULED ?? 0)} FLIGHTS
             </Typography>
-            <Chip label="NEXT 2 HRS" size="small" sx={{ bgcolor: '#F1F5F9', color: '#475569', fontWeight: 800, fontSize: '0.68rem' }} />
+            <Chip label="LIVE + UPCOMING" size="small" sx={{ bgcolor: '#F1F5F9', color: '#475569', fontWeight: 800, fontSize: '0.68rem' }} />
           </Box>
           <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.84rem', color: '#475569', mt: 0.5 }}>
             Scheduled Movements
           </Typography>
           <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8', mt: 0.3 }}>
-            {flights.filter((f) => f.flightType === 'DEPARTURE').length} Departures • {flights.filter((f) => f.flightType === 'ARRIVAL').length} Arrivals
+            {flightSummary.BOARDING ?? 0} boarding • {flightSummary.DELAYED ?? 0} delayed • {flightSummary.SCHEDULED ?? 0} scheduled
           </Typography>
         </Card>
 
@@ -678,7 +604,7 @@ export const AirsideOpsDashboard: React.FC = () => {
         >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <Typography variant="h3" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: conflicts.length > 0 ? '#DC2626' : '#10B981' }}>
-              {conflicts.length} ACTIONS
+              {conflictTotal} ACTIONS
             </Typography>
             <Chip
               label={conflicts.length > 0 ? 'REQUIRED' : 'ALL CLEAR'}
@@ -695,7 +621,7 @@ export const AirsideOpsDashboard: React.FC = () => {
             Operational Attention
           </Typography>
           <Typography sx={{ fontSize: '0.74rem', color: '#94A3B8', mt: 0.3 }}>
-            {conflicts.length > 0 ? `${conflicts.length} vector conflicts awaiting assignment` : 'Zero assignment collisions detected'}
+            {conflicts.length > 0 ? `${conflictTotal} planning conflicts found (showing ${conflicts.length})` : 'Zero assignment collisions detected'}
           </Typography>
         </Card>
       </Box>
@@ -757,7 +683,7 @@ export const AirsideOpsDashboard: React.FC = () => {
 
               {/* Spatial Gate Cards Grid */}
               <Box sx={{ p: 2.5, display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
-                {filteredGates.map((gate) => {
+                {filteredGates.slice(0, 12).map((gate) => {
                   const isOccupied = gate.status === 'OCCUPIED';
                   const isAvailable = gate.status === 'AVAILABLE';
                   const isStandby = gate.status === 'STANDBY';
@@ -848,7 +774,7 @@ export const AirsideOpsDashboard: React.FC = () => {
                   endIcon={<ArrowRight size={14} />}
                   sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.76rem', color: '#0284C7' }}
                 >
-                  View All 24 Gates
+                  View All {gates.length} Gates
                 </Button>
               </Box>
             </Card>
@@ -863,7 +789,7 @@ export const AirsideOpsDashboard: React.FC = () => {
                   </Typography>
                 </Box>
                 <Chip
-                  label={`${conflicts.length} Active`}
+                  label={`${conflictTotal} Active`}
                   size="small"
                   sx={{ bgcolor: conflicts.length > 0 ? '#FEE2E2' : '#DCFCE7', color: conflicts.length > 0 ? '#DC2626' : '#15803D', fontWeight: 800 }}
                 />
@@ -1089,7 +1015,7 @@ export const AirsideOpsDashboard: React.FC = () => {
                             {rwy.runwayCode}
                           </Typography>
                           <Typography sx={{ fontSize: '0.72rem', color: '#64748B' }}>
-                            ({rwy.length})
+                            (ILS {rwy.ils})
                           </Typography>
                         </Box>
                         <Chip
@@ -1184,7 +1110,7 @@ export const AirsideOpsDashboard: React.FC = () => {
           </Box>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(6, 1fr)' }, gap: 2 }}>
-            {filteredGates.map((gate) => {
+            {filteredGates.slice(0, gateTabLimit).map((gate) => {
               const isOccupied = gate.status === 'OCCUPIED';
               const isAvailable = gate.status === 'AVAILABLE';
 
@@ -1247,6 +1173,13 @@ export const AirsideOpsDashboard: React.FC = () => {
               );
             })}
           </Box>
+          {filteredGates.length > gateTabLimit && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Button onClick={() => setGateTabLimit((n) => n + 48)} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                Show more gates ({filteredGates.length - gateTabLimit} remaining)
+              </Button>
+            </Box>
+          )}
         </Box>
       )}
 
@@ -1273,7 +1206,7 @@ export const AirsideOpsDashboard: React.FC = () => {
                       RUNWAY {r.runwayCode}
                     </Typography>
                     <Typography sx={{ fontSize: '0.82rem', color: '#64748B' }}>
-                      Length: {r.length} • Heavy Widebody Capable
+                      ILS {r.ils}
                     </Typography>
                   </Box>
                   <Chip
@@ -1409,17 +1342,22 @@ export const AirsideOpsDashboard: React.FC = () => {
               Airside Notifications & Operations Log
             </Typography>
             <Typography sx={{ fontSize: '0.86rem', color: '#64748B' }}>
-              Real-time audit log of gate changes, runway re-vectors, and clearance telemetry.
+              Closed runways and the most urgent planning conflicts, computed live from flight, gate and aircraft data.
             </Typography>
           </Box>
 
           <Card elevation={0} sx={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', p: 3 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {[
-                { id: 'NOTIF-01', time: '12:02 IST', title: 'Gate A07 Reassigned to IndiGo 6E-521', type: 'INFO' },
-                { id: 'NOTIF-02', time: '11:55 IST', title: 'Runway 27R closed for scheduled FOD radar inspection', type: 'WARNING' },
-                { id: 'NOTIF-03', time: '11:40 IST', title: 'Air India AI-203 boarding clearance granted at Stand G12', type: 'SUCCESS' },
-                { id: 'NOTIF-04', time: '11:20 IST', title: 'Vistara UK-901 gate berth confirmed at Concourse A', type: 'INFO' },
+                ...runways
+                  .filter((r) => r.status === 'SWEEP')
+                  .map((r) => ({ id: `RWY-${r.runwayId}`, time: 'Now', title: `Runway ${r.runwayCode} is closed for FOD sweep / maintenance`, type: 'WARNING' })),
+                ...conflicts.slice(0, 8).map((c) => ({
+                  id: c.id,
+                  time: c.severity,
+                  title: `${c.flightNumber}: ${c.title}`,
+                  type: c.severity === 'CRITICAL' ? 'WARNING' : 'INFO',
+                })),
               ].map((n) => (
                 <Box key={n.id} sx={{ p: 2, borderRadius: '10px', border: '1px solid #E2E8F0', bgcolor: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -1579,7 +1517,7 @@ export const AirsideOpsDashboard: React.FC = () => {
               <MenuItem key={r.id} value={r.runwayCode}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
                   <Typography sx={{ fontWeight: 700, fontSize: '0.86rem' }}>
-                    Runway {r.runwayCode} ({r.length})
+                    Runway {r.runwayCode} (ILS {r.ils})
                   </Typography>
                   <Chip
                     label={r.status.replace(/_/g, ' ')}
@@ -1614,9 +1552,10 @@ export const AirsideOpsDashboard: React.FC = () => {
                 size="small"
                 variant="outlined"
                 onClick={() => {
-                  const firstOpen = gates.find((g) => g.status === 'AVAILABLE');
-                  if (firstOpen) setSelectedGateNumber(firstOpen.gateNumber);
-                  setSelectedRunwayCode('28L');
+                  const suitable = firstFreeGateFor(selectedFlightForAssignment.wingspanMeters, selectedGateNumber);
+                  if (suitable) setSelectedGateNumber(suitable);
+                  const openRunway = firstOpenRunway();
+                  if (openRunway) setSelectedRunwayCode(openRunway);
                 }}
                 sx={{
                   color: '#DC2626',
@@ -1628,7 +1567,7 @@ export const AirsideOpsDashboard: React.FC = () => {
                   '&:hover': { bgcolor: '#FEE2E2', borderColor: '#B91C1C' },
                 }}
               >
-                Auto-Select Next Available Gate (A02)
+                Auto-Select Next Suitable Gate
               </Button>
             </Box>
           ) : (

@@ -9,9 +9,10 @@ export interface RunwayTelemetryData {
   visualRangeMeters: number;
   activeDeparturesCount: number;
   activeArrivalsCount: number;
-  crosswindVector: string;
-  headwindVector: string;
-  weatherCondition: string;
+  // No weather feed exists, so the server leaves these null rather than inventing values.
+  crosswindVector?: string | null;
+  headwindVector?: string | null;
+  weatherCondition?: string | null;
 }
 
 export const runwayApi = {

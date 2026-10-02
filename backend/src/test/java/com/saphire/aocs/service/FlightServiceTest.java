@@ -47,6 +47,7 @@ class FlightServiceTest {
     @Mock private GateRepository gateRepository;
     @Mock private StandRepository standRepository;
     @Mock private DepartmentRepository departmentRepository;
+    @Mock private com.saphire.aocs.repository.RunwayRepository runwayRepository;
 
     @InjectMocks private FlightService flightService;
 
@@ -278,6 +279,39 @@ class FlightServiceTest {
             FlightDTO result = flightService.createFlight(validDtoBuilder().flightStatus(null).build());
 
             assertThat(result.getFlightStatus()).isEqualTo("SCHEDULED");
+        }
+    }
+
+    @Nested
+    @DisplayName("assignRunway")
+    class RunwayAssignment {
+        private com.saphire.aocs.entity.Runway runway(String status) {
+            com.saphire.aocs.entity.Runway r = new com.saphire.aocs.entity.Runway();
+            r.setRunwayId(7L);
+            r.setRunwayCode("RWY-04L");
+            r.setOperationalStatus(status);
+            return r;
+        }
+
+        @Test
+        @DisplayName("stores the runway id on the flight")
+        void assignsOpenRunway() {
+            Flight f = flightWithStatus(FlightStatus.SCHEDULED);
+            when(flightRepository.findById(101L)).thenReturn(Optional.of(f));
+            when(runwayRepository.findById(7L)).thenReturn(Optional.of(runway("ACTIVE_CAT_III")));
+            stubSaveEchoesArgument();
+
+            assertThat(flightService.assignRunway(101L, 7L).getRunwayId()).isEqualTo(7L);
+        }
+
+        @Test
+        @DisplayName("refuses a runway closed for a FOD sweep")
+        void refusesClosedRunway() {
+            when(flightRepository.findById(101L)).thenReturn(Optional.of(flightWithStatus(FlightStatus.SCHEDULED)));
+            when(runwayRepository.findById(7L)).thenReturn(Optional.of(runway("SWEEP_FOD_INSPECTION")));
+
+            assertThatThrownBy(() -> flightService.assignRunway(101L, 7L)).isInstanceOf(ConflictException.class);
+            verify(flightRepository, never()).save(any());
         }
     }
 }

@@ -208,4 +208,22 @@ class GateServiceTest {
         assertThat(result.get(0).getActiveFlights()).isEmpty();
         verify(flightService, never()).mapToDTO(any(Flight.class));
     }
+
+    @Test
+    @DisplayName("blocks an aircraft wider than the gate's rated wingspan")
+    void oversizedAircraft_ShouldThrowConflict() {
+        com.saphire.aocs.entity.AircraftType type = com.saphire.aocs.entity.AircraftType.builder()
+                .modelName("A380-800").wingspanMeters(new java.math.BigDecimal("79.80")).build();
+        Flight incoming = flight(101L, "SPH101", BASE, BASE.plusHours(1), "SCHEDULED");
+        incoming.setAircraft(com.saphire.aocs.entity.Aircraft.builder().aircraftType(type).build());
+        Gate narrow = Gate.builder().gateId(1L).gateNumber("A1").maxWingspanMeters(36.0).build();
+
+        when(flightRepository.findByIdForUpdate(101L)).thenReturn(Optional.of(incoming));
+        when(gateRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(narrow));
+
+        assertThatThrownBy(() -> gateService.assignGateToFlight(GateAssignmentDTO.builder().flightId(101L).gateId(1L).build()))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("does not fit gate A1");
+        verify(flightRepository, never()).save(any());
+    }
 }

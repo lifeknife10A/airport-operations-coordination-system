@@ -60,6 +60,7 @@ public class FlightService {
     private final GateRepository gateRepository;
     private final StandRepository standRepository;
     private final DepartmentRepository departmentRepository;
+    private final com.saphire.aocs.repository.RunwayRepository runwayRepository;
 
     private static final int MAX_PAGE_SIZE = 100;
 
@@ -99,6 +100,24 @@ public class FlightService {
                 .totalElements(result.getTotalElements())
                 .totalPages(result.getTotalPages())
                 .build();
+    }
+
+    /** Flights that are live or upcoming: boarding first, then delayed, then scheduled. */
+    @Transactional(readOnly = true)
+    public List<FlightDTO> getOperationalFlights(int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, MAX_PAGE_SIZE));
+        return flightRepository.findOperationalFlights(PageRequest.of(0, safeLimit)).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /** Hub flight count per status; every known status is present even at zero. */
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Long> getFlightStatusSummary() {
+        java.util.Map<String, Long> counts = new java.util.LinkedHashMap<>();
+        for (FlightStatus s : FlightStatus.values()) counts.put(s.name(), 0L);
+        for (Object[] row : flightRepository.countHubFlightsByStatus()) counts.put(String.valueOf(row[0]), (Long) row[1]);
+        return counts;
     }
 
     @Transactional(readOnly = true)
@@ -157,6 +176,22 @@ public class FlightService {
 
         Flight saved = flightRepository.save(flight);
         return mapToDTO(saved);
+    }
+
+    /** Assigns the departure/arrival runway. Closed runways (sweep or maintenance) cannot be assigned. */
+    @Transactional
+    public FlightDTO assignRunway(Long flightId, Long runwayId) {
+        Flight flight = flightRepository.findById(flightId)
+                .orElseThrow(() -> new ResourceNotFoundException("Flight not found with ID: " + flightId));
+        com.saphire.aocs.entity.Runway runway = runwayRepository.findById(runwayId)
+                .orElseThrow(() -> new ResourceNotFoundException("Runway not found with ID: " + runwayId));
+        String status = runway.getOperationalStatus();
+        if ("SWEEP_FOD_INSPECTION".equals(status) || "CLOSED_MAINTENANCE".equals(status)) {
+            throw new ConflictException("Runway " + runway.getRunwayCode() + " is closed (" + status + ") and cannot take traffic");
+        }
+        flight.setRunwayId(runway.getRunwayId());
+        log.info("Runway {} assigned to flight {} (id {})", runway.getRunwayCode(), flight.getFlightNumber(), flightId);
+        return mapToDTO(flightRepository.save(flight));
     }
 
     @Transactional
@@ -243,6 +278,9 @@ public class FlightService {
                 .aircraftRegistration(flight.getAircraft() != null ? flight.getAircraft().getRegistrationNumber() : null)
                 .aircraftType(flight.getAircraft() != null && flight.getAircraft().getAircraftType() != null
                         ? flight.getAircraft().getAircraftType().getModelName() : null)
+                .aircraftWingspanMeters(flight.getAircraft() != null && flight.getAircraft().getAircraftType() != null
+                        && flight.getAircraft().getAircraftType().getWingspanMeters() != null
+                        ? flight.getAircraft().getAircraftType().getWingspanMeters().doubleValue() : null)
                 .gateId(flight.getGate() != null ? flight.getGate().getGateId() : null)
                 .gateNumber(flight.getGate() != null ? flight.getGate().getGateNumber() : null)
                 .standId(flight.getStand() != null ? flight.getStand().getStandId() : null)

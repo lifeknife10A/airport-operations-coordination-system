@@ -23,14 +23,29 @@ public class AirsideTelemetryService {
 
     @Transactional(readOnly = true)
     public List<RunwayTelemetryDTO> getAllRunways() {
-        return runwayRepository.findAll().stream().map(this::mapToTelemetryDTO).collect(Collectors.toList());
+        java.util.Map<Long, int[]> traffic = new java.util.HashMap<>();   // runway id -> {departures, arrivals}
+        for (Object[] row : flightRepository.countRunwayTraffic()) {
+            int[] counts = traffic.computeIfAbsent((Long) row[0], k -> new int[2]);
+            counts["DEPARTURE".equals(row[1]) ? 0 : 1] = ((Number) row[2]).intValue();
+        }
+        return runwayRepository.findAll().stream()
+                .map(r -> mapToTelemetryDTO(r, traffic.getOrDefault(r.getRunwayId(), new int[2])))
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public RunwayTelemetryDTO getRunwayById(Long id) {
         Runway runway = runwayRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Runway not found with ID: " + id));
-        return mapToTelemetryDTO(runway);
+        return mapToTelemetryDTO(runway, trafficFor(runway.getRunwayId()));
+    }
+
+    private int[] trafficFor(Long runwayId) {
+        int[] counts = new int[2];
+        for (Object[] row : flightRepository.countRunwayTraffic()) {
+            if (runwayId.equals(row[0])) counts["DEPARTURE".equals(row[1]) ? 0 : 1] = ((Number) row[2]).intValue();
+        }
+        return counts;
     }
 
     @Transactional
@@ -49,10 +64,11 @@ public class AirsideTelemetryService {
         }
 
         Runway saved = runwayRepository.save(runway);
-        return mapToTelemetryDTO(saved);
+        return mapToTelemetryDTO(saved, trafficFor(saved.getRunwayId()));
     }
 
-    private RunwayTelemetryDTO mapToTelemetryDTO(Runway r) {
+    /** Wind and weather are left null: there is no weather feed, so none is invented. */
+    private RunwayTelemetryDTO mapToTelemetryDTO(Runway r, int[] traffic) {
         return RunwayTelemetryDTO.builder()
                 .runwayId(r.getRunwayId())
                 .runwayCode(r.getRunwayCode())
@@ -60,11 +76,8 @@ public class AirsideTelemetryService {
                 .surfaceFriction(r.getSurfaceFriction() != null ? r.getSurfaceFriction() : new BigDecimal("0.84"))
                 .activeIlsFrequency(r.getActiveIlsFrequency() != null ? r.getActiveIlsFrequency() : "110.30 MHz")
                 .visualRangeMeters(r.getVisualRangeMeters() != null ? r.getVisualRangeMeters() : 2000)
-                .activeDeparturesCount(4)
-                .activeArrivalsCount(6)
-                .crosswindVector("270° / 12 kts")
-                .headwindVector("090° / 08 kts")
-                .weatherCondition("VMC - Visual Meteorological Conditions")
+                .activeDeparturesCount(traffic[0])
+                .activeArrivalsCount(traffic[1])
                 .build();
     }
 }

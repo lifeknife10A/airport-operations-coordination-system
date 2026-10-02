@@ -72,4 +72,50 @@ public interface FlightRepository extends JpaRepository<Flight, Long> {
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT f FROM Flight f WHERE f.flightId = :id")
     java.util.Optional<Flight> findByIdForUpdate(@org.springframework.data.repository.query.Param("id") Long id);
+
+    /** Live or upcoming hub flights, boarding first, then delayed, then scheduled (newest first). */
+    @Query("SELECT f FROM Flight f JOIN FETCH f.originAirport JOIN FETCH f.destinationAirport JOIN FETCH f.airline "
+            + "JOIN FETCH f.aircraft a JOIN FETCH a.aircraftType LEFT JOIN FETCH f.gate LEFT JOIN FETCH f.stand LEFT JOIN FETCH f.department "
+            + "WHERE f.flightStatus IN ('BOARDING', 'DELAYED', 'SCHEDULED') "
+            + "AND (f.originAirport.airportId = 1 OR f.destinationAirport.airportId = 1) "
+            + "ORDER BY CASE f.flightStatus WHEN 'BOARDING' THEN 0 WHEN 'DELAYED' THEN 1 ELSE 2 END, f.scheduledDepartureTime DESC")
+    List<Flight> findOperationalFlights(Pageable pageable);
+
+    @Query("SELECT f.flightStatus, COUNT(f) FROM Flight f WHERE f.originAirport.airportId = 1 OR f.destinationAirport.airportId = 1 GROUP BY f.flightStatus")
+    List<Object[]> countHubFlightsByStatus();
+
+    /** Live/upcoming flights parked at a gate whose wingspan limit is below the aircraft's wingspan. */
+    @Query(value = "SELECT f FROM Flight f JOIN FETCH f.gate g JOIN FETCH f.aircraft a JOIN FETCH a.aircraftType t JOIN FETCH f.airline "
+            + "WHERE f.flightStatus IN ('BOARDING', 'DELAYED', 'SCHEDULED') AND g.maxWingspanMeters < t.wingspanMeters "
+            + "ORDER BY CASE f.flightStatus WHEN 'BOARDING' THEN 0 WHEN 'DELAYED' THEN 1 ELSE 2 END, f.scheduledDepartureTime DESC",
+            countQuery = "SELECT COUNT(f) FROM Flight f JOIN f.gate g JOIN f.aircraft a JOIN a.aircraftType t "
+            + "WHERE f.flightStatus IN ('BOARDING', 'DELAYED', 'SCHEDULED') AND g.maxWingspanMeters < t.wingspanMeters")
+    Page<Flight> findWingspanConflicts(Pageable pageable);
+
+    /**
+     * Pairs of live/upcoming flights on the same gate whose departures are under 15 minutes apart.
+     * Columns: flight1 id, flight1 number, flight2 number, gate number, flight1 departure.
+     */
+    @Query(value = "SELECT f1.flight_id, f1.flight_number, f2.flight_number, g.gate_number, f1.scheduled_departure_time "
+            + "FROM flights f1 JOIN flights f2 ON f1.gate_id = f2.gate_id AND f1.flight_id < f2.flight_id "
+            + "AND ABS(EXTRACT(EPOCH FROM (f1.scheduled_departure_time - f2.scheduled_departure_time))) < 900 "
+            + "JOIN gates g ON g.gate_id = f1.gate_id "
+            + "WHERE f1.flight_status IN ('BOARDING', 'DELAYED', 'SCHEDULED') AND f2.flight_status IN ('BOARDING', 'DELAYED', 'SCHEDULED') "
+            + "ORDER BY f1.scheduled_departure_time DESC LIMIT :limit", nativeQuery = true)
+    List<Object[]> findGateOverlaps(@org.springframework.data.repository.query.Param("limit") int limit);
+
+    @Query(value = "SELECT COUNT(*) FROM flights f1 JOIN flights f2 ON f1.gate_id = f2.gate_id AND f1.flight_id < f2.flight_id "
+            + "AND ABS(EXTRACT(EPOCH FROM (f1.scheduled_departure_time - f2.scheduled_departure_time))) < 900 "
+            + "WHERE f1.flight_status IN ('BOARDING', 'DELAYED', 'SCHEDULED') AND f2.flight_status IN ('BOARDING', 'DELAYED', 'SCHEDULED')",
+            nativeQuery = true)
+    long countGateOverlaps();
+
+    /**
+     * Per-runway traffic: departures that are boarding or delayed, and inbound (airborne) arrivals.
+     * Columns: runway id, "DEPARTURE" or "ARRIVAL", count.
+     */
+    @Query("SELECT f.runwayId, f.flightType, COUNT(f) FROM Flight f WHERE f.runwayId IS NOT NULL AND "
+            + "((f.flightType = 'DEPARTURE' AND f.flightStatus IN ('BOARDING', 'DELAYED')) "
+            + "OR (f.flightType = 'ARRIVAL' AND f.flightStatus = 'AIRBORNE')) GROUP BY f.runwayId, f.flightType")
+    List<Object[]> countRunwayTraffic();
 }

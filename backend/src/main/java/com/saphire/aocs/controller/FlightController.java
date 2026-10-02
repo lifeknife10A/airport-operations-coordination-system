@@ -38,6 +38,16 @@ public class FlightController {
         return ResponseEntity.ok(flightService.getSaphireHubFlightsPaged(page, size, query));
     }
 
+    @GetMapping("/operational")
+    public ResponseEntity<List<FlightDTO>> getOperationalFlights(@RequestParam(defaultValue = "40") int limit) {
+        return ResponseEntity.ok(flightService.getOperationalFlights(limit));
+    }
+
+    @GetMapping("/status-summary")
+    public ResponseEntity<java.util.Map<String, Long>> getFlightStatusSummary() {
+        return ResponseEntity.ok(flightService.getFlightStatusSummary());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<FlightDTO> getFlightById(@PathVariable Long id) {
         return ResponseEntity.ok(flightService.getFlightById(id));
@@ -48,6 +58,12 @@ public class FlightController {
     public ResponseEntity<FlightDTO> createFlight(@Valid @RequestBody FlightCreateDTO dto) {
         FlightDTO created = flightService.createFlight(dto);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
+    }
+
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER', 'GATE_AGENT')")
+    @PutMapping("/{id}/runway")
+    public ResponseEntity<FlightDTO> assignRunway(@PathVariable Long id, @Valid @RequestBody com.saphire.aocs.dto.RunwayAssignmentDTO dto) {
+        return ResponseEntity.ok(flightService.assignRunway(id, dto.getRunwayId()));
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER', 'GROUND_HANDLING_SUPERVISOR', 'RAMP_AGENT', 'GATE_AGENT')")
