@@ -56,6 +56,14 @@ public class SessionService {
         return findActiveSession(sessionId).isPresent();
     }
 
+    /** Ends every active session of a user (used when an account is suspended). */
+    @Transactional
+    public int revokeAllForUser(Long userId, String reason) {
+        int n = authSessionRepository.revokeAllActiveForUser(userId, ZonedDateTime.now(), reason);
+        if (n > 0) log.info("Revoked {} active session(s) of user {}: {}", n, userId, reason);
+        return n;
+    }
+
     @Transactional
     public void revokeSession(UUID sessionId) {
         if (sessionId == null) return;

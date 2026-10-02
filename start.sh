@@ -80,7 +80,7 @@ trap cleanup EXIT INT TERM
 # --- Backend -------------------------------------------------------------------
 say "[1/2] Starting backend on :8080 (log: logs/backend.log)"
 say "      First boot applies the database migrations and loads the demo data; this can take a couple of minutes."
-( cd "$BACKEND_DIR" && chmod +x mvnw && ./mvnw -q spring-boot:run -Dmaven.test.skip=true >"$LOGS_DIR/backend.log" 2>&1 ) &
+( cd "$BACKEND_DIR" && chmod +x mvnw && ./mvnw -q clean spring-boot:run -Dmaven.test.skip=true >"$LOGS_DIR/backend.log" 2>&1 ) &
 BACKEND_PID=$!
 
 waited=0

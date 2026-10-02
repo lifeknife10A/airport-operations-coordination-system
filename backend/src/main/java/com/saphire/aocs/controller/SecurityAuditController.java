@@ -27,8 +27,17 @@ public class SecurityAuditController {
 
     @GetMapping("/logs")
     @PreAuthorize("hasRole('SYSTEM_ADMINISTRATOR')")
-    public ResponseEntity<List<AuditLogDTO>> getAuditLogs() {
-        return ResponseEntity.ok(auditService.getAllAuditLogs().stream().map(AuditLogDTO::from).toList());
+    public ResponseEntity<com.saphire.aocs.dto.PagedResponseDTO<AuditLogDTO>> getAuditLogs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size) {
+        var result = auditService.getAuditLogsPage(page, size);
+        return ResponseEntity.ok(com.saphire.aocs.dto.PagedResponseDTO.<AuditLogDTO>builder()
+                .content(result.getContent().stream().map(AuditLogDTO::from).toList())
+                .page(result.getNumber())
+                .size(result.getSize())
+                .totalElements(result.getTotalElements())
+                .totalPages(result.getTotalPages())
+                .build());
     }
 
     @PostMapping("/log-action")

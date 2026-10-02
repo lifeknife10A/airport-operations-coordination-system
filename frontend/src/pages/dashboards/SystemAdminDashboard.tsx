@@ -77,6 +77,8 @@ import {
 import toast from 'react-hot-toast';
 import { DashboardLayout } from '../../components/dashboard/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
+import { userApi, StaffUserDto } from '../../api/userApi';
+import { auditApi } from '../../api/auditApi';
 import { aocsDataStore, OperationalNotification } from '../../services/aocsDataStore';
 import { getUserInitials } from '../../utils/userUtils';
 import {
@@ -88,6 +90,8 @@ import {
 // Types
 interface StaffAccount {
   id: string;
+  userId: number;
+  username: string;
   name: string;
   email: string;
   role: string;
@@ -137,14 +141,25 @@ const STATUS_PIE_DATA = [
   { name: 'Delayed', value: 3, color: '#EF4444' },
 ];
 
-const INITIAL_STAFF: StaffAccount[] = [
-  { id: 'USR-10', name: 'Aarav Li', email: 'admin@saphire.in', role: 'System Administrator', department: 'Terminal Management', status: 'ACTIVE', lastLogin: 'Just now' },
-  { id: 'USR-01', name: 'Sai Sharma', email: 'aocc@saphire.in', role: 'AOCC Operations Manager', department: 'Flight Operations', status: 'ACTIVE', lastLogin: '4 mins ago' },
-  { id: 'USR-02', name: 'Riya Johnson', email: 'ground@saphire.in', role: 'Ground Handling Supervisor', department: 'Ground Handling', status: 'ACTIVE', lastLogin: '18 mins ago' },
-  { id: 'USR-09', name: 'Elena Tanaka', email: 'department@saphire.in', role: 'Airline Billing Clerk', department: 'Finance & Billing', status: 'ACTIVE', lastLogin: '1 hour ago' },
-  { id: 'USR-05', name: 'Aditya Zhang', email: 'airside@saphire.in', role: 'Gate Agent', department: 'Airfield Maintenance', status: 'ACTIVE', lastLogin: '2 hours ago' },
-  { id: 'USR-03', name: 'Priya Kumar', email: 'logistics@saphire.in', role: 'Baggage Handler', department: 'Baggage Services', status: 'ACTIVE', lastLogin: '3 hours ago' },
-  { id: 'USR-07', name: 'Aarav Patel', email: 'passenger@saphire.in', role: 'Security Officer', department: 'Security & Safety', status: 'ACTIVE', lastLogin: '5 hours ago' },
+// Role/department names arrive from the API as e.g. SYSTEM_ADMINISTRATOR / TERMINAL_MANAGEMENT.
+const prettyName = (raw: string) =>
+  raw.toLowerCase().split('_').map((w) => (w === 'and' ? 'and' : w.charAt(0).toUpperCase() + w.slice(1))).join(' ');
+
+const toStaffAccount = (u: StaffUserDto): StaffAccount => ({
+  id: `USR-${u.userId}`,
+  userId: u.userId,
+  username: u.username,
+  name: u.name,
+  email: u.email ?? '',
+  role: prettyName(u.role),
+  department: prettyName(u.department),
+  status: u.status,
+  lastLogin: '—',
+});
+
+const DEPARTMENT_OPTIONS = [
+  'FLIGHT_OPERATIONS', 'GROUND_HANDLING', 'BAGGAGE_SERVICES', 'AIRFIELD_MAINTENANCE', 'SECURITY_AND_SAFETY',
+  'TERMINAL_MANAGEMENT', 'AIRLINE_FINANCE_BILLING', 'PASSENGER_SERVICES', 'IMMIGRATION_BORDER_CONTROL', 'IT_AND_SYSTEMS',
 ];
 
 const INITIAL_FLIGHTS: HubFlight[] = [
@@ -153,14 +168,6 @@ const INITIAL_FLIGHTS: HubFlight[] = [
   { id: 103, flightNumber: 'SPH-308', aircraft: 'Boeing 787-9 Dreamliner', airline: 'Saphire Airways', route: 'SPH ➔ LAX (Los Angeles Int)', gate: 'Gate C22', scheduledTime: '23:35 UTC', status: 'AIRBORNE' },
   { id: 104, flightNumber: 'SPH-809', aircraft: 'Airbus A330-300', airline: 'Saphire Airways', route: 'SPH ➔ JFK (New York JFK)', gate: 'Gate A10', scheduledTime: '23:50 UTC', status: 'DELAYED' },
   { id: 105, flightNumber: 'SPH-412', aircraft: 'Airbus A321neo', airline: 'Saphire Airways', route: 'CDG ➔ SPH (Paris Charles de Gaulle)', gate: 'Gate B08', scheduledTime: '00:15 UTC', status: 'ON_BLOCK' },
-];
-
-const INITIAL_AUDIT: AuditRecord[] = [
-  { id: 'LOG-8824', time: '22:27:14 UTC', user: 'admin@saphire.in', action: 'USER_LOGIN', details: 'Aarav Li authenticated executive command session from internal terminal subnet.' },
-  { id: 'LOG-8823', time: '22:21:08 UTC', user: 'aocc@saphire.in', action: 'FLIGHT_STATUS_UPDATE', details: 'Flight SPH-102 transitioned to BOARDING at Gate B12 (Concourse B).' },
-  { id: 'LOG-8822', time: '22:16:45 UTC', user: 'aocc@saphire.in', action: 'GATE_ALLOCATION', details: 'Gate A04 allocated for widebody aircraft arrival SPH-204.' },
-  { id: 'LOG-8821', time: '22:09:30 UTC', user: 'ground@saphire.in', action: 'TASK_COMPLETION', details: 'Apron refueling telemetry verified and signed off for Stand B12.' },
-  { id: 'LOG-8820', time: '21:55:12 UTC', user: 'admin@saphire.in', action: 'ROLE_RBAC_AUDIT', details: 'Ground handling role permissions matrix validated and locked.' },
 ];
 
 const RBAC_ROLES = [
@@ -244,9 +251,12 @@ export const SystemAdminDashboard: React.FC = () => {
   };
 
   // State
-  const [staff, setStaff] = useState<StaffAccount[]>(INITIAL_STAFF);
+  const [staff, setStaff] = useState<StaffAccount[]>([]);
+  const [staffLoading, setStaffLoading] = useState(true);
+  const [staffVisible, setStaffVisible] = useState(25);
   const [flights, setFlights] = useState<HubFlight[]>(INITIAL_FLIGHTS);
-  const [auditLogs, setAuditLogs] = useState<AuditRecord[]>(INITIAL_AUDIT);
+  const [auditLogs, setAuditLogs] = useState<AuditRecord[]>([]);
+  const [auditLoading, setAuditLoading] = useState(true);
   const [staffSearch, setStaffSearch] = useState('');
   const [flightSearch, setFlightSearch] = useState('');
   const [auditSearch, setAuditSearch] = useState('');
@@ -279,6 +289,45 @@ export const SystemAdminDashboard: React.FC = () => {
   // Turnaround Telemetry Modal
   const [turnaroundModalOpen, setTurnaroundModalOpen] = useState(false);
 
+  // Real staff directory and audit trail from the backend (administrator-only endpoints).
+  const loadStaff = () => {
+    setStaffLoading(true);
+    userApi
+      .getAll()
+      .then((users) => setStaff(users.map(toStaffAccount)))
+      .catch(() => toast.error('Could not load the staff directory from the server.'))
+      .finally(() => setStaffLoading(false));
+  };
+
+  const loadAudit = () => {
+    setAuditLoading(true);
+    auditApi
+      .getAuditLogs(0, 200)
+      .then((res) =>
+        setAuditLogs(
+          res.content.map((a) => ({
+            id: `LOG-${a.logId}`,
+            time: a.createdAt ? new Date(a.createdAt).toLocaleString() : '',
+            user: a.username ?? 'system',
+            action: a.action,
+            details: a.changePayload ?? '',
+            entityType: a.entityType ?? undefined,
+          }))
+        )
+      )
+      .catch(() => toast.error('Could not load the audit trail from the server.'))
+      .finally(() => setAuditLoading(false));
+  };
+
+  useEffect(() => {
+    loadStaff();
+    loadAudit();
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'audit') loadAudit();
+  }, [activeTab]);
+
   // Synchronize with AOCS Reactive Store
   const syncStoreData = () => {
     const storeFlights = aocsDataStore.getFlights();
@@ -293,20 +342,6 @@ export const SystemAdminDashboard: React.FC = () => {
           gate: f.gateCode ? `Gate ${f.gateCode}` : 'Unassigned',
           scheduledTime: f.scheduledTime,
           status: (f.status as any) || 'SCHEDULED',
-        }))
-      );
-    }
-
-    const storeAudits = aocsDataStore.getAuditLogs();
-    if (storeAudits && storeAudits.length > 0) {
-      setAuditLogs(
-        storeAudits.map((a) => ({
-          id: `LOG-${a.auditId}`,
-          time: a.timestamp,
-          user: a.performedByUserName,
-          action: a.action,
-          details: a.changePayload,
-          entityType: a.entityType,
         }))
       );
     }
@@ -362,8 +397,8 @@ export const SystemAdminDashboard: React.FC = () => {
   const [openUserModal, setOpenUserModal] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserRole, setNewUserRole] = useState('Ground Handling Supervisor');
-  const [newUserDept, setNewUserDept] = useState('Ground Handling');
+  const [newUserRole, setNewUserRole] = useState('GROUND_HANDLING_SUPERVISOR');
+  const [newUserDept, setNewUserDept] = useState('GROUND_HANDLING');
 
   const [openFlightModal, setOpenFlightModal] = useState(false);
   const [newFlightNum, setNewFlightNum] = useState('');
@@ -377,52 +412,48 @@ export const SystemAdminDashboard: React.FC = () => {
   const [alertMessage, setAlertMessage] = useState('');
 
   // Handlers
-  const handleCreateUser = () => {
+  const handleCreateUser = async () => {
     if (!newUserName.trim() || !newUserEmail.trim()) {
       toast.error('Please enter name and operational email.');
       return;
     }
-    const newEntry: StaffAccount = {
-      id: `USR-${Math.floor(10 + Math.random() * 90)}`,
-      name: newUserName,
-      email: newUserEmail,
-      role: newUserRole,
-      department: newUserDept,
-      status: 'ACTIVE',
-      lastLogin: 'Never',
-    };
-    setStaff([newEntry, ...staff]);
-    toast.success(`Account enrolled for ${newUserName}`);
-    setOpenUserModal(false);
-    setNewUserName('');
-    setNewUserEmail('');
+    try {
+      const { user: created, temporaryPassword } = await userApi.create({
+        name: newUserName.trim(),
+        email: newUserEmail.trim(),
+        roleName: newUserRole,
+        departmentName: newUserDept,
+      });
+      setStaff((prev) => [toStaffAccount(created), ...prev]);
+      toast.success(`Account created for ${created.name} (username: ${created.username}). Temporary password: ${temporaryPassword} - shown once, share it securely.`, { duration: 20000 });
+      setOpenUserModal(false);
+      setNewUserName('');
+      setNewUserEmail('');
+    } catch (err) {
+      const e = err as { response?: { data?: { detail?: string; fieldErrors?: Record<string, string> } } };
+      const fields = e.response?.data?.fieldErrors ? Object.values(e.response.data.fieldErrors).join(', ') : '';
+      toast.error(`Account was NOT created: ${fields || e.response?.data?.detail || 'the server rejected the request.'}`);
+    }
   };
 
-  const toggleStaffStatus = (id: string) => {
+  const toggleStaffStatus = async (id: string) => {
     const target = staff.find((s) => s.id === id);
     if (!target) return;
 
-    // Security Policy: Administrator cannot suspend their own operational account
-    const isSelf =
-      target.id === 'USR-10' ||
-      target.email.toLowerCase() === (user?.email || 'admin@saphire.in').toLowerCase() ||
-      target.name.toLowerCase() === (user?.name || 'aarav li').toLowerCase();
-
-    if (isSelf) {
+    if (target.username.toLowerCase() === (user?.username || '').toLowerCase()) {
       toast.error('Administrative security policy: You cannot suspend your own administrative account.');
       return;
     }
 
-    setStaff(
-      staff.map((s) => {
-        if (s.id === id) {
-          const updated = s.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-          toast.success(`Account status set to ${updated}: ${s.name}`);
-          return { ...s, status: updated };
-        }
-        return s;
-      })
-    );
+    const next = target.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+    try {
+      const updated = await userApi.setStatus(target.userId, next);
+      setStaff((prev) => prev.map((s) => (s.id === id ? { ...s, status: updated.status } : s)));
+      toast.success(`Account status set to ${updated.status}: ${target.name}`);
+    } catch (err) {
+      const e = err as { response?: { data?: { detail?: string } } };
+      toast.error(`Status was NOT changed: ${e.response?.data?.detail || 'the server rejected the request.'}`);
+    }
   };
 
   const handleCreateFlight = () => {
@@ -1417,7 +1448,7 @@ export const SystemAdminDashboard: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredStaff.map((s) => (
+                {filteredStaff.slice(0, staffVisible).map((s) => (
                   <TableRow key={s.id} hover>
                     <TableCell sx={{ color: '#0F2942', fontWeight: 600 }}>
                       <Box>
@@ -1452,9 +1483,7 @@ export const SystemAdminDashboard: React.FC = () => {
                       />
                     </TableCell>
                     <TableCell>
-                      {s.id === 'USR-10' ||
-                      s.email.toLowerCase() === (user?.email || 'admin@saphire.in').toLowerCase() ||
-                      s.name.toLowerCase() === (user?.name || 'aarav li').toLowerCase() ? (
+                      {s.username.toLowerCase() === (user?.username || '').toLowerCase() ? (
                         <Chip
                           label="Current User"
                           size="small"
@@ -1491,6 +1520,18 @@ export const SystemAdminDashboard: React.FC = () => {
               </TableBody>
             </Table>
           </TableContainer>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1.5, px: 0.5 }}>
+            <Typography sx={{ fontSize: '0.78rem', color: '#64748B' }}>
+              {staffLoading
+                ? 'Loading staff directory…'
+                : `Showing ${Math.min(staffVisible, filteredStaff.length)} of ${filteredStaff.length} staff accounts`}
+            </Typography>
+            {filteredStaff.length > staffVisible && (
+              <Button size="small" onClick={() => setStaffVisible((n) => n + 50)} sx={{ textTransform: 'none', fontWeight: 600 }}>
+                Show 50 more
+              </Button>
+            )}
+          </Box>
         </Card>
       )}
 
@@ -2114,7 +2155,7 @@ export const SystemAdminDashboard: React.FC = () => {
               onChange={(e) => setNewUserRole(e.target.value)}
             >
               {RBAC_ROLES.map((r) => (
-                <MenuItem key={r.role} value={r.name}>
+                <MenuItem key={r.role} value={r.role}>
                   {r.name}
                 </MenuItem>
               ))}
@@ -2127,13 +2168,11 @@ export const SystemAdminDashboard: React.FC = () => {
               label="Assigned Department"
               onChange={(e) => setNewUserDept(e.target.value)}
             >
-              <MenuItem value="Flight Operations">Flight Operations</MenuItem>
-              <MenuItem value="Ground Handling">Ground Handling</MenuItem>
-              <MenuItem value="Baggage Services">Baggage Services</MenuItem>
-              <MenuItem value="Airfield Maintenance">Airfield Maintenance</MenuItem>
-              <MenuItem value="Security & Safety">Security & Safety</MenuItem>
-              <MenuItem value="Terminal Management">Terminal Management</MenuItem>
-              <MenuItem value="Finance & Billing">Finance & Billing</MenuItem>
+              {DEPARTMENT_OPTIONS.map((d) => (
+                <MenuItem key={d} value={d}>
+                  {prettyName(d)}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         </DialogContent>

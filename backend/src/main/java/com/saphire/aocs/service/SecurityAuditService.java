@@ -26,9 +26,13 @@ public class SecurityAuditService {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /** Newest first, one page at a time (there are thousands of entries). */
     @Transactional(readOnly = true)
-    public List<AuditLog> getAllAuditLogs() {
-        return auditLogRepository.findAll();
+    public org.springframework.data.domain.Page<AuditLog> getAuditLogsPage(int page, int size) {
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(Math.max(1, size), 200);
+        return auditLogRepository.findAll(org.springframework.data.domain.PageRequest.of(
+                safePage, safeSize, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "logId")));
     }
 
     /** Writes an audit entry attributed to the authenticated caller, never to a client-supplied id. */

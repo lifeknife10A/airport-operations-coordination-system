@@ -262,6 +262,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
       setIsLiveData(aocsDataStore.isLiveDataActive());
     };
     const unsub = aocsDataStore.subscribe(syncNotifications);
+    // The initial live-data sync can finish between this component's first render and this
+    // subscription (a heavy first render widens that gap), in which case its event is missed
+    // and the "demo data" banner would stay up forever. Re-read the current state now.
+    syncNotifications();
     return unsub;
   }, []);
 

@@ -9,6 +9,7 @@ import lombok.*;
 public class UserResponseDTO {
     private Long userId;
     private String username;
+    private String email;
     private String name;
     private String role;
     private String department;

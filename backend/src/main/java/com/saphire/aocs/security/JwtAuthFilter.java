@@ -68,7 +68,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 Optional<AuthSession> session = sessionService.findActiveSession(sessionId);
                 Optional<User> user = session.flatMap(s -> userRepository.findById(s.getUserId()));
 
-                if (user.isPresent() && user.get().getRole() != null) {
+                if (user.isPresent() && user.get().getRole() != null && !"SUSPENDED".equals(user.get().getStatus())) {
                     String role = user.get().getRole().getRoleName();
                     String springRole = role.startsWith("ROLE_") ? role : "ROLE_" + role;
                     String username = user.get().getUsername();

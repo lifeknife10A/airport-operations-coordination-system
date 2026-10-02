@@ -1008,6 +1008,12 @@ public async updateFlightStatus(flightNumber: string, status: Flight['status'], 
 
     this.auditLogs = [newLog, ...this.auditLogs];
     this.persist('saphire_audit_logs', this.auditLogs);
+
+    // Also write it to the real audit trail (attributed to the signed-in user server-side).
+    // Best effort: a failure here must never block the operation being audited.
+    if (localStorage.getItem('aocs_token')) {
+      auditApi.logAction({ action, changePayload }).catch((e) => console.warn('Audit write failed', e));
+    }
   }
 }
 

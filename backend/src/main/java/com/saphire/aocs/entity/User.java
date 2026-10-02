@@ -30,6 +30,10 @@ public class User {
     @Column(name = "password_hash", length = 255)
     private String passwordHash;
 
+    @Builder.Default
+    @Column(name = "status", length = 20, nullable = false)
+    private String status = "ACTIVE";
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;

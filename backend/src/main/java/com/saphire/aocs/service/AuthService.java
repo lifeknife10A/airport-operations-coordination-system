@@ -60,6 +60,11 @@ public class AuthService {
             throw new UnauthorizedException(GENERIC_FAILURE);
         }
 
+        if ("SUSPENDED".equals(user.getStatus())) {
+            log.warn("Blocked login for suspended user '{}' (id {})", user.getUsername(), user.getUserId());
+            throw new UnauthorizedException("This account has been suspended. Contact your administrator.");
+        }
+
         String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
         var session = sessionService.createSession(user.getUserId(), jwtService.getExpiryMs());
         String token = jwtService.issueToken(user.getUserId(), user.getUsername(), roleName, session.getSessionId());
