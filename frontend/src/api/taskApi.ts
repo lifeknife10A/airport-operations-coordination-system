@@ -1,5 +1,5 @@
 import axiosClient from './axiosClient';
-import { TurnaroundTask, TaskCreatePayload } from '../types';
+import { TurnaroundTask } from '../types';
 
 const clock = (iso?: string | null): string => {
   if (!iso) return '';
@@ -26,7 +26,73 @@ export const normalizeTask = (d: any): TurnaroundTask => ({
   notes: d.notes ?? undefined,
 });
 
+export interface TaskPage {
+  content: TurnaroundTask[];
+  page: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+export interface TaskStatusCounts {
+  PENDING: number;
+  IN_PROGRESS: number;
+  COMPLETED: number;
+  BLOCKED: number;
+}
+
+export interface ActiveTurnaround {
+  flightId: number;
+  flightNumber: string;
+  flightStatus: string;
+  airlineName: string;
+  aircraftType: string;
+  standNumber: string;
+  concourse: string;
+  origin: string;
+  destination: string;
+  scheduledDeparture?: string;
+  tasks: TurnaroundTask[];
+}
+
+export interface StaffWorkload {
+  userId: number;
+  name: string;
+  username: string;
+  departmentName: string;
+  inProgressTasks: number;
+  openTasks: number;
+}
+
 export const taskApi = {
+  getPage: async (opts: { status?: string; q?: string; page?: number; size?: number } = {}): Promise<TaskPage> => {
+    const response = await axiosClient.get('/tasks/page', {
+      params: { status: opts.status || undefined, q: opts.q || undefined, page: opts.page ?? 0, size: opts.size ?? 25 },
+    });
+    return { ...response.data, content: response.data.content.map(normalizeTask) };
+  },
+
+  getStatusCounts: async (): Promise<TaskStatusCounts> => (await axiosClient.get('/tasks/summary')).data,
+
+  getActiveTurnarounds: async (limit = 30): Promise<ActiveTurnaround[]> => {
+    const response = await axiosClient.get('/tasks/active-turnarounds', { params: { limit } });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return response.data.map((x: any): ActiveTurnaround => ({
+      flightId: x.flight.flightId,
+      flightNumber: x.flight.flightNumber,
+      flightStatus: x.flight.flightStatus,
+      airlineName: x.flight.airlineName ?? '',
+      aircraftType: x.flight.aircraftType ?? '',
+      standNumber: x.flight.standNumber ?? '',
+      concourse: x.concourse ?? '',
+      origin: x.flight.originAirportCode ?? '',
+      destination: x.flight.destinationAirportCode ?? '',
+      scheduledDeparture: x.flight.scheduledDepartureTime ?? undefined,
+      tasks: x.tasks.map(normalizeTask),
+    }));
+  },
+
+  getRampStaff: async (): Promise<StaffWorkload[]> => (await axiosClient.get('/tasks/staff')).data,
+
   getAllTasks: async (): Promise<TurnaroundTask[]> => {
     const response = await axiosClient.get('/tasks');
     return response.data.map(normalizeTask);
@@ -44,11 +110,12 @@ export const taskApi = {
   },
 
   assignTaskUser: async (taskId: number, userId: number): Promise<TurnaroundTask> => {
-    const response = await axiosClient.put(`/tasks/${taskId}/assign`, { userId });
+    const response = await axiosClient.put(`/tasks/${taskId}/assign`, null, { params: { userId } });
     return normalizeTask(response.data);
   },
 
-  createTask: async (payload: TaskCreatePayload): Promise<TurnaroundTask> => {
+  // The backend defaults the schedule to "now, 30 minutes long" when none is given.
+  createTask: async (payload: { flightId: number; taskName: string; assignedUserId?: number }): Promise<TurnaroundTask> => {
     const response = await axiosClient.post('/tasks', payload);
     return normalizeTask(response.data);
   },

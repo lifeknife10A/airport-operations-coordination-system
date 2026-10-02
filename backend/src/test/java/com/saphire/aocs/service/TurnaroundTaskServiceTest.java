@@ -270,4 +270,49 @@ class TurnaroundTaskServiceTest {
 
         verify(taskRepository, never()).findByFlight_FlightId(any());
     }
+
+    @Test
+    @DisplayName("board page: blank filters become '', size is clamped, search is lower-cased")
+    void taskBoardPage_normalisesFilters() {
+        when(taskRepository.searchBoard(any(), any(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
+
+        taskService.getTaskBoardPage(" ", "  ReFuel ", -3, 5000);
+
+        ArgumentCaptor<org.springframework.data.domain.Pageable> pageable =
+                ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        verify(taskRepository).searchBoard(eq(""), eq("refuel"), pageable.capture());
+        assertThat(pageable.getValue().getPageNumber()).isZero();
+        assertThat(pageable.getValue().getPageSize()).isEqualTo(100);
+    }
+
+    @Test
+    @DisplayName("board page: an unknown status is a 400, not an empty page")
+    void taskBoardPage_rejectsUnknownStatus() {
+        assertThatThrownBy(() -> taskService.getTaskBoardPage("nope", "", 0, 25))
+                .isInstanceOf(BadRequestException.class);
+        verifyNoInteractions(taskRepository);
+    }
+
+    @Test
+    @DisplayName("status counts: every status is present even when it has no rows")
+    void statusCounts_fillsMissingStatusesWithZero() {
+        when(taskRepository.countByStatus()).thenReturn(java.util.List.<Object[]>of(new Object[]{"COMPLETED", 7L}));
+
+        assertThat(taskService.getTaskStatusCounts())
+                .containsEntry("COMPLETED", 7L)
+                .containsEntry("PENDING", 0L)
+                .containsEntry("IN_PROGRESS", 0L)
+                .containsEntry("BLOCKED", 0L);
+    }
+
+    @Test
+    @DisplayName("assigning work to a suspended account is refused")
+    void assignTaskUser_rejectsSuspendedUser() {
+        when(taskRepository.findById(500L)).thenReturn(Optional.of(task(TaskStatus.PENDING, ZonedDateTime.now().plusMinutes(10), null)));
+        when(userRepository.findById(9L)).thenReturn(Optional.of(User.builder().userId(9L).status("SUSPENDED").build()));
+
+        assertThatThrownBy(() -> taskService.assignTaskUser(500L, 9L)).isInstanceOf(ConflictException.class);
+        verify(taskRepository, never()).save(any());
+    }
 }

@@ -1,6 +1,9 @@
 package com.saphire.aocs.service;
 
+import com.saphire.aocs.dto.ActiveTurnaroundDTO;
+import com.saphire.aocs.dto.StaffWorkloadDTO;
 import com.saphire.aocs.dto.TaskCreateDTO;
+import com.saphire.aocs.dto.PagedResponseDTO;
 import com.saphire.aocs.dto.TaskDTO;
 import com.saphire.aocs.entity.DelayLog;
 import com.saphire.aocs.entity.DelayLogId;
@@ -69,6 +72,7 @@ public class TurnaroundTaskService {
     private final FlightRepository flightRepository;
     private final UserRepository userRepository;
     private final DelayLogRepository delayLogRepository;
+    private final FlightService flightService;
 
     @Transactional(readOnly = true)
     public List<TaskDTO> getAllTasks(String status) {
@@ -80,6 +84,66 @@ public class TurnaroundTaskService {
         return taskRepository.findAllWithAssociations().stream()
                 .limit(200)
                 .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponseDTO<TaskDTO> getTaskBoardPage(String status, String query, int page, int size) {
+        String statusFilter = (status == null || status.isBlank()) ? "" : parseStatus(status).name();
+        String q = query == null ? "" : query.trim().toLowerCase();
+        int safeSize = Math.max(1, Math.min(size, 100));
+        org.springframework.data.domain.Page<TurnaroundTask> p =
+                taskRepository.searchBoard(statusFilter, q, org.springframework.data.domain.PageRequest.of(Math.max(page, 0), safeSize));
+        return PagedResponseDTO.<TaskDTO>builder()
+                .content(p.getContent().stream().map(this::mapToDTO).collect(Collectors.toList()))
+                .page(p.getNumber()).size(p.getSize())
+                .totalElements(p.getTotalElements()).totalPages(p.getTotalPages())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Long> getTaskStatusCounts() {
+        java.util.Map<String, Long> counts = new java.util.LinkedHashMap<>();
+        for (TaskStatus s : TaskStatus.values()) counts.put(s.name(), 0L);
+        for (Object[] row : taskRepository.countByStatus()) counts.put(String.valueOf(row[0]), (Long) row[1]);
+        return counts;
+    }
+
+    /** Flights with turnaround work in progress or blocked, each with its full task list. */
+    @Transactional(readOnly = true)
+    public List<ActiveTurnaroundDTO> getActiveTurnarounds(int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 50));
+        List<Long> flightIds = taskRepository.findActiveTurnaroundFlightIds(
+                org.springframework.data.domain.PageRequest.of(0, safeLimit));
+        if (flightIds.isEmpty()) return List.of();
+
+        java.util.Map<Long, List<TaskDTO>> tasksByFlight = taskRepository.findByFlightIdsWithAssociations(flightIds).stream()
+                .sorted(java.util.Comparator.comparing(TurnaroundTask::getScheduledStart,
+                        java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                .collect(Collectors.groupingBy(t -> t.getFlight().getFlightId(),
+                        java.util.LinkedHashMap::new, Collectors.mapping(this::mapToDTO, Collectors.toList())));
+        java.util.Map<Long, Flight> flights = flightRepository.findAllById(flightIds).stream()
+                .collect(Collectors.toMap(Flight::getFlightId, f -> f));
+
+        return flightIds.stream().filter(flights::containsKey).map(id -> {
+            Flight f = flights.get(id);
+            return ActiveTurnaroundDTO.builder()
+                    .flight(flightService.mapToDTO(f))
+                    .concourse(f.getStand() != null ? f.getStand().getConcourse() : null)
+                    .tasks(tasksByFlight.getOrDefault(id, List.of()))
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    /** Ramp agents available for assignment, least-loaded first. */
+    @Transactional(readOnly = true)
+    public List<StaffWorkloadDTO> getRampStaffWorkload() {
+        return taskRepository.findRampStaffWorkload().stream()
+                .map(r -> StaffWorkloadDTO.builder()
+                        .userId((Long) r[0]).name((String) r[1]).departmentName((String) r[2])
+                        .inProgressTasks(((Number) r[3]).longValue()).openTasks(((Number) r[4]).longValue())
+                        .username((String) r[5])
+                        .build())
                 .collect(Collectors.toList());
     }
 
@@ -176,6 +240,9 @@ public class TurnaroundTaskService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
+        if ("SUSPENDED".equals(user.getStatus())) {
+            throw new ConflictException("Cannot assign work to a suspended account");
+        }
         task.setAssignedUser(user);
         TurnaroundTask saved = taskRepository.save(task);
         return mapToDTO(saved);

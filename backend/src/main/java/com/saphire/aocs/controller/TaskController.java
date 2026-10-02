@@ -1,5 +1,8 @@
 package com.saphire.aocs.controller;
 
+import com.saphire.aocs.dto.ActiveTurnaroundDTO;
+import com.saphire.aocs.dto.PagedResponseDTO;
+import com.saphire.aocs.dto.StaffWorkloadDTO;
 import com.saphire.aocs.dto.StatusUpdateDTO;
 import com.saphire.aocs.dto.TaskCreateDTO;
 import com.saphire.aocs.dto.TaskDTO;
@@ -23,6 +26,31 @@ public class TaskController {
     @GetMapping
     public ResponseEntity<List<TaskDTO>> getAllTasks(@RequestParam(required = false) String status) {
         return ResponseEntity.ok(turnaroundTaskService.getAllTasks(status));
+    }
+
+    @GetMapping("/page")
+    public ResponseEntity<PagedResponseDTO<TaskDTO>> getTaskBoardPage(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false, name = "q") String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size) {
+        return ResponseEntity.ok(turnaroundTaskService.getTaskBoardPage(status, query, page, size));
+    }
+
+    @GetMapping("/active-turnarounds")
+    public ResponseEntity<List<ActiveTurnaroundDTO>> getActiveTurnarounds(@RequestParam(defaultValue = "30") int limit) {
+        return ResponseEntity.ok(turnaroundTaskService.getActiveTurnarounds(limit));
+    }
+
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'AIRPORT_OPERATIONS_MANAGER', 'GROUND_HANDLING_SUPERVISOR')")
+    @GetMapping("/staff")
+    public ResponseEntity<List<StaffWorkloadDTO>> getRampStaffWorkload() {
+        return ResponseEntity.ok(turnaroundTaskService.getRampStaffWorkload());
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<java.util.Map<String, Long>> getTaskStatusCounts() {
+        return ResponseEntity.ok(turnaroundTaskService.getTaskStatusCounts());
     }
 
     @GetMapping("/flight/{flightId}")

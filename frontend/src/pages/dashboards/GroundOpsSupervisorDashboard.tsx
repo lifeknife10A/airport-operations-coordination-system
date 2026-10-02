@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -60,25 +60,30 @@ import { useAuth } from '../../context/AuthContext';
 import { aocsDataStore } from '../../services/aocsDataStore';
 import { PriorityBadge } from '../../components/common/PriorityBadge';
 import { shiftHandoverApi, ShiftHandoverData } from '../../api/shiftHandoverApi';
+import { taskApi, ActiveTurnaround, StaffWorkload, TaskStatusCounts } from '../../api/taskApi';
+import { describeApiError } from '../../services/aocsDataStore';
+import type { TurnaroundTask } from '../../types';
 
 // Types
 export type TaskStage = 'CLEANING' | 'FUELING' | 'MAINTENANCE' | 'SECURITY';
-export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED';
+export type StageStatus = TaskStatus | 'NONE';
 export type TaskPriority = 'HIGH' | 'MEDIUM' | 'LOW';
 
 export interface GroundTurnaroundFlight {
   id: string;
+  flightId: number;
   flightNumber: string;
   airline: string;
   aircraft: string;
   stand: string;
-  concourse: 'Concourse A' | 'Concourse B' | 'Concourse C';
+  concourse: string;
   route: string;
   etaEtd: string;
-  cleaningStatus: TaskStatus;
-  fuelingStatus: TaskStatus;
-  maintenanceStatus: TaskStatus;
-  securityStatus: TaskStatus;
+  cleaningStatus: StageStatus;
+  fuelingStatus: StageStatus;
+  maintenanceStatus: StageStatus;
+  securityStatus: StageStatus;
   overallProgress: number; // 0 - 100
   supervisorNotes: string;
   delayReason?: string;
@@ -86,27 +91,16 @@ export interface GroundTurnaroundFlight {
 
 export interface GroundTask {
   id: string;
+  taskId: number;
   flightNumber: string;
   stand: string;
   serviceType: TaskStage;
   title: string;
   priority: TaskPriority;
-  assignedCrew: string;
   assignedStaff: string;
   status: TaskStatus;
   estCompletion: string;
   notes: string;
-}
-
-export interface GroundCrew {
-  id: string;
-  name: string;
-  department: string;
-  lead: string;
-  activeTasks: number;
-  standLocation: string;
-  status: 'AVAILABLE' | 'ENGAGED' | 'STANDBY';
-  members: number;
 }
 
 export interface HandoverLog {
@@ -123,260 +117,82 @@ export interface HandoverLog {
   summaryNotes: string;
 }
 
-// Initial Data
-const INITIAL_GROUND_FLIGHTS: GroundTurnaroundFlight[] = [
-  {
-    id: 'GF-203',
-    flightNumber: 'AI-203',
-    airline: 'Air India',
-    aircraft: 'Boeing 787-8 Dreamliner',
-    stand: 'Stand G01',
-    concourse: 'Concourse A',
-    route: 'DEL → BOM',
-    etaEtd: 'ETD 23:42 UTC',
-    cleaningStatus: 'COMPLETED',
-    fuelingStatus: 'COMPLETED',
-    maintenanceStatus: 'IN_PROGRESS',
-    securityStatus: 'PENDING',
-    overallProgress: 75,
-    supervisorNotes: 'Hydraulic sensor check on Stand G01 currently ongoing by Avionics Team.',
-    delayReason: 'Line maintenance hydraulic fluid check (+12m)',
-  },
-  {
-    id: 'GF-521',
-    flightNumber: '6E-521',
-    airline: 'IndiGo',
-    aircraft: 'Airbus A321neo',
-    stand: 'Stand G07',
-    concourse: 'Concourse A',
-    route: 'BOM → BLR',
-    etaEtd: 'ETD 23:33 UTC',
-    cleaningStatus: 'COMPLETED',
-    fuelingStatus: 'IN_PROGRESS',
-    maintenanceStatus: 'COMPLETED',
-    securityStatus: 'PENDING',
-    overallProgress: 50,
-    supervisorNotes: 'Apron tanker #3 currently dispensing 14,200 kg Jet A-1.',
-    delayReason: 'ATC slot adjustment due to storm routing',
-  },
-  {
-    id: 'GF-901',
-    flightNumber: 'UK-901',
-    airline: 'Vistara',
-    aircraft: 'Airbus A320neo',
-    stand: 'Stand G04',
-    concourse: 'Concourse A',
-    route: 'BOM → DEL',
-    etaEtd: 'ETD 23:05 UTC',
-    cleaningStatus: 'COMPLETED',
-    fuelingStatus: 'COMPLETED',
-    maintenanceStatus: 'COMPLETED',
-    securityStatus: 'COMPLETED',
-    overallProgress: 100,
-    supervisorNotes: 'Turnaround complete. Pushback tug connected. Stand clear.',
-  },
-  {
-    id: 'GF-102',
-    flightNumber: 'SPH-102',
-    airline: 'Saphire Airways',
-    aircraft: 'Airbus A350-900',
-    stand: 'Stand G17',
-    concourse: 'Concourse B',
-    route: 'SPH → LHR',
-    etaEtd: 'ETD 23:45 UTC',
-    cleaningStatus: 'COMPLETED',
-    fuelingStatus: 'COMPLETED',
-    maintenanceStatus: 'COMPLETED',
-    securityStatus: 'IN_PROGRESS',
-    overallProgress: 85,
-    supervisorNotes: 'Passenger boarding group 3 in progress. Baggage hold hatches locked.',
-  },
-  {
-    id: 'GF-204',
-    flightNumber: 'SPH-204',
-    airline: 'Saphire Airways',
-    aircraft: 'Boeing 777-300ER',
-    stand: 'Stand G15',
-    concourse: 'Concourse B',
-    route: 'SPH → DXB',
-    etaEtd: 'ETD 00:15 UTC',
-    cleaningStatus: 'IN_PROGRESS',
-    fuelingStatus: 'PENDING',
-    maintenanceStatus: 'PENDING',
-    securityStatus: 'PENDING',
-    overallProgress: 25,
-    supervisorNotes: 'Inbound offload finishing. Cabin cleaning crew Alpha boarding.',
-  },
-  {
-    id: 'GF-809',
-    flightNumber: 'SPH-809',
-    airline: 'Saphire Airways',
-    aircraft: 'Boeing 787-9',
-    stand: 'Stand G24',
-    concourse: 'Concourse B',
-    route: 'SPH → JFK',
-    etaEtd: 'ETD 00:40 UTC',
-    cleaningStatus: 'PENDING',
-    fuelingStatus: 'PENDING',
-    maintenanceStatus: 'IN_PROGRESS',
-    securityStatus: 'PENDING',
-    overallProgress: 20,
-    supervisorNotes: 'Catering high-loader vehicle being swapped out on apron.',
-    delayReason: 'Ground equipment mechanical interlock replacement',
-  },
-  {
-    id: 'GF-201',
-    flightNumber: 'EK-201',
-    airline: 'Emirates',
-    aircraft: 'Airbus A380-800',
-    stand: 'Stand G31',
-    concourse: 'Concourse C',
-    route: 'SPH → DXB',
-    etaEtd: 'ETD 00:50 UTC',
-    cleaningStatus: 'IN_PROGRESS',
-    fuelingStatus: 'IN_PROGRESS',
-    maintenanceStatus: 'COMPLETED',
-    securityStatus: 'PENDING',
-    overallProgress: 45,
-    supervisorNotes: 'Dual upper-deck catering loading in progress at Stand G31.',
-  },
-  {
-    id: 'GF-117',
-    flightNumber: 'BA-117',
-    airline: 'British Airways',
-    aircraft: 'Boeing 777-300ER',
-    stand: 'Stand G34',
-    concourse: 'Concourse C',
-    route: 'SPH → LHR',
-    etaEtd: 'ETD 01:05 UTC',
-    cleaningStatus: 'COMPLETED',
-    fuelingStatus: 'PENDING',
-    maintenanceStatus: 'COMPLETED',
-    securityStatus: 'PENDING',
-    overallProgress: 60,
-    supervisorNotes: 'Hydrant fuel bowser dispatched to Stand G34.',
-  },
+// ---------------------------------------------------------------------------------------------
+// Live data mapping: backend turnaround tasks/flights -> the shapes this dashboard renders
+// ---------------------------------------------------------------------------------------------
+// The board has four stage columns; the backend's seven task names map onto them like this.
+// Baggage unloading, catering and pushback prep still count toward a flight's progress.
+const STAGE_BY_TASK_NAME: Record<string, TaskStage> = {
+  'CABIN CLEANING': 'CLEANING',
+  REFUELING: 'FUELING',
+  'SAFETY INSPECTION': 'MAINTENANCE',
+  'BOARDING GATE CLEARANCE': 'SECURITY',
+};
+const TASK_NAME_OPTIONS = [
+  'Cabin Cleaning',
+  'Refueling',
+  'Baggage Unloading',
+  'Catering Replenishment',
+  'Boarding Gate Clearance',
+  'Pushback Operational Prep',
+  'Safety Inspection',
 ];
+const stageOf = (taskName: string): TaskStage => STAGE_BY_TASK_NAME[taskName.toUpperCase()] ?? 'MAINTENANCE';
 
-const INITIAL_GROUND_TASKS: GroundTask[] = [
-  {
-    id: 'TSK-101',
-    flightNumber: 'AI-203',
-    stand: 'Stand G12',
-    serviceType: 'MAINTENANCE',
-    title: 'Hydraulic reserve sensor inspection',
-    priority: 'HIGH',
-    assignedCrew: 'Avionics Pre-Flight Crew',
-    assignedStaff: 'Ravi Sharma',
-    status: 'IN_PROGRESS',
-    estCompletion: '22:45 UTC',
-    notes: 'Investigating standby sensor pressure telemetry before cabin door close.',
-  },
-  {
-    id: 'TSK-102',
-    flightNumber: 'SPH-809',
-    stand: 'Stand G14',
-    serviceType: 'MAINTENANCE',
-    title: 'Catering lift truck replacement & apron check',
-    priority: 'HIGH',
-    assignedCrew: 'Ramp GSE Fleet Team',
-    assignedStaff: 'Manoj Rao',
-    status: 'IN_PROGRESS',
-    estCompletion: '23:10 UTC',
-    notes: 'Hydraulic scissor lock sensor faulted. Replacement tug en route from GSE bay.',
-  },
-  {
-    id: 'TSK-103',
-    flightNumber: '6E-521',
-    stand: 'Stand G08',
-    serviceType: 'FUELING',
-    title: 'Apron pressure refueling (14,200 kg)',
-    priority: 'MEDIUM',
-    assignedCrew: 'Jet Fuel Unit #3',
-    assignedStaff: 'Arjun Mehta',
-    status: 'IN_PROGRESS',
-    estCompletion: '23:30 UTC',
-    notes: 'Fuel flow rate: 1,200 L/min via hydrant dispenser #4.',
-  },
-  {
-    id: 'TSK-104',
-    flightNumber: 'UK-901',
-    stand: 'Stand G04',
-    serviceType: 'CLEANING',
-    title: 'Cabin deep cleaning & sanitary sterilization',
-    priority: 'LOW',
-    assignedCrew: 'Cabin Hygiene Alpha',
-    assignedStaff: 'Sunita Patil',
-    status: 'COMPLETED',
-    estCompletion: '22:25 UTC',
-    notes: 'Full cabin sweep completed. Galleys and lavatories sealed.',
-  },
-  {
-    id: 'TSK-105',
-    flightNumber: 'SPH-204',
-    stand: 'Stand G01',
-    serviceType: 'CLEANING',
-    title: 'Long-haul turn cabin refresh & bedding replacement',
-    priority: 'MEDIUM',
-    assignedCrew: 'Cabin Hygiene Alpha',
-    assignedStaff: 'Unassigned',
-    status: 'PENDING',
-    estCompletion: '23:45 UTC',
-    notes: 'Awaiting completion of passenger offload before team enters aircraft.',
-  },
-  {
-    id: 'TSK-106',
-    flightNumber: 'SPH-102',
-    stand: 'Stand G10',
-    serviceType: 'SECURITY',
-    title: 'Pre-departure airside security sweep & K9 sweep',
-    priority: 'MEDIUM',
-    assignedCrew: 'Canine & Airside Security',
-    assignedStaff: 'Inspector Farooq',
-    status: 'IN_PROGRESS',
-    estCompletion: '23:25 UTC',
-    notes: 'Overhead bin and forward cargo hold security verification.',
-  },
-];
+const clockOf = (iso?: string): string => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : `${d.toISOString().slice(11, 16)} UTC`;
+};
 
-const INITIAL_GROUND_CREWS: GroundCrew[] = [
-  { id: 'CRW-1', name: 'Cabin Hygiene Alpha', department: 'Cleaning & Hospitality', lead: 'Sunita Patil', activeTasks: 2, standLocation: 'Stand G01', status: 'ENGAGED', members: 12 },
-  { id: 'CRW-2', name: 'Jet Fuel Unit #3', department: 'Hydrant & Refueling', lead: 'Arjun Mehta', activeTasks: 1, standLocation: 'Stand G08', status: 'ENGAGED', members: 4 },
-  { id: 'CRW-3', name: 'Avionics Pre-Flight Crew', department: 'Engineering & Line Tech', lead: 'Ravi Sharma', activeTasks: 1, standLocation: 'Stand G12', status: 'ENGAGED', members: 5 },
-  { id: 'CRW-4', name: 'Canine & Airside Security', department: 'Airside Security', lead: 'Insp. Farooq', activeTasks: 1, standLocation: 'Stand G10', status: 'ENGAGED', members: 6 },
-  { id: 'CRW-5', name: 'Ramp Cargo Team Delta', department: 'Baggage & Cargo Ramp', lead: 'Kiran Reddy', activeTasks: 0, standLocation: 'Apron Hub Central', status: 'AVAILABLE', members: 14 },
-  { id: 'CRW-6', name: 'Ramp GSE Fleet Team', department: 'Ground Equipment & Tugs', lead: 'Manoj Rao', activeTasks: 1, standLocation: 'Stand G14', status: 'ENGAGED', members: 8 },
-];
+const EMPTY_FLIGHT: GroundTurnaroundFlight = {
+  id: 'none', flightId: 0, flightNumber: '—', airline: '', aircraft: '', stand: '', concourse: '', route: '', etaEtd: '',
+  cleaningStatus: 'NONE', fuelingStatus: 'NONE', maintenanceStatus: 'NONE', securityStatus: 'NONE',
+  overallProgress: 0, supervisorNotes: '',
+};
 
-const INITIAL_HANDOVERS: HandoverLog[] = [
-  {
-    id: 'HND-401',
-    shiftTitle: 'Evening Ramp Shift (14:00 - 22:30 UTC)',
-    outgoingSupervisor: 'Riya Johnson (Ground Ops Lead)',
-    incomingSupervisor: 'Vikram Seth (Night Shift Lead)',
-    timestamp: 'Today, 22:30 UTC',
-    carriedOverTasks: 3,
-    flightsAwaitingAction: 2,
-    unresolvedHolds: [
-      'AI-203 hydraulic pressure sensor line check on Stand G12 (Avionics engaged).',
-      'SPH-809 catering lift truck swap ongoing at Stand G14.',
-    ],
-    status: 'SUBMITTED',
-    summaryNotes: 'Turnaround overall efficiency at 94.2%. Weather clear over airside. Stand G12 requires priority monitoring for pushback slot at 23:42 UTC.',
-  },
-  {
-    id: 'HND-400',
-    shiftTitle: 'Day Ramp Shift (06:00 - 14:00 UTC)',
-    outgoingSupervisor: 'Vikram Seth (Shift Lead)',
-    incomingSupervisor: 'Riya Johnson (Ground Ops Lead)',
-    timestamp: 'Today, 14:00 UTC',
-    carriedOverTasks: 1,
-    flightsAwaitingAction: 1,
-    unresolvedHolds: ['Concourse A fuel hydrant pressure surge resolved at 11:30 UTC.'],
-    status: 'ACKNOWLEDGED',
-    summaryNotes: 'All 19 flights turned around within target block times. 1 minor GSE tire maintenance.',
-  },
-];
+const toGroundFlight = (a: ActiveTurnaround): GroundTurnaroundFlight => {
+  const statusOf = (stage: TaskStage): StageStatus => {
+    const t = a.tasks.find((x) => stageOf(x.taskName) === stage && STAGE_BY_TASK_NAME[x.taskName.toUpperCase()]);
+    return t ? (t.status as TaskStatus) : 'NONE';
+  };
+  const done = a.tasks.filter((t) => t.status === 'COMPLETED').length;
+  const blocked = a.tasks.filter((t) => t.status === 'BLOCKED');
+  return {
+    id: `F-${a.flightId}`,
+    flightId: a.flightId,
+    flightNumber: a.flightNumber,
+    airline: a.airlineName,
+    aircraft: a.aircraftType,
+    stand: a.standNumber ? `Stand ${a.standNumber}` : 'No stand',
+    concourse: a.concourse,
+    route: `${a.origin} → ${a.destination}`,
+    etaEtd: clockOf(a.scheduledDeparture),
+    cleaningStatus: statusOf('CLEANING'),
+    fuelingStatus: statusOf('FUELING'),
+    maintenanceStatus: statusOf('MAINTENANCE'),
+    securityStatus: statusOf('SECURITY'),
+    overallProgress: a.tasks.length ? Math.round((done / a.tasks.length) * 100) : 0,
+    supervisorNotes: blocked.length ? `Blocked: ${blocked.map((t) => t.taskName).join(', ')}` : `${a.tasks.length} task(s) on this flight`,
+    delayReason: a.flightStatus === 'DELAYED' ? 'Flight is currently delayed' : undefined,
+  };
+};
+
+// Priority is not stored; it is derived from status so a blocked task always reads as urgent.
+const toGroundTask = (t: TurnaroundTask, standByFlight: Map<string, string>): GroundTask => ({
+  id: `TSK-${t.taskId}`,
+  taskId: t.taskId,
+  flightNumber: t.flightNumber,
+  stand: standByFlight.get(t.flightNumber) ?? '',
+  serviceType: stageOf(t.taskName),
+  title: t.taskName,
+  priority: t.status === 'BLOCKED' ? 'HIGH' : t.status === 'IN_PROGRESS' ? 'MEDIUM' : 'LOW',
+  assignedStaff: t.assignedUserName ?? '',
+  status: t.status as TaskStatus,
+  estCompletion: t.plannedEnd || '—',
+  notes: t.notes ?? '',
+});
+
 
 export const GroundOpsSupervisorDashboard: React.FC = () => {
   const location = useLocation();
@@ -444,141 +260,150 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
     }
   };
 
-  // State
-  const [flights, setFlights] = useState<GroundTurnaroundFlight[]>(INITIAL_GROUND_FLIGHTS);
-  const [tasks, setTasks] = useState<GroundTask[]>(INITIAL_GROUND_TASKS);
-  const [crews, setCrews] = useState<GroundCrew[]>(INITIAL_GROUND_CREWS);
-  const [handovers, setHandovers] = useState<HandoverLog[]>(INITIAL_HANDOVERS);
-  const [selectedFlight, setSelectedFlight] = useState<GroundTurnaroundFlight>(INITIAL_GROUND_FLIGHTS[0]);
+  // State -- flights, tasks, counts and staff are all loaded from the backend.
+  const [rawTasks, setRawTasks] = useState<TurnaroundTask[]>([]);
+  const [flights, setFlights] = useState<GroundTurnaroundFlight[]>([]);
+  const [taskPage, setTaskPage] = useState(0);
+  const [taskTotal, setTaskTotal] = useState(0);
+  const [taskCounts, setTaskCounts] = useState<TaskStatusCounts>({ PENDING: 0, IN_PROGRESS: 0, COMPLETED: 0, BLOCKED: 0 });
+  const [staff, setStaff] = useState<StaffWorkload[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [handovers, setHandovers] = useState<HandoverLog[]>([]);
+  const [selectedFlightId, setSelectedFlightId] = useState<string | null>(null);
+  const selectedFlight = flights.find((f) => f.id === selectedFlightId) ?? flights[0] ?? EMPTY_FLIGHT;
+  const setSelectedFlight = (f: GroundTurnaroundFlight) => setSelectedFlightId(f.id);
 
   // Filters
   const [taskFilter, setTaskFilter] = useState<'ALL' | 'ATTENTION' | 'IN_PROGRESS' | 'COMPLETED'>('ALL');
-  const [flightFilter, setFlightFilter] = useState<'ALL' | 'Concourse A' | 'Concourse B' | 'Concourse C'>('ALL');
+  const [flightFilter, setFlightFilter] = useState<string>('ALL');
   const [flightSearch, setFlightSearch] = useState('');
   const [taskSearch, setTaskSearch] = useState('');
 
   // Modals
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
-  const [newTaskFlight, setNewTaskFlight] = useState('AI-203');
-  const [newTaskType, setNewTaskType] = useState<TaskStage>('CLEANING');
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskCrew, setNewTaskCrew] = useState('Cabin Hygiene Alpha');
-  const [newTaskStaff, setNewTaskStaff] = useState('Sunita Patil');
-  const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>('MEDIUM');
-  const [newTaskTime, setNewTaskTime] = useState('23:45 UTC');
+  const [newTaskFlightId, setNewTaskFlightId] = useState<number | ''>('');
+  const [newTaskName, setNewTaskName] = useState(TASK_NAME_OPTIONS[0]);
+  const [newTaskUserId, setNewTaskUserId] = useState<number | ''>('');
 
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [activeTaskToAssign, setActiveTaskToAssign] = useState<GroundTask | null>(null);
-  const [assignedCrewChoice, setAssignedCrewChoice] = useState('');
-  const [assignedStaffChoice, setAssignedStaffChoice] = useState('');
+  const [assignedUserChoice, setAssignedUserChoice] = useState<number | ''>('');
 
   const [handoverModalOpen, setHandoverModalOpen] = useState(false);
   const [handoverIncomingSup, setHandoverIncomingSup] = useState('Vikram Seth (Night Shift Lead)');
   const [handoverNotesInput, setHandoverNotesInput] = useState('');
-  const [handoverIssuesInput, setHandoverIssuesInput] = useState('AI-203 hydraulic pressure sensor line check on Stand G12');
+  const [handoverIssuesInput, setHandoverIssuesInput] = useState('');
 
-  // Accurate stats calculation directly from state
+  const standByFlight = useMemo(() => new Map(flights.map((f) => [f.flightNumber, f.stand])), [flights]);
+  const tasks = useMemo(() => rawTasks.map((t) => toGroundTask(t, standByFlight)), [rawTasks, standByFlight]);
+
+  // Board (active flights + status counts) and the ramp roster
+  const loadBoard = useCallback(async () => {
+    try {
+      const [active, counts] = await Promise.all([taskApi.getActiveTurnarounds(30), taskApi.getStatusCounts()]);
+      setFlights(active.map(toGroundFlight));
+      setTaskCounts(counts);
+      setLoadError(null);
+    } catch (e) {
+      setLoadError(describeApiError(e));
+    }
+  }, []);
+  const loadStaff = useCallback(() => {
+    taskApi.getRampStaff().then(setStaff).catch(() => setStaff([]));
+  }, []);
+  useEffect(() => {
+    loadBoard();
+    loadStaff();
+  }, [loadBoard, loadStaff]);
+
+  // Task queue: the server does the filtering, searching and paging (there are ~10,000 tasks).
+  const taskRequest = useRef(0);
+  const fetchTasks = useCallback(
+    async (page: number) => {
+      const requestId = ++taskRequest.current;
+      const status = taskFilter === 'ATTENTION' ? 'BLOCKED' : taskFilter === 'ALL' ? '' : taskFilter;
+      try {
+        const res = await taskApi.getPage({ status, q: taskSearch.trim(), page, size: 25 });
+        if (requestId !== taskRequest.current) return; // a newer filter/search superseded this response
+        setRawTasks((prev) => (page === 0 ? res.content : [...prev, ...res.content]));
+        setTaskPage(res.page);
+        setTaskTotal(res.totalElements);
+      } catch (e) {
+        if (requestId === taskRequest.current) toast.error(`Could not load tasks: ${describeApiError(e)}`);
+      }
+    },
+    [taskFilter, taskSearch]
+  );
+  useEffect(() => {
+    const handle = setTimeout(() => fetchTasks(0), 250);
+    return () => clearTimeout(handle);
+  }, [fetchTasks]);
+
   const totalFlightsCount = flights.length;
-  const totalTasksCount = tasks.length;
-  const completedTasksCount = tasks.filter((t) => t.status === 'COMPLETED').length;
-  const pendingTasksCount = tasks.filter((t) => t.status !== 'COMPLETED').length;
+  const totalTasksCount = taskCounts.PENDING + taskCounts.IN_PROGRESS + taskCounts.COMPLETED + taskCounts.BLOCKED;
+  const completedTasksCount = taskCounts.COMPLETED;
+  const pendingTasksCount = taskCounts.BLOCKED;
 
-  // Task Actions
-  const handleMarkTaskStarted = (taskId: string) => {
-    setTasks(
-      tasks.map((t) => {
-        if (t.id === taskId) {
-          toast.success(`Task ${t.id} (${t.title}) marked as IN PROGRESS`);
-          aocsDataStore.updateTurnaroundTask(t.flightNumber, t.serviceType, 'IN_PROGRESS', 'Ground Handling');
-          return { ...t, status: 'IN_PROGRESS' };
-        }
-        return t;
-      })
-    );
+  // Task actions: change the row immediately, put it back with the server's reason if refused.
+  const changeTaskStatus = async (task: GroundTask, next: TaskStatus, okMessage: string) => {
+    const before = rawTasks;
+    setRawTasks((prev) => prev.map((t) => (t.taskId === task.taskId ? { ...t, status: next } : t)));
+    try {
+      await taskApi.updateTaskStatus(task.taskId, next);
+      toast.success(okMessage);
+      loadBoard();
+      loadStaff();
+    } catch (e) {
+      setRawTasks(before);
+      toast.error(`${task.title} was NOT changed to ${next}: ${describeApiError(e)}`);
+    }
   };
-
-  const handleMarkTaskCompleted = (taskId: string) => {
-    setTasks(
-      tasks.map((t) => {
-        if (t.id === taskId) {
-          toast.success(`Task ${t.id} marked as COMPLETED!`);
-          aocsDataStore.updateTurnaroundTask(t.flightNumber, t.serviceType, 'COMPLETED', 'Ground Handling');
-
-          // If this task belongs to the currently selected flight, update that stage
-          if (t.flightNumber === selectedFlight.flightNumber) {
-            const updated = { ...selectedFlight };
-            if (t.serviceType === 'CLEANING') updated.cleaningStatus = 'COMPLETED';
-            if (t.serviceType === 'FUELING') updated.fuelingStatus = 'COMPLETED';
-            if (t.serviceType === 'MAINTENANCE') updated.maintenanceStatus = 'COMPLETED';
-            if (t.serviceType === 'SECURITY') updated.securityStatus = 'COMPLETED';
-
-            // recalculate overall
-            let completedCount = 0;
-            if (updated.cleaningStatus === 'COMPLETED') completedCount++;
-            if (updated.fuelingStatus === 'COMPLETED') completedCount++;
-            if (updated.maintenanceStatus === 'COMPLETED') completedCount++;
-            if (updated.securityStatus === 'COMPLETED') completedCount++;
-            updated.overallProgress = Math.round((completedCount / 4) * 100);
-
-            setSelectedFlight(updated);
-            setFlights(flights.map((f) => (f.id === updated.id ? updated : f)));
-          }
-          return { ...t, status: 'COMPLETED' };
-        }
-        return t;
-      })
-    );
-  };
+  const handleMarkTaskStarted = (task: GroundTask) => changeTaskStatus(task, 'IN_PROGRESS', `${task.title} on ${task.flightNumber} is now in progress`);
+  const handleMarkTaskCompleted = (task: GroundTask) => changeTaskStatus(task, 'COMPLETED', `${task.title} on ${task.flightNumber} completed`);
+  const handleMarkTaskResumed = (task: GroundTask) => changeTaskStatus(task, 'IN_PROGRESS', `${task.title} on ${task.flightNumber} resumed`);
 
   const handleOpenAssignModal = (task: GroundTask) => {
     setActiveTaskToAssign(task);
-    setAssignedCrewChoice(task.assignedCrew);
-    setAssignedStaffChoice(task.assignedStaff);
+    setAssignedUserChoice(rawTasks.find((t) => t.taskId === task.taskId)?.assignedUserId ?? '');
     setAssignModalOpen(true);
   };
 
-  const handleSaveAssignment = () => {
-    if (!activeTaskToAssign) return;
-    setTasks(
-      tasks.map((t) => {
-        if (t.id === activeTaskToAssign.id) {
-          return {
-            ...t,
-            assignedCrew: assignedCrewChoice,
-            assignedStaff: assignedStaffChoice || 'Assigned Ramp Specialist',
-          };
-        }
-        return t;
-      })
-    );
-    toast.success(`Task ${activeTaskToAssign.id} assigned to ${assignedCrewChoice} (${assignedStaffChoice})`);
-    setAssignModalOpen(false);
-  };
-
-  const handleCreateTaskSubmit = () => {
-    if (!newTaskTitle.trim()) {
-      toast.error('Please enter a task title / work order description');
+  const handleSaveAssignment = async () => {
+    if (!activeTaskToAssign || assignedUserChoice === '') {
+      toast.error('Pick a staff member first');
       return;
     }
-    const flightObj = flights.find((f) => f.flightNumber === newTaskFlight);
-    const newTask: GroundTask = {
-      id: `TSK-${Math.floor(107 + Math.random() * 800)}`,
-      flightNumber: newTaskFlight,
-      stand: flightObj ? flightObj.stand : 'Stand G12',
-      serviceType: newTaskType,
-      title: newTaskTitle,
-      priority: newTaskPriority,
-      assignedCrew: newTaskCrew,
-      assignedStaff: newTaskStaff,
-      status: 'PENDING',
-      estCompletion: newTaskTime,
-      notes: `Created by Ground Ops Supervisor Riya Johnson at ${new Date().toLocaleTimeString()} UTC.`,
-    };
+    try {
+      const updated = await taskApi.assignTaskUser(activeTaskToAssign.taskId, assignedUserChoice);
+      setRawTasks((prev) => prev.map((t) => (t.taskId === updated.taskId ? { ...t, ...updated } : t)));
+      toast.success(`${activeTaskToAssign.title} assigned to ${updated.assignedUserName ?? 'staff member'}`);
+      setAssignModalOpen(false);
+      loadStaff();
+    } catch (e) {
+      toast.error(`Assignment failed: ${describeApiError(e)}`);
+    }
+  };
 
-    setTasks([newTask, ...tasks]);
-    toast.success(`New task ${newTask.id} created for flight ${newTaskFlight}`);
-    setNewTaskTitle('');
-    setCreateTaskOpen(false);
+  const handleCreateTaskSubmit = async () => {
+    if (newTaskFlightId === '') {
+      toast.error('Choose a flight for this workorder');
+      return;
+    }
+    try {
+      const created = await taskApi.createTask({
+        flightId: newTaskFlightId,
+        taskName: newTaskName,
+        assignedUserId: newTaskUserId === '' ? undefined : newTaskUserId,
+      });
+      toast.success(`${created.taskName} created for ${created.flightNumber}`);
+      setCreateTaskOpen(false);
+      setNewTaskUserId('');
+      fetchTasks(0);
+      loadBoard();
+      loadStaff();
+    } catch (e) {
+      toast.error(`Workorder was NOT created: ${describeApiError(e)}`);
+    }
   };
 
   const handleCreateHandoverSubmit = async () => {
@@ -645,7 +470,24 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
   };
 
   // Helper renderers for status dots
-  const renderTurnaroundDot = (status: TaskStatus) => {
+  const renderTurnaroundDot = (status: StageStatus) => {
+    if (status === 'NONE') {
+      return (
+        <Tooltip title="No task of this kind on this flight" arrow>
+          <Box sx={{ color: '#CBD5E1', fontWeight: 600, fontSize: '0.74rem' }}>—</Box>
+        </Tooltip>
+      );
+    }
+    if (status === 'BLOCKED') {
+      return (
+        <Tooltip title="Blocked" arrow>
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.6, color: '#DC2626', fontWeight: 700, fontSize: '0.74rem' }}>
+            <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: '#DC2626' }} />
+            Blocked
+          </Box>
+        </Tooltip>
+      );
+    }
     if (status === 'COMPLETED') {
       return (
         <Tooltip title="Complete" arrow>
@@ -708,26 +550,8 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
     return true;
   });
 
-  const filteredTasks = tasks.filter((t) => {
-    if (taskFilter === 'ATTENTION') {
-      if (t.status === 'COMPLETED' || (t.priority !== 'HIGH' && t.status !== 'PENDING')) return false;
-    } else if (taskFilter === 'IN_PROGRESS') {
-      if (t.status !== 'IN_PROGRESS') return false;
-    } else if (taskFilter === 'COMPLETED') {
-      if (t.status !== 'COMPLETED') return false;
-    }
-    if (taskSearch.trim()) {
-      const q = taskSearch.toLowerCase();
-      return (
-        t.id.toLowerCase().includes(q) ||
-        t.flightNumber.toLowerCase().includes(q) ||
-        t.title.toLowerCase().includes(q) ||
-        t.stand.toLowerCase().includes(q) ||
-        t.assignedCrew.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  // Filtering, searching and paging happen on the server; what is loaded is what is shown.
+  const filteredTasks = tasks;
 
   return (
     <DashboardLayout activeRole="ground-ops">
@@ -771,7 +595,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                   Ground Turnaround Operations
                 </Typography>
                 <Typography sx={{ fontSize: '0.86rem', color: '#64748B', mt: 0.2 }}>
-                  Supervisor: Riya Johnson · Saphire Ground Handling & Apron Services
+                  Supervisor: {user?.name || 'Ground Handling Supervisor'} · Saphire Ground Handling & Apron Services
                 </Typography>
               </Box>
 
@@ -1274,13 +1098,13 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                         Ground Task Queue
                       </Typography>
                       <Chip
-                        label={`${filteredTasks.length} in queue`}
+                        label={`${filteredTasks.length} of ${taskTotal}`}
                         size="small"
                         sx={{ bgcolor: '#F1F5F9', color: '#475569', fontWeight: 800, fontSize: '0.68rem', height: '20px' }}
                       />
                     </Box>
                     <Typography sx={{ fontSize: '0.8rem', color: '#64748B' }}>
-                      Prioritized turnaround dispatch and crew verification queue.
+                      Blocked work first, then in-progress and pending, newest schedule first.
                     </Typography>
                   </Box>
 
@@ -1289,7 +1113,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                     {(
                       [
                         { id: 'ALL', label: 'All Tasks' },
-                        { id: 'ATTENTION', label: 'Attention (4)' },
+                        { id: 'ATTENTION', label: `Blocked (${taskCounts.BLOCKED})` },
                         { id: 'IN_PROGRESS', label: 'In Progress' },
                         { id: 'COMPLETED', label: 'Done' },
                       ] as const
@@ -1351,9 +1175,11 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                               borderRadius: '4px',
                             }}
                           />
-                          <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284C7' }}>
-                            {task.stand}
-                          </Typography>
+                          {task.stand && (
+                            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284C7' }}>
+                              {task.stand}
+                            </Typography>
+                          )}
                           <Typography sx={{ fontSize: '0.72rem', color: '#94A3B8' }}>• Est: {task.estCompletion}</Typography>
                         </Box>
 
@@ -1361,7 +1187,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                           {task.title}
                         </Typography>
                         <Typography sx={{ fontSize: '0.76rem', color: '#64748B', mt: 0.3 }}>
-                          Assigned Crew: <strong style={{ color: '#334155' }}>{task.assignedCrew}</strong> ({task.assignedStaff})
+                          Assigned: <strong style={{ color: '#334155' }}>{task.assignedStaff || 'Unassigned'}</strong>
                         </Typography>
                       </Box>
 
@@ -1391,7 +1217,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                           <Button
                             size="small"
                             variant="contained"
-                            onClick={() => handleMarkTaskStarted(task.id)}
+                            onClick={() => handleMarkTaskStarted(task)}
                             sx={{
                               fontFamily: "'Outfit', sans-serif",
                               fontWeight: 700,
@@ -1413,7 +1239,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                           <Button
                             size="small"
                             variant="contained"
-                            onClick={() => handleMarkTaskCompleted(task.id)}
+                            onClick={() => handleMarkTaskCompleted(task)}
                             sx={{
                               fontFamily: "'Outfit', sans-serif",
                               fontWeight: 700,
@@ -1429,6 +1255,28 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                             }}
                           >
                             Mark Completed
+                          </Button>
+                        )}
+
+                        {task.status === 'BLOCKED' && (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            onClick={() => handleMarkTaskResumed(task)}
+                            sx={{
+                              fontFamily: "'Outfit', sans-serif",
+                              fontWeight: 700,
+                              fontSize: '0.72rem',
+                              textTransform: 'none',
+                              borderRadius: '7px',
+                              backgroundColor: '#DC2626',
+                              color: '#FFFFFF',
+                              px: 1.4,
+                              py: 0.4,
+                              '&:hover': { backgroundColor: '#B91C1C' },
+                            }}
+                          >
+                            Resume
                           </Button>
                         )}
 
@@ -1665,7 +1513,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                       Shift Handover Protocol & Status
                     </Typography>
                     <Typography sx={{ fontSize: '0.82rem', color: '#64748B', mt: 0.2 }}>
-                      <strong style={{ color: '#0F2942' }}>3 tasks carried over</strong> · 2 flights awaiting action · 1 unresolved stand hold (AI-203 hydraulic sensor)
+                      <strong style={{ color: '#0F2942' }}>{taskCounts.IN_PROGRESS} tasks in progress</strong> · {taskCounts.BLOCKED} blocked · {taskCounts.PENDING} pending across the airport
                     </Typography>
                   </Box>
                 </Box>
@@ -1711,7 +1559,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                   Active Ground Servicing Flights
                 </Typography>
                 <Typography sx={{ fontSize: '0.86rem', color: '#64748B' }}>
-                  Complete telemetry for 18 flights currently berthed at Central Terminal apron stands.
+                  {flights.length} flights with turnaround work in progress or blocked right now.
                 </Typography>
               </Box>
               <Button
@@ -1729,7 +1577,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
               <TextField
                 fullWidth
                 size="small"
-                placeholder="Search flights by flight number, airline, or stand (e.g. AI-203, Stand G12)..."
+                placeholder="Search flights by flight number, airline, or stand (e.g. A503000, S200)..."
                 value={flightSearch}
                 onChange={(e) => setFlightSearch(e.target.value)}
                 slotProps={{
@@ -1836,7 +1684,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
               <TextField
                 fullWidth
                 size="small"
-                placeholder="Search tasks by ID, flight, workorder title, or crew..."
+                placeholder="Search by flight number or task name (e.g. A503000, Refueling)..."
                 value={taskSearch}
                 onChange={(e) => setTaskSearch(e.target.value)}
                 slotProps={{
@@ -1861,7 +1709,7 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                       <TableCell sx={{ fontWeight: 800, color: '#64748B' }}>TASK ID / STAGE</TableCell>
                       <TableCell sx={{ fontWeight: 800, color: '#64748B' }}>FLIGHT & STAND</TableCell>
                       <TableCell sx={{ fontWeight: 800, color: '#64748B' }}>WORKORDER DESCRIPTION</TableCell>
-                      <TableCell sx={{ fontWeight: 800, color: '#64748B' }}>ASSIGNED CREW</TableCell>
+                      <TableCell sx={{ fontWeight: 800, color: '#64748B' }}>ASSIGNED TO</TableCell>
                       <TableCell sx={{ fontWeight: 800, color: '#64748B' }}>PRIORITY</TableCell>
                       <TableCell sx={{ fontWeight: 800, color: '#64748B' }}>STATUS</TableCell>
                       <TableCell align="right" sx={{ fontWeight: 800, color: '#64748B' }}>ACTIONS</TableCell>
@@ -1876,15 +1724,14 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <Typography sx={{ fontWeight: 800, color: '#0F2942' }}>{task.flightNumber}</Typography>
-                          <Typography sx={{ fontSize: '0.74rem', color: '#0284C7', fontWeight: 700 }}>{task.stand}</Typography>
+                          {task.stand && <Typography sx={{ fontSize: '0.74rem', color: '#0284C7', fontWeight: 700 }}>{task.stand}</Typography>}
                         </TableCell>
                         <TableCell>
                           <Typography sx={{ fontWeight: 700, fontSize: '0.84rem', color: '#1E293B' }}>{task.title}</Typography>
                           <Typography sx={{ fontSize: '0.72rem', color: '#64748B' }}>{task.notes}</Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography sx={{ fontSize: '0.82rem', fontWeight: 700 }}>{task.assignedCrew}</Typography>
-                          <Typography sx={{ fontSize: '0.72rem', color: '#64748B' }}>{task.assignedStaff}</Typography>
+                          <Typography sx={{ fontSize: '0.82rem', fontWeight: 700 }}>{task.assignedStaff || 'Unassigned'}</Typography>
                         </TableCell>
                         <TableCell>{getPriorityBadge(task.priority)}</TableCell>
                         <TableCell>
@@ -1892,6 +1739,8 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                             <Chip label="COMPLETED" size="small" sx={{ bgcolor: '#DCFCE7', color: '#15803D', fontWeight: 800, fontSize: '0.68rem' }} />
                           ) : task.status === 'IN_PROGRESS' ? (
                             <Chip label="IN PROGRESS" size="small" sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontWeight: 800, fontSize: '0.68rem' }} />
+                          ) : task.status === 'BLOCKED' ? (
+                            <Chip label="BLOCKED" size="small" sx={{ bgcolor: '#FEE2E2', color: '#B91C1C', fontWeight: 800, fontSize: '0.68rem' }} />
                           ) : (
                             <Chip label="PENDING" size="small" sx={{ bgcolor: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', fontWeight: 800, fontSize: '0.68rem' }} />
                           )}
@@ -1910,10 +1759,12 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                               <Button
                                 size="small"
                                 variant="contained"
-                                onClick={() => handleMarkTaskCompleted(task.id)}
-                                sx={{ bgcolor: '#10B981', color: '#FFF', textTransform: 'none', fontWeight: 700, fontSize: '0.72rem', borderRadius: '6px' }}
+                                onClick={() =>
+                                  task.status === 'IN_PROGRESS' ? handleMarkTaskCompleted(task) : task.status === 'BLOCKED' ? handleMarkTaskResumed(task) : handleMarkTaskStarted(task)
+                                }
+                                sx={{ bgcolor: task.status === 'IN_PROGRESS' ? '#10B981' : task.status === 'BLOCKED' ? '#DC2626' : '#0284C7', color: '#FFF', textTransform: 'none', fontWeight: 700, fontSize: '0.72rem', borderRadius: '6px' }}
                               >
-                                Complete
+                                {task.status === 'IN_PROGRESS' ? 'Complete' : task.status === 'BLOCKED' ? 'Resume' : 'Start'}
                               </Button>
                             )}
                           </Box>
@@ -1924,6 +1775,13 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                 </Table>
               </TableContainer>
             </Card>
+            {filteredTasks.length < taskTotal && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Button onClick={() => fetchTasks(taskPage + 1)} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                  Show more ({taskTotal - filteredTasks.length} remaining)
+                </Button>
+              </Box>
+            )}
           </Box>
         )}
 
@@ -1935,10 +1793,10 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Box>
                 <Typography variant="h4" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
-                  Apron Crew Dispatch & Assignment
+                  Ramp Staff Dispatch & Assignment
                 </Typography>
                 <Typography sx={{ fontSize: '0.86rem', color: '#64748B' }}>
-                  Deploy specialized ground handling crews across Central Terminal apron stands.
+                  Active ramp agents and their current workload, least busy first.
                 </Typography>
               </Box>
             </Box>
@@ -1950,80 +1808,63 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
                 gap: 2.5,
               }}
             >
-              {crews.map((crew) => (
-                <Card
-                  key={crew.id}
-                  elevation={0}
-                  sx={{
-                    p: 2.5,
-                    backgroundColor: '#FFFFFF',
-                    borderRadius: '16px',
-                    border: '1px solid #E2E8F0',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
-                      <Box>
-                        <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1rem', color: '#0F2942' }}>
-                          {crew.name}
-                        </Typography>
-                        <Typography sx={{ fontSize: '0.76rem', color: '#64748B' }}>{crew.department}</Typography>
-                      </Box>
-                      <Chip
-                        label={crew.status}
-                        size="small"
-                        sx={{
-                          bgcolor: crew.status === 'AVAILABLE' ? '#DCFCE7' : crew.status === 'ENGAGED' ? '#FEF3C7' : '#F1F5F9',
-                          color: crew.status === 'AVAILABLE' ? '#15803D' : crew.status === 'ENGAGED' ? '#D97706' : '#64748B',
-                          fontWeight: 800,
-                          fontSize: '0.68rem',
-                        }}
-                      />
-                    </Box>
-
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, my: 2 }}>
-                      <Typography sx={{ fontSize: '0.8rem', color: '#475569' }}>
-                        Crew Lead: <strong>{crew.lead}</strong>
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.8rem', color: '#475569' }}>
-                        Current Location: <strong style={{ color: '#0284C7' }}>{crew.standLocation}</strong>
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.8rem', color: '#475569' }}>
-                        Deployed Specialists: <strong>{crew.members} personnel</strong>
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.8rem', color: '#475569' }}>
-                        Active Workorders: <strong>{crew.activeTasks} in flight</strong>
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    onClick={() => {
-                      setNewTaskCrew(crew.name);
-                      setNewTaskStaff(crew.lead);
-                      setCreateTaskOpen(true);
-                    }}
-                    sx={{
-                      bgcolor: '#0F2942',
-                      color: '#FFFFFF',
-                      fontFamily: "'Outfit', sans-serif",
-                      fontWeight: 700,
-                      fontSize: '0.8rem',
-                      textTransform: 'none',
-                      borderRadius: '8px',
-                      py: 0.8,
-                      '&:hover': { bgcolor: '#1E3A5F' },
-                    }}
+              {staff.length === 0 && (
+                <Typography sx={{ color: '#64748B', fontSize: '0.86rem' }}>
+                  No ramp staff loaded. This list is only available to supervisors, managers and administrators.
+                </Typography>
+              )}
+              {staff.map((member) => {
+                const state = member.inProgressTasks > 0 ? 'ENGAGED' : member.openTasks > 0 ? 'QUEUED' : 'AVAILABLE';
+                return (
+                  <Card
+                    key={member.userId}
+                    elevation={0}
+                    sx={{ p: 2.5, backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
                   >
-                    Deploy New Workorder to Crew
-                  </Button>
-                </Card>
-              ))}
+                    <Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                        <Box>
+                          <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1rem', color: '#0F2942' }}>
+                            {member.name}
+                          </Typography>
+                          <Typography sx={{ fontSize: '0.76rem', color: '#64748B' }}>
+                            {member.username} · {member.departmentName?.replace(/_/g, ' ')}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          label={state}
+                          size="small"
+                          sx={{
+                            bgcolor: state === 'AVAILABLE' ? '#DCFCE7' : state === 'ENGAGED' ? '#FEF3C7' : '#F1F5F9',
+                            color: state === 'AVAILABLE' ? '#15803D' : state === 'ENGAGED' ? '#D97706' : '#64748B',
+                            fontWeight: 800,
+                            fontSize: '0.68rem',
+                          }}
+                        />
+                      </Box>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, my: 2 }}>
+                        <Typography sx={{ fontSize: '0.8rem', color: '#475569' }}>
+                          In progress: <strong>{member.inProgressTasks}</strong>
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.8rem', color: '#475569' }}>
+                          Open workorders (pending, running, blocked): <strong>{member.openTasks}</strong>
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      onClick={() => {
+                        setNewTaskUserId(member.userId);
+                        setCreateTaskOpen(true);
+                      }}
+                      sx={{ bgcolor: '#0F2942', color: '#FFFFFF', fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '0.8rem', textTransform: 'none', borderRadius: '8px', py: 0.8, '&:hover': { bgcolor: '#1E3A5F' } }}
+                    >
+                      Give {member.name.split(' ')[0]} a workorder
+                    </Button>
+                  </Card>
+                );
+              })}
             </Box>
           </Box>
         )}
@@ -2149,29 +1990,24 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {[
-                {
-                  id: 'n1',
-                  time: '5 mins ago',
-                  title: 'Stand G12 Hydraulic Check',
-                  body: 'Avionics team is completing the secondary sensor calibration on flight AI-203. Stand pushback window adjusted to 23:42 UTC.',
-                  type: 'WARN',
-                },
-                {
-                  id: 'n2',
-                  time: '18 mins ago',
-                  title: 'Stand G04 Turnaround Completed',
-                  body: 'Vistara flight UK-901 has completed all ground servicing checks. Towbar hitch confirmed for pushback.',
-                  type: 'SUCCESS',
-                },
-                {
-                  id: 'n3',
-                  time: '42 mins ago',
-                  title: 'GSE Equipment Swap: Stand G14',
-                  body: 'Catering lift truck replaced with unit #7. Apron safety officer has cleared stand for service resumption.',
-                  type: 'INFO',
-                },
-              ].map((n) => (
+              {flights.length === 0 && (
+                <Typography sx={{ color: '#64748B', fontSize: '0.86rem' }}>No flights have turnaround work in progress or blocked right now.</Typography>
+              )}
+              {flights
+                .map((f) => {
+                  const stages = [f.cleaningStatus, f.fuelingStatus, f.maintenanceStatus, f.securityStatus];
+                  const blocked = stages.includes('BLOCKED') || f.supervisorNotes.startsWith('Blocked');
+                  const running = stages.includes('IN_PROGRESS');
+                  return {
+                    id: f.id,
+                    time: f.etaEtd ? `ETD ${f.etaEtd}` : '',
+                    title: `${f.flightNumber} · ${f.stand}`,
+                    body: blocked ? `${f.supervisorNotes}. ${f.airline} ${f.aircraft}.` : running ? `Turnaround work running (${f.overallProgress}% of tasks done).` : `${f.overallProgress}% of tasks done.`,
+                    type: blocked ? 'WARN' : f.overallProgress === 100 ? 'SUCCESS' : 'INFO',
+                  };
+                })
+                .sort((x, y) => Number(y.type === 'WARN') - Number(x.type === 'WARN'))
+                .map((n) => (
                 <Card
                   key={n.id}
                   elevation={0}
@@ -2298,92 +2134,49 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
         }}
       >
         <DialogTitle sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
-          Dispatch New Ground Workorder
+          New Turnaround Workorder
         </DialogTitle>
         <DialogContent dividers>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.2, pt: 1 }}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Flight Number</InputLabel>
-                <Select
-                  value={newTaskFlight}
-                  label="Flight Number"
-                  onChange={(e) => setNewTaskFlight(e.target.value)}
-                >
-                  {flights.map((f) => (
-                    <MenuItem key={f.id} value={f.flightNumber}>
-                      {f.flightNumber} ({f.stand})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+            <FormControl fullWidth size="small">
+              <InputLabel>Flight</InputLabel>
+              <Select value={newTaskFlightId} label="Flight" onChange={(e) => setNewTaskFlightId(Number(e.target.value))}>
+                {flights.map((f) => (
+                  <MenuItem key={f.id} value={f.flightId}>
+                    {f.flightNumber} ({f.stand})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-              <FormControl fullWidth size="small">
-                <InputLabel>Turnaround Stage</InputLabel>
-                <Select
-                  value={newTaskType}
-                  label="Turnaround Stage"
-                  onChange={(e) => setNewTaskType(e.target.value as TaskStage)}
-                >
-                  <MenuItem value="CLEANING">Cleaning & Hospitality</MenuItem>
-                  <MenuItem value="FUELING">Apron Refueling</MenuItem>
-                  <MenuItem value="MAINTENANCE">Line Maintenance</MenuItem>
-                  <MenuItem value="SECURITY">Airside Security</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
+            <FormControl fullWidth size="small">
+              <InputLabel>Task</InputLabel>
+              <Select value={newTaskName} label="Task" onChange={(e) => setNewTaskName(e.target.value)}>
+                {TASK_NAME_OPTIONS.map((n) => (
+                  <MenuItem key={n} value={n}>
+                    {n}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-            <TextField
-              label="Workorder Title / Action Summary"
-              size="small"
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              placeholder="e.g. Inspect hydraulic sensor pressure, Refuel 14,000 kg..."
-              fullWidth
-            />
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Assigned Crew</InputLabel>
-                <Select
-                  value={newTaskCrew}
-                  label="Assigned Crew"
-                  onChange={(e) => {
-                    const c = crews.find((crw) => crw.name === e.target.value);
-                    setNewTaskCrew(e.target.value);
-                    if (c) setNewTaskStaff(c.lead);
-                  }}
-                >
-                  {crews.map((crw) => (
-                    <MenuItem key={crw.id} value={crw.name}>
-                      {crw.name} ({crw.standLocation})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <FormControl fullWidth size="small">
-                <InputLabel>Priority Level</InputLabel>
-                <Select
-                  value={newTaskPriority}
-                  label="Priority Level"
-                  onChange={(e) => setNewTaskPriority(e.target.value as TaskPriority)}
-                >
-                  <MenuItem value="HIGH">High (Blocking Turnaround)</MenuItem>
-                  <MenuItem value="MEDIUM">Medium (Standard)</MenuItem>
-                  <MenuItem value="LOW">Routine / Low</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-
-            <TextField
-              label="Target Completion Time (UTC)"
-              size="small"
-              value={newTaskTime}
-              onChange={(e) => setNewTaskTime(e.target.value)}
-              placeholder="e.g. 23:45 UTC"
-              fullWidth
-            />
+            <FormControl fullWidth size="small">
+              <InputLabel>Assign to (optional)</InputLabel>
+              <Select
+                value={newTaskUserId}
+                label="Assign to (optional)"
+                onChange={(e) => setNewTaskUserId(String(e.target.value) === '' ? '' : Number(e.target.value))}
+              >
+                <MenuItem value="">
+                  <em>Leave unassigned</em>
+                </MenuItem>
+                {staff.map((m) => (
+                  <MenuItem key={m.userId} value={m.userId}>
+                    {m.name} ({m.username}) · {m.openTasks} open
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
@@ -2418,35 +2211,23 @@ export const GroundOpsSupervisorDashboard: React.FC = () => {
         <DialogContent dividers>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <Typography sx={{ fontSize: '0.84rem', color: '#475569' }}>
-              Reassign workorder for <strong>{activeTaskToAssign?.flightNumber}</strong> ({activeTaskToAssign?.stand})
+              Assign <strong>{activeTaskToAssign?.title}</strong> on <strong>{activeTaskToAssign?.flightNumber}</strong>
             </Typography>
 
             <FormControl fullWidth size="small">
-              <InputLabel>Designated Crew</InputLabel>
+              <InputLabel>Staff member</InputLabel>
               <Select
-                value={assignedCrewChoice}
-                label="Designated Crew"
-                onChange={(e) => {
-                  const crw = crews.find((c) => c.name === e.target.value);
-                  setAssignedCrewChoice(e.target.value);
-                  if (crw) setAssignedStaffChoice(crw.lead);
-                }}
+                value={assignedUserChoice}
+                label="Staff member"
+                onChange={(e) => setAssignedUserChoice(Number(e.target.value))}
               >
-                {crews.map((c) => (
-                  <MenuItem key={c.id} value={c.name}>
-                    {c.name} ({c.status})
+                {staff.map((m) => (
+                  <MenuItem key={m.userId} value={m.userId}>
+                    {m.name} ({m.username}) · {m.openTasks} open
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
-
-            <TextField
-              label="Assigned Lead / Specialist"
-              size="small"
-              value={assignedStaffChoice}
-              onChange={(e) => setAssignedStaffChoice(e.target.value)}
-              fullWidth
-            />
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>

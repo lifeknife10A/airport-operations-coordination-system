@@ -338,7 +338,7 @@ const SEED_NOTIFICATIONS: OperationalNotification[] = [
 // ============================================================================
 
 // Pulls the most useful message out of a failed axios call (backend ProblemDetail `detail`).
-const describeApiError = (e: unknown): string => {
+export const describeApiError = (e: unknown): string => {
   const err = e as { response?: { data?: { detail?: string; message?: string } }; message?: string };
   return err?.response?.data?.detail || err?.response?.data?.message || err?.message || 'request failed';
 };
