@@ -262,17 +262,16 @@ export interface StaffUserSummary {
   department: string;
   email: string;
   status: 'ACTIVE' | 'OFF_DUTY' | 'ON_SHIFT';
-  password: string;
 }
 
 const SEED_STAFF_USERS: StaffUserSummary[] = [
-  { userId: 10, fullName: 'Aarav Li', roleName: 'System Administrator', department: 'Terminal Management', email: 'admin@saphire.in', status: 'ACTIVE', password: 'pass' },
-  { userId: 11, fullName: 'Sai Sharma', roleName: 'AOCC Operations Manager', department: 'Flight Operations', email: 'aocc@saphire.in', status: 'ACTIVE', password: 'pass' },
-  { userId: 12, fullName: 'Riya Johnson', roleName: 'Ground Ops Supervisor', department: 'Ground Handling', email: 'ground@saphire.in', status: 'ACTIVE', password: 'pass' },
-  { userId: 13, fullName: 'Elena Tanaka', roleName: 'Airline Billing Clerk', department: 'Finance & Billing', email: 'billing@saphire.in', status: 'ACTIVE', password: 'pass' },
-  { userId: 14, fullName: 'Marcus Vance', roleName: 'Gate Agent / Airside Lead', department: 'Airside Operations', email: 'airside@saphire.in', status: 'ACTIVE', password: 'pass' },
-  { userId: 15, fullName: 'Tariq Al-Mansoor', roleName: 'Baggage / Cargo Supervisor', department: 'Logistics', email: 'logistics@saphire.in', status: 'ACTIVE', password: 'pass' },
-  { userId: 16, fullName: 'Aarav Patel', roleName: 'Security Officer', department: 'Terminal Security', email: 'security@saphire.in', status: 'ACTIVE', password: 'pass' },
+  { userId: 10, fullName: 'Aarav Li', roleName: 'System Administrator', department: 'Terminal Management', email: 'admin@saphire.in', status: 'ACTIVE' },
+  { userId: 11, fullName: 'Sai Sharma', roleName: 'AOCC Operations Manager', department: 'Flight Operations', email: 'aocc@saphire.in', status: 'ACTIVE' },
+  { userId: 12, fullName: 'Riya Johnson', roleName: 'Ground Ops Supervisor', department: 'Ground Handling', email: 'ground@saphire.in', status: 'ACTIVE' },
+  { userId: 13, fullName: 'Elena Tanaka', roleName: 'Airline Billing Clerk', department: 'Finance & Billing', email: 'billing@saphire.in', status: 'ACTIVE' },
+  { userId: 14, fullName: 'Marcus Vance', roleName: 'Gate Agent / Airside Lead', department: 'Airside Operations', email: 'airside@saphire.in', status: 'ACTIVE' },
+  { userId: 15, fullName: 'Tariq Al-Mansoor', roleName: 'Baggage / Cargo Supervisor', department: 'Logistics', email: 'logistics@saphire.in', status: 'ACTIVE' },
+  { userId: 16, fullName: 'Aarav Patel', roleName: 'Security Officer', department: 'Terminal Security', email: 'security@saphire.in', status: 'ACTIVE' },
 ];
 
 const SEED_NOTIFICATIONS: OperationalNotification[] = [
@@ -908,7 +907,7 @@ public async updateFlightStatus(flightNumber: string, status: Flight['status'], 
   }
 
   // Administrative Override 3: Clear All Turnaround Prerequisites for a Flight
-  public adminClearAllTurnaroundPrerequisites(flightNumber: string, supervisorPin: string): boolean {
+  public adminClearAllTurnaroundPrerequisites(flightNumber: string): boolean {
     this.tasks = this.tasks.map((t) =>
       t.flightNumber === flightNumber
         ? { ...t, status: 'COMPLETED', actualEnd: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
@@ -918,7 +917,7 @@ public async updateFlightStatus(flightNumber: string, status: Flight['status'], 
 
     this.logAuditEvent(
       'ADMIN_TURNAROUND_CLEAR_ALL',
-      `Administrative override: All turnaround prerequisites for ${flightNumber} authorized and signed off by supervisor (PIN: ${supervisorPin})`,
+      `Administrative override: All turnaround prerequisites for ${flightNumber} authorized and signed off by the system administrator`,
       'System Administrator'
     );
 

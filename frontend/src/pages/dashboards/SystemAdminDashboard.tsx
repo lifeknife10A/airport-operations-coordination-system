@@ -273,7 +273,6 @@ export const SystemAdminDashboard: React.FC = () => {
   const [overrideReason, setOverrideReason] = useState('Administrative operational dispatch acceleration');
   const [overrideGateCode, setOverrideGateCode] = useState('B12');
   const [overrideBypassConflict, setOverrideBypassConflict] = useState(true);
-  const [overridePin, setOverridePin] = useState('8821');
   const [overrideTerminal, setOverrideTerminal] = useState('Concourse B');
   const [terminalLocked, setTerminalLocked] = useState(false);
 
@@ -341,11 +340,8 @@ export const SystemAdminDashboard: React.FC = () => {
   };
 
   const handleExecuteTurnaroundClear = () => {
-    if (overridePin !== '8821' && overridePin !== '1234') {
-      toast.error('Invalid Supervisor Clearance PIN. Verification failed.');
-      return;
-    }
-    aocsDataStore.adminClearAllTurnaroundPrerequisites(overrideFlightNum, overridePin);
+    // Authorization is enforced by the server (system-administrator role), not by a PIN typed here.
+    aocsDataStore.adminClearAllTurnaroundPrerequisites(overrideFlightNum);
     toast.success(`Turnaround sign-off verified for ${overrideFlightNum}. Boarding turnstiles unlocked.`);
     setOverrideModalOpen(false);
   };
@@ -2451,15 +2447,6 @@ export const SystemAdminDashboard: React.FC = () => {
                     ))}
                   </Select>
                 </FormControl>
-
-                <TextField
-                  fullWidth
-                  label="Supervisor Authorization PIN"
-                  placeholder="Enter 8821"
-                  value={overridePin}
-                  onChange={(e) => setOverridePin(e.target.value)}
-                  helperText="Default supervisor authority PIN: 8821"
-                />
               </Box>
 
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 1 }}>
