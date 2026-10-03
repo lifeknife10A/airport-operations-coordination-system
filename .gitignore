@@ -26,4 +26,9 @@ skills-lock.json
 
 # Video production raw captures
 video_production/raw_video/
+video_production/raw_video_clean/
+video_production/audio/*.wav
+video_production/audio/*.aiff
+video_production/audio/*.txt
+
 
