@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1350 850" width="1350" height="850" style="background:#ffffff; font-family:'Segoe UI', Helvetica, Arial, sans-serif;">
+  <!-- Title -->
+  <text x="50" y="40" fill="#000000" font-size="18" font-weight="bold">Saphire AOCS — UML Use Case Diagram (Lab 03)</text>
+  <text x="1050" y="40" fill="#666666" font-size="12">Roll No: I075, I078, I080, I088</text>
+
+  <!-- System Boundary -->
+  <rect x="260" y="60" width="830" height="760" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+  <text x="280" y="88" fill="#000000" font-size="14" font-weight="bold">System: Airport Operations Coordination System (AOCS)</text>
+
+  <!-- Left Actors -->
+  <!-- Passenger -->
+  <g transform="translate(60, 110)">
+    <circle cx="40" cy="20" r="14" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="34" x2="40" y2="70" stroke="#000000" stroke-width="2"/>
+    <line x1="15" y1="48" x2="65" y2="48" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="20" y2="105" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="60" y2="105" stroke="#000000" stroke-width="2"/>
+    <text x="40" y="125" text-anchor="middle" fill="#000000" font-size="12" font-weight="bold">Passenger</text>
+  </g>
+
+  <!-- Check-in Agent -->
+  <g transform="translate(60, 270)">
+    <circle cx="40" cy="20" r="14" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="34" x2="40" y2="70" stroke="#000000" stroke-width="2"/>
+    <line x1="15" y1="48" x2="65" y2="48" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="20" y2="105" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="60" y2="105" stroke="#000000" stroke-width="2"/>
+    <text x="40" y="125" text-anchor="middle" fill="#000000" font-size="12" font-weight="bold">Check-In Agent</text>
+  </g>
+
+  <!-- Security Officer -->
+  <g transform="translate(60, 440)">
+    <circle cx="40" cy="20" r="14" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="34" x2="40" y2="70" stroke="#000000" stroke-width="2"/>
+    <line x1="15" y1="48" x2="65" y2="48" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="20" y2="105" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="60" y2="105" stroke="#000000" stroke-width="2"/>
+    <text x="40" y="125" text-anchor="middle" fill="#000000" font-size="12" font-weight="bold">Security Officer</text>
+  </g>
+
+  <!-- Baggage Handler -->
+  <g transform="translate(60, 620)">
+    <circle cx="40" cy="20" r="14" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="34" x2="40" y2="70" stroke="#000000" stroke-width="2"/>
+    <line x1="15" y1="48" x2="65" y2="48" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="20" y2="105" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="60" y2="105" stroke="#000000" stroke-width="2"/>
+    <text x="40" y="125" text-anchor="middle" fill="#000000" font-size="12" font-weight="bold">Baggage Handler</text>
+  </g>
+
+  <!-- Right Actors -->
+  <!-- AOCC Duty Manager -->
+  <g transform="translate(1190, 110)">
+    <circle cx="40" cy="20" r="14" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="34" x2="40" y2="70" stroke="#000000" stroke-width="2"/>
+    <line x1="15" y1="48" x2="65" y2="48" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="20" y2="105" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="60" y2="105" stroke="#000000" stroke-width="2"/>
+    <text x="40" y="125" text-anchor="middle" fill="#000000" font-size="12" font-weight="bold">AOCC Manager</text>
+  </g>
+
+  <!-- Airside Dispatcher -->
+  <g transform="translate(1190, 270)">
+    <circle cx="40" cy="20" r="14" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="34" x2="40" y2="70" stroke="#000000" stroke-width="2"/>
+    <line x1="15" y1="48" x2="65" y2="48" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="20" y2="105" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="60" y2="105" stroke="#000000" stroke-width="2"/>
+    <text x="40" y="125" text-anchor="middle" fill="#000000" font-size="12" font-weight="bold">Airside Dispatcher</text>
+  </g>
+
+  <!-- Ground Supervisor -->
+  <g transform="translate(1190, 440)">
+    <circle cx="40" cy="20" r="14" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="34" x2="40" y2="70" stroke="#000000" stroke-width="2"/>
+    <line x1="15" y1="48" x2="65" y2="48" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="20" y2="105" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="60" y2="105" stroke="#000000" stroke-width="2"/>
+    <text x="40" y="125" text-anchor="middle" fill="#000000" font-size="12" font-weight="bold">Ground Supervisor</text>
+  </g>
+
+  <!-- Billing Clerk / System Admin -->
+  <g transform="translate(1190, 620)">
+    <circle cx="40" cy="20" r="14" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="34" x2="40" y2="70" stroke="#000000" stroke-width="2"/>
+    <line x1="15" y1="48" x2="65" y2="48" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="20" y2="105" stroke="#000000" stroke-width="2"/>
+    <line x1="40" y1="70" x2="60" y2="105" stroke="#000000" stroke-width="2"/>
+    <text x="40" y="125" text-anchor="middle" fill="#000000" font-size="12" font-weight="bold">Billing &amp; Admin</text>
+  </g>
+
+  <!-- Use Cases (All Standard Solid Ovals) -->
+  <!-- UC-01: Track Flight Status -->
+  <ellipse cx="420" cy="140" rx="100" ry="28" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <text x="420" y="144" text-anchor="middle" font-size="12">Track Flight Status</text>
+
+  <!-- UC-02: Submit Inquiries & Claims -->
+  <ellipse cx="420" cy="215" rx="105" ry="28" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <text x="420" y="219" text-anchor="middle" font-size="12">Submit Support Inquiry</text>
+
+  <!-- UC-03: Process Check-In -->
+  <ellipse cx="420" cy="310" rx="100" ry="30" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <text x="420" y="314" text-anchor="middle" font-size="12">Process Pax Check-In</text>
+
+  <!-- UC-03a: Select Seat (Included Use Case - Solid Oval) -->
+  <ellipse cx="675" cy="275" rx="85" ry="24" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <text x="675" y="279" text-anchor="middle" font-size="11">Select Seat Map</text>
+
+  <!-- UC-03b: Issue Boarding Pass (Included Use Case - Solid Oval) -->
+  <ellipse cx="675" cy="340" rx="90" ry="24" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <text x="675" y="344" text-anchor="middle" font-size="11">Issue IATA Pass &amp; Tag</text>
+
+  <!-- UC-04: Screen Passenger & Luggage -->
+  <ellipse cx="420" cy="480" rx="105" ry="30" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <text x="420" y="484" text-anchor="middle" font-size="12">Screen Luggage &amp; Clear</text>
+
+  <!-- UC-05: Baggage Sorter Scan & Reclaim -->
+  <ellipse cx="420" cy="660" rx="105" ry="30" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <text x="420" y="664" text-anchor="middle" font-size="12">Scan &amp; Route Baggage</text>
+
+  <!-- UC-06: Dispatch Flight Turnaround -->
+  <ellipse cx="940" cy="150" rx="105" ry="30" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <text x="940" y="154" text-anchor="middle" font-size="12">Dispatch Turnaround</text>
+
+  <!-- UC-06a: Log Delay Code (Extended Use Case - Solid Oval) -->
+  <ellipse cx="675" cy="150" rx="85" ry="24" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <text x="675" y="154" text-anchor="middle" font-size="11">Log IATA Delay Code</text>
+
+  <!-- UC-07: Assign Gate & Stand -->
+  <ellipse cx="940" cy="310" rx="100" ry="30" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <text x="940" y="314" text-anchor="middle" font-size="12">Assign Gate &amp; Stand</text>
+
+  <!-- UC-07a: Check Wingspan Conflict (Extended Use Case - Solid Oval) -->
+  <ellipse cx="675" cy="420" rx="95" ry="24" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <text x="675" y="424" text-anchor="middle" font-size="11">Detect Wingspan Conflict</text>
+
+  <!-- UC-08: Dispatch Ramp Equipment -->
+  <ellipse cx="940" cy="480" rx="105" ry="30" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <text x="940" y="484" text-anchor="middle" font-size="12">Dispatch Ground Equipment</text>
+
+  <!-- UC-09: Compile Tariff Invoices -->
+  <ellipse cx="940" cy="650" rx="105" ry="30" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <text x="940" y="654" text-anchor="middle" font-size="12">Compile Tariff Invoices</text>
+
+  <!-- Actor to UC Lines -->
+  <line x1="140" y1="150" x2="320" y2="140" stroke="#000000" stroke-width="1.2"/>
+  <line x1="140" y1="160" x2="315" y2="210" stroke="#000000" stroke-width="1.2"/>
+  <line x1="140" y1="320" x2="320" y2="310" stroke="#000000" stroke-width="1.2"/>
+  <line x1="140" y1="490" x2="315" y2="480" stroke="#000000" stroke-width="1.2"/>
+  <line x1="140" y1="670" x2="315" y2="660" stroke="#000000" stroke-width="1.2"/>
+
+  <line x1="1190" y1="150" x2="1045" y2="150" stroke="#000000" stroke-width="1.2"/>
+  <line x1="1190" y1="310" x2="1040" y2="310" stroke="#000000" stroke-width="1.2"/>
+  <line x1="1190" y1="480" x2="1045" y2="480" stroke="#000000" stroke-width="1.2"/>
+  <line x1="1190" y1="660" x2="1045" y2="650" stroke="#000000" stroke-width="1.2"/>
+
+  <!-- Include / Extend Arrows (Only the lines are dashed) -->
+  <line x1="515" y1="295" x2="590" y2="280" stroke="#000000" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="525" y="280" font-size="9" font-style="italic">&lt;&lt;include&gt;&gt;</text>
+
+  <line x1="515" y1="325" x2="585" y2="335" stroke="#000000" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="525" y="345" font-size="9" font-style="italic">&lt;&lt;include&gt;&gt;</text>
+
+  <line x1="760" y1="150" x2="835" y2="150" stroke="#000000" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="770" y="142" font-size="9" font-style="italic">&lt;&lt;extend&gt;&gt;</text>
+
+  <line x1="755" y1="405" x2="855" y2="335" stroke="#000000" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="780" y="380" font-size="9" font-style="italic">&lt;&lt;extend&gt;&gt;</text>
+</svg>

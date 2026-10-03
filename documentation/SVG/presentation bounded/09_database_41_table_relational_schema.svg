@@ -1,0 +1,418 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2600 3200" width="2600" height="3200" style="background:#ffffff; font-family:'Segoe UI', Helvetica, Arial, sans-serif;">
+<rect x="40" y="30" width="2520" height="90" fill="#f8fafc" stroke="#000000" stroke-width="2"/>
+<text x="70" y="72" fill="#000000" font-size="26" font-weight="bold">AIRPORT OPERATIONS COORDINATION SYSTEM (AOCS): RELATIONAL DATABASE SCHEMA</text>
+<text x="70" y="102" fill="#475569" font-size="16">Complete 41-Table Normalized 3NF Architecture | PostgreSQL 18 Engine | Lead Architect: Krishna Solanki (I075) &amp; Team</text>
+<rect x="60" y="150" width="580" height="32" fill="#e2e8f0" stroke="#000000" stroke-width="1.5"/>
+<text x="72" y="171" fill="#0f172a" font-size="12" font-weight="bold">1. SECURITY &amp; IDENTITY GOVERNANCE (5 TABLES)</text>
+<rect x="60" y="192" width="580" height="74" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="60" y="192" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="72" y="211" fill="#000000" font-size="13" font-weight="bold">ROLES</text>
+<text x="74" y="235" fill="#000000" font-size="11" font-weight="bold">[PK] role_id BIGSERIAL</text>
+<line x1="60" y1="240" x2="640" y2="240" stroke="#cbd5e1" stroke-width="1"/>
+<text x="84" y="257" fill="#334155" font-size="10.5">role_name VARCHAR(50) UNIQUE</text>
+<rect x="60" y="282" width="580" height="74" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="60" y="282" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="72" y="301" fill="#000000" font-size="13" font-weight="bold">DEPARTMENTS</text>
+<text x="74" y="325" fill="#000000" font-size="11" font-weight="bold">[PK] department_id BIGSERIAL</text>
+<line x1="60" y1="330" x2="640" y2="330" stroke="#cbd5e1" stroke-width="1"/>
+<text x="84" y="347" fill="#334155" font-size="10.5">department_name VARCHAR(100) UNIQUE</text>
+<rect x="60" y="372" width="580" height="188" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="60" y="372" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="72" y="391" fill="#000000" font-size="13" font-weight="bold">USERS</text>
+<text x="74" y="415" fill="#000000" font-size="11" font-weight="bold">[PK] user_id BIGSERIAL</text>
+<line x1="60" y1="420" x2="640" y2="420" stroke="#cbd5e1" stroke-width="1"/>
+<text x="84" y="437" fill="#334155" font-size="10.5">username VARCHAR(50) UNIQUE</text>
+<text x="84" y="456" fill="#334155" font-size="10.5">name VARCHAR(100)</text>
+<text x="84" y="475" fill="#334155" font-size="10.5">email VARCHAR(150) UNIQUE</text>
+<text x="84" y="494" fill="#334155" font-size="10.5">password_hash VARCHAR(255)</text>
+<text x="84" y="513" fill="#334155" font-size="10.5">account_status VARCHAR(20)</text>
+<text x="74" y="532" fill="#0f172a" font-size="10.5" text-decoration="underline">role_id BIGINT [FK]</text>
+<text x="74" y="551" fill="#0f172a" font-size="10.5" text-decoration="underline">department_id BIGINT [FK]</text>
+<rect x="60" y="576" width="580" height="93" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="60" y="576" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="72" y="595" fill="#000000" font-size="13" font-weight="bold">USER_PHONE_NUMBERS</text>
+<text x="74" y="619" fill="#000000" font-size="11" font-weight="bold">[PK] (user_id, phone_number) [PK]</text>
+<line x1="60" y1="624" x2="640" y2="624" stroke="#cbd5e1" stroke-width="1"/>
+<text x="74" y="641" fill="#0f172a" font-size="10.5" text-decoration="underline">user_id BIGINT [FK]</text>
+<text x="84" y="660" fill="#334155" font-size="10.5">phone_number VARCHAR(30)</text>
+<rect x="60" y="685" width="580" height="150" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="60" y="685" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="72" y="704" fill="#000000" font-size="13" font-weight="bold">AUTH_SESSIONS</text>
+<text x="74" y="728" fill="#000000" font-size="11" font-weight="bold">[PK] session_id BIGSERIAL</text>
+<line x1="60" y1="733" x2="640" y2="733" stroke="#cbd5e1" stroke-width="1"/>
+<text x="84" y="750" fill="#334155" font-size="10.5">token_hash VARCHAR(64) UNIQUE</text>
+<text x="74" y="769" fill="#0f172a" font-size="10.5" text-decoration="underline">user_id BIGINT [FK]</text>
+<text x="84" y="788" fill="#334155" font-size="10.5">is_active BOOLEAN</text>
+<text x="84" y="807" fill="#334155" font-size="10.5">created_at TIMESTAMPTZ</text>
+<text x="84" y="826" fill="#334155" font-size="10.5">revoked_at TIMESTAMPTZ</text>
+<rect x="60" y="865" width="580" height="32" fill="#e2e8f0" stroke="#000000" stroke-width="1.5"/>
+<text x="72" y="886" fill="#0f172a" font-size="12" font-weight="bold">3. FLIGHT OPERATIONS &amp; DISPATCH (5 TABLES)</text>
+<rect x="60" y="907" width="580" height="169" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="60" y="907" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="72" y="926" fill="#000000" font-size="13" font-weight="bold">WEATHER_REPORTS</text>
+<text x="74" y="950" fill="#000000" font-size="11" font-weight="bold">[PK] report_id BIGSERIAL</text>
+<line x1="60" y1="955" x2="640" y2="955" stroke="#cbd5e1" stroke-width="1"/>
+<text x="74" y="972" fill="#0f172a" font-size="10.5" text-decoration="underline">airport_id BIGINT [FK]</text>
+<text x="84" y="991" fill="#334155" font-size="10.5">visibility_meters INT</text>
+<text x="84" y="1010" fill="#334155" font-size="10.5">wind_speed_knots INT</text>
+<text x="84" y="1029" fill="#334155" font-size="10.5">temperature_celsius NUMERIC(4,1)</text>
+<text x="84" y="1048" fill="#334155" font-size="10.5">runway_condition VARCHAR(20)</text>
+<text x="84" y="1067" fill="#334155" font-size="10.5">observation_time TIMESTAMPTZ</text>
+<rect x="60" y="1092" width="580" height="131" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="60" y="1092" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="72" y="1111" fill="#000000" font-size="13" font-weight="bold">GATE_ASSIGNMENT_RULES</text>
+<text x="74" y="1135" fill="#000000" font-size="11" font-weight="bold">[PK] rule_id BIGSERIAL</text>
+<line x1="60" y1="1140" x2="640" y2="1140" stroke="#cbd5e1" stroke-width="1"/>
+<text x="74" y="1157" fill="#0f172a" font-size="10.5" text-decoration="underline">gate_id BIGINT [FK]</text>
+<text x="74" y="1176" fill="#0f172a" font-size="10.5" text-decoration="underline">type_id BIGINT [FK]</text>
+<text x="84" y="1195" fill="#334155" font-size="10.5">max_wingspan_meters NUMERIC(5,2)</text>
+<text x="84" y="1214" fill="#334155" font-size="10.5">max_weight_mtow_kg NUMERIC(10,2)</text>
+<rect x="60" y="1239" width="580" height="340" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="60" y="1239" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="72" y="1258" fill="#000000" font-size="13" font-weight="bold">FLIGHTS</text>
+<text x="74" y="1282" fill="#000000" font-size="11" font-weight="bold">[PK] flight_id BIGSERIAL</text>
+<line x1="60" y1="1287" x2="640" y2="1287" stroke="#cbd5e1" stroke-width="1"/>
+<text x="84" y="1304" fill="#334155" font-size="10.5">flight_number VARCHAR(10)</text>
+<text x="84" y="1323" fill="#334155" font-size="10.5">flight_status VARCHAR(20)</text>
+<text x="84" y="1342" fill="#334155" font-size="10.5">flight_type VARCHAR(15)</text>
+<text x="74" y="1361" fill="#0f172a" font-size="10.5" text-decoration="underline">origin_airport_id BIGINT [FK]</text>
+<text x="74" y="1380" fill="#0f172a" font-size="10.5" text-decoration="underline">destination_airport_id BIGINT [FK]</text>
+<text x="74" y="1399" fill="#0f172a" font-size="10.5" text-decoration="underline">airline_id BIGINT [FK]</text>
+<text x="74" y="1418" fill="#0f172a" font-size="10.5" text-decoration="underline">aircraft_id BIGINT [FK]</text>
+<text x="74" y="1437" fill="#0f172a" font-size="10.5" text-decoration="underline">gate_id BIGINT [FK]</text>
+<text x="74" y="1456" fill="#0f172a" font-size="10.5" text-decoration="underline">stand_id BIGINT [FK]</text>
+<text x="74" y="1475" fill="#0f172a" font-size="10.5" text-decoration="underline">runway_id BIGINT [FK]</text>
+<text x="84" y="1494" fill="#334155" font-size="10.5">scheduled_departure_time TIMESTAMPTZ</text>
+<text x="84" y="1513" fill="#334155" font-size="10.5">actual_departure_time TIMESTAMPTZ</text>
+<text x="84" y="1532" fill="#334155" font-size="10.5">scheduled_arrival_time TIMESTAMPTZ</text>
+<text x="84" y="1551" fill="#334155" font-size="10.5">actual_arrival_time TIMESTAMPTZ</text>
+<text x="74" y="1570" fill="#0f172a" font-size="10.5" text-decoration="underline">inbound_flight_id BIGINT [FK]</text>
+<rect x="60" y="1595" width="580" height="93" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="60" y="1595" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="72" y="1614" fill="#000000" font-size="13" font-weight="bold">DELAY_CODES</text>
+<text x="74" y="1638" fill="#000000" font-size="11" font-weight="bold">[PK] delay_code VARCHAR(10) [PK]</text>
+<line x1="60" y1="1643" x2="640" y2="1643" stroke="#cbd5e1" stroke-width="1"/>
+<text x="84" y="1660" fill="#334155" font-size="10.5">category VARCHAR(50)</text>
+<text x="84" y="1679" fill="#334155" font-size="10.5">description VARCHAR(255)</text>
+<rect x="60" y="1704" width="580" height="150" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="60" y="1704" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="72" y="1723" fill="#000000" font-size="13" font-weight="bold">DELAY_LOGS</text>
+<text x="74" y="1747" fill="#000000" font-size="11" font-weight="bold">[PK] (flight_id, delay_seq_no) [PK]</text>
+<line x1="60" y1="1752" x2="640" y2="1752" stroke="#cbd5e1" stroke-width="1"/>
+<text x="74" y="1769" fill="#0f172a" font-size="10.5" text-decoration="underline">flight_id BIGINT [FK]</text>
+<text x="84" y="1788" fill="#334155" font-size="10.5">delay_seq_no INT</text>
+<text x="74" y="1807" fill="#0f172a" font-size="10.5" text-decoration="underline">delay_code VARCHAR(10) [FK]</text>
+<text x="84" y="1826" fill="#334155" font-size="10.5">delay_minutes INT</text>
+<text x="74" y="1845" fill="#0f172a" font-size="10.5" text-decoration="underline">logged_by_user_id BIGINT [FK]</text>
+<rect x="690" y="150" width="580" height="32" fill="#e2e8f0" stroke="#000000" stroke-width="1.5"/>
+<text x="702" y="171" fill="#0f172a" font-size="12" font-weight="bold">2. AERODROME &amp; AIRFIELD INFRASTRUCTURE (8 TABLES)</text>
+<rect x="690" y="192" width="580" height="131" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="690" y="192" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="702" y="211" fill="#000000" font-size="13" font-weight="bold">AIRLINES</text>
+<text x="704" y="235" fill="#000000" font-size="11" font-weight="bold">[PK] airline_id BIGSERIAL</text>
+<line x1="690" y1="240" x2="1270" y2="240" stroke="#cbd5e1" stroke-width="1"/>
+<text x="714" y="257" fill="#334155" font-size="10.5">iata_code VARCHAR(10) UNIQUE</text>
+<text x="714" y="276" fill="#334155" font-size="10.5">icao_code VARCHAR(10) UNIQUE</text>
+<text x="714" y="295" fill="#334155" font-size="10.5">airline_name VARCHAR(100)</text>
+<text x="714" y="314" fill="#334155" font-size="10.5">country VARCHAR(50)</text>
+<rect x="690" y="339" width="580" height="169" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="690" y="339" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="702" y="358" fill="#000000" font-size="13" font-weight="bold">AIRPORTS</text>
+<text x="704" y="382" fill="#000000" font-size="11" font-weight="bold">[PK] airport_id BIGSERIAL</text>
+<line x1="690" y1="387" x2="1270" y2="387" stroke="#cbd5e1" stroke-width="1"/>
+<text x="714" y="404" fill="#334155" font-size="10.5">iata_code VARCHAR(10) UNIQUE</text>
+<text x="714" y="423" fill="#334155" font-size="10.5">icao_code VARCHAR(10) UNIQUE</text>
+<text x="714" y="442" fill="#334155" font-size="10.5">airport_name VARCHAR(100)</text>
+<text x="714" y="461" fill="#334155" font-size="10.5">city VARCHAR(50)</text>
+<text x="714" y="480" fill="#334155" font-size="10.5">country VARCHAR(50)</text>
+<text x="714" y="499" fill="#334155" font-size="10.5">timezone VARCHAR(50)</text>
+<rect x="690" y="524" width="580" height="169" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="690" y="524" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="702" y="543" fill="#000000" font-size="13" font-weight="bold">AIRCRAFT_TYPES</text>
+<text x="704" y="567" fill="#000000" font-size="11" font-weight="bold">[PK] type_id BIGSERIAL</text>
+<line x1="690" y1="572" x2="1270" y2="572" stroke="#cbd5e1" stroke-width="1"/>
+<text x="714" y="589" fill="#334155" font-size="10.5">type_code VARCHAR(20) UNIQUE</text>
+<text x="714" y="608" fill="#334155" font-size="10.5">manufacturer VARCHAR(50)</text>
+<text x="714" y="627" fill="#334155" font-size="10.5">model_name VARCHAR(50)</text>
+<text x="714" y="646" fill="#334155" font-size="10.5">wingspan_meters NUMERIC(5,2)</text>
+<text x="714" y="665" fill="#334155" font-size="10.5">mtow_kg NUMERIC(10,2)</text>
+<text x="714" y="684" fill="#334155" font-size="10.5">max_passenger_capacity INT</text>
+<rect x="690" y="709" width="580" height="112" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="690" y="709" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="702" y="728" fill="#000000" font-size="13" font-weight="bold">AIRCRAFT</text>
+<text x="704" y="752" fill="#000000" font-size="11" font-weight="bold">[PK] aircraft_id BIGSERIAL</text>
+<line x1="690" y1="757" x2="1270" y2="757" stroke="#cbd5e1" stroke-width="1"/>
+<text x="714" y="774" fill="#334155" font-size="10.5">registration_number VARCHAR(20) UNIQUE</text>
+<text x="704" y="793" fill="#0f172a" font-size="10.5" text-decoration="underline">type_id BIGINT [FK]</text>
+<text x="704" y="812" fill="#0f172a" font-size="10.5" text-decoration="underline">airline_id BIGINT [FK]</text>
+<rect x="690" y="837" width="580" height="131" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="690" y="837" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="702" y="856" fill="#000000" font-size="13" font-weight="bold">GATES</text>
+<text x="704" y="880" fill="#000000" font-size="11" font-weight="bold">[PK] gate_id BIGSERIAL</text>
+<line x1="690" y1="885" x2="1270" y2="885" stroke="#cbd5e1" stroke-width="1"/>
+<text x="714" y="902" fill="#334155" font-size="10.5">gate_number VARCHAR(10) UNIQUE</text>
+<text x="714" y="921" fill="#334155" font-size="10.5">terminal VARCHAR(10)</text>
+<text x="714" y="940" fill="#334155" font-size="10.5">concourse VARCHAR(10)</text>
+<text x="714" y="959" fill="#334155" font-size="10.5">is_operational BOOLEAN</text>
+<rect x="690" y="984" width="580" height="112" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="690" y="984" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="702" y="1003" fill="#000000" font-size="13" font-weight="bold">CHECKIN_COUNTERS</text>
+<text x="704" y="1027" fill="#000000" font-size="11" font-weight="bold">[PK] counter_id BIGSERIAL</text>
+<line x1="690" y1="1032" x2="1270" y2="1032" stroke="#cbd5e1" stroke-width="1"/>
+<text x="714" y="1049" fill="#334155" font-size="10.5">counter_number VARCHAR(20) UNIQUE</text>
+<text x="714" y="1068" fill="#334155" font-size="10.5">terminal VARCHAR(10)</text>
+<text x="704" y="1087" fill="#0f172a" font-size="10.5" text-decoration="underline">allocated_airline_id BIGINT [FK]</text>
+<rect x="690" y="1112" width="580" height="131" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="690" y="1112" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="702" y="1131" fill="#000000" font-size="13" font-weight="bold">STANDS</text>
+<text x="704" y="1155" fill="#000000" font-size="11" font-weight="bold">[PK] stand_id BIGSERIAL</text>
+<line x1="690" y1="1160" x2="1270" y2="1160" stroke="#cbd5e1" stroke-width="1"/>
+<text x="714" y="1177" fill="#334155" font-size="10.5">stand_number VARCHAR(20) UNIQUE</text>
+<text x="714" y="1196" fill="#334155" font-size="10.5">is_remote BOOLEAN</text>
+<text x="714" y="1215" fill="#334155" font-size="10.5">has_jetbridge BOOLEAN</text>
+<text x="704" y="1234" fill="#0f172a" font-size="10.5" text-decoration="underline">assigned_gate_id BIGINT [FK]</text>
+<rect x="690" y="1259" width="580" height="150" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="690" y="1259" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="702" y="1278" fill="#000000" font-size="13" font-weight="bold">RUNWAYS</text>
+<text x="704" y="1302" fill="#000000" font-size="11" font-weight="bold">[PK] runway_id BIGSERIAL</text>
+<line x1="690" y1="1307" x2="1270" y2="1307" stroke="#cbd5e1" stroke-width="1"/>
+<text x="714" y="1324" fill="#334155" font-size="10.5">runway_code VARCHAR(10) UNIQUE</text>
+<text x="714" y="1343" fill="#334155" font-size="10.5">operational_status VARCHAR(30)</text>
+<text x="714" y="1362" fill="#334155" font-size="10.5">surface_friction NUMERIC(3,2)</text>
+<text x="714" y="1381" fill="#334155" font-size="10.5">active_ils_frequency VARCHAR(20)</text>
+<text x="714" y="1400" fill="#334155" font-size="10.5">visual_range_meters INT</text>
+<rect x="1320" y="150" width="580" height="32" fill="#e2e8f0" stroke="#000000" stroke-width="1.5"/>
+<text x="1332" y="171" fill="#0f172a" font-size="12" font-weight="bold">4. AIRSIDE TURNAROUND &amp; GROUND SERVICING (5 TABLES)</text>
+<rect x="1320" y="192" width="580" height="207" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1320" y="192" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1332" y="211" fill="#000000" font-size="13" font-weight="bold">TASKS</text>
+<text x="1334" y="235" fill="#000000" font-size="11" font-weight="bold">[PK] task_id BIGSERIAL</text>
+<line x1="1320" y1="240" x2="1900" y2="240" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1344" y="257" fill="#334155" font-size="10.5">task_name VARCHAR(100)</text>
+<text x="1344" y="276" fill="#334155" font-size="10.5">status VARCHAR(20)</text>
+<text x="1344" y="295" fill="#334155" font-size="10.5">scheduled_start TIMESTAMPTZ</text>
+<text x="1344" y="314" fill="#334155" font-size="10.5">scheduled_end TIMESTAMPTZ</text>
+<text x="1344" y="333" fill="#334155" font-size="10.5">actual_start TIMESTAMPTZ</text>
+<text x="1344" y="352" fill="#334155" font-size="10.5">actual_end TIMESTAMPTZ</text>
+<text x="1334" y="371" fill="#0f172a" font-size="10.5" text-decoration="underline">flight_id BIGINT [FK]</text>
+<text x="1334" y="390" fill="#0f172a" font-size="10.5" text-decoration="underline">assigned_user_id BIGINT [FK]</text>
+<rect x="1320" y="415" width="580" height="131" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1320" y="415" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1332" y="434" fill="#000000" font-size="13" font-weight="bold">GROUND_EQUIPMENT</text>
+<text x="1334" y="458" fill="#000000" font-size="11" font-weight="bold">[PK] equipment_id BIGSERIAL</text>
+<line x1="1320" y1="463" x2="1900" y2="463" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1344" y="480" fill="#334155" font-size="10.5">equipment_code VARCHAR(20) UNIQUE</text>
+<text x="1344" y="499" fill="#334155" font-size="10.5">equipment_type VARCHAR(50)</text>
+<text x="1344" y="518" fill="#334155" font-size="10.5">status VARCHAR(20)</text>
+<text x="1334" y="537" fill="#0f172a" font-size="10.5" text-decoration="underline">department_id BIGINT [FK]</text>
+<rect x="1320" y="562" width="580" height="150" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1320" y="562" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1332" y="581" fill="#000000" font-size="13" font-weight="bold">EQUIPMENT_ASSIGNMENTS</text>
+<text x="1334" y="605" fill="#000000" font-size="11" font-weight="bold">[PK] assignment_id BIGSERIAL</text>
+<line x1="1320" y1="610" x2="1900" y2="610" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1334" y="627" fill="#0f172a" font-size="10.5" text-decoration="underline">equipment_id BIGINT [FK]</text>
+<text x="1334" y="646" fill="#0f172a" font-size="10.5" text-decoration="underline">task_id BIGINT [FK]</text>
+<text x="1334" y="665" fill="#0f172a" font-size="10.5" text-decoration="underline">operator_id BIGINT [FK]</text>
+<text x="1344" y="684" fill="#334155" font-size="10.5">assigned_timestamp TIMESTAMPTZ</text>
+<text x="1344" y="703" fill="#334155" font-size="10.5">released_timestamp TIMESTAMPTZ</text>
+<rect x="1320" y="728" width="580" height="150" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1320" y="728" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1332" y="747" fill="#000000" font-size="13" font-weight="bold">FUEL_LOGS</text>
+<text x="1334" y="771" fill="#000000" font-size="11" font-weight="bold">[PK] fuel_log_id BIGSERIAL</text>
+<line x1="1320" y1="776" x2="1900" y2="776" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1344" y="793" fill="#334155" font-size="10.5">fuel_density NUMERIC(6,3)</text>
+<text x="1334" y="812" fill="#0f172a" font-size="10.5" text-decoration="underline">task_id BIGINT [FK]</text>
+<text x="1334" y="831" fill="#0f172a" font-size="10.5" text-decoration="underline">flight_id BIGINT [FK]</text>
+<text x="1334" y="850" fill="#0f172a" font-size="10.5" text-decoration="underline">aircraft_id BIGINT [FK]</text>
+<text x="1334" y="869" fill="#0f172a" font-size="10.5" text-decoration="underline">recorded_by_user_id BIGINT [FK]</text>
+<rect x="1320" y="894" width="580" height="169" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1320" y="894" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1332" y="913" fill="#000000" font-size="13" font-weight="bold">SHIFT_HANDOVER_LOGS</text>
+<text x="1334" y="937" fill="#000000" font-size="11" font-weight="bold">[PK] handover_id BIGSERIAL</text>
+<line x1="1320" y1="942" x2="1900" y2="942" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1344" y="959" fill="#334155" font-size="10.5">shift_code VARCHAR(20)</text>
+<text x="1334" y="978" fill="#0f172a" font-size="10.5" text-decoration="underline">department_id BIGINT [FK]</text>
+<text x="1334" y="997" fill="#0f172a" font-size="10.5" text-decoration="underline">outgoing_supervisor_id BIGINT [FK]</text>
+<text x="1334" y="1016" fill="#0f172a" font-size="10.5" text-decoration="underline">incoming_supervisor_id BIGINT [FK]</text>
+<text x="1344" y="1035" fill="#334155" font-size="10.5">critical_events_summary TEXT</text>
+<text x="1344" y="1054" fill="#334155" font-size="10.5">status VARCHAR(30)</text>
+<rect x="1320" y="1093" width="580" height="32" fill="#e2e8f0" stroke="#000000" stroke-width="1.5"/>
+<text x="1332" y="1114" fill="#0f172a" font-size="12" font-weight="bold">6. COMMERCIAL, SUPPORT &amp; AUDIT (6 TABLES)</text>
+<rect x="1320" y="1135" width="580" height="131" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1320" y="1135" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1332" y="1154" fill="#000000" font-size="13" font-weight="bold">CARGO_MANIFESTS</text>
+<text x="1334" y="1178" fill="#000000" font-size="11" font-weight="bold">[PK] cargo_id BIGSERIAL</text>
+<line x1="1320" y1="1183" x2="1900" y2="1183" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1344" y="1200" fill="#334155" font-size="10.5">container_id VARCHAR(30)</text>
+<text x="1344" y="1219" fill="#334155" font-size="10.5">weight_kg NUMERIC(8,2)</text>
+<text x="1344" y="1238" fill="#334155" font-size="10.5">cargo_type VARCHAR(20)</text>
+<text x="1334" y="1257" fill="#0f172a" font-size="10.5" text-decoration="underline">flight_id BIGINT [FK]</text>
+<rect x="1320" y="1282" width="580" height="150" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1320" y="1282" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1332" y="1301" fill="#000000" font-size="13" font-weight="bold">CUSTOMER_FEEDBACK_LOGS</text>
+<text x="1334" y="1325" fill="#000000" font-size="11" font-weight="bold">[PK] feedback_id BIGSERIAL</text>
+<line x1="1320" y1="1330" x2="1900" y2="1330" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1334" y="1347" fill="#0f172a" font-size="10.5" text-decoration="underline">passenger_id BIGINT [FK]</text>
+<text x="1344" y="1366" fill="#334155" font-size="10.5">terminal VARCHAR(10)</text>
+<text x="1344" y="1385" fill="#334155" font-size="10.5">rating INT</text>
+<text x="1344" y="1404" fill="#334155" font-size="10.5">category VARCHAR(50)</text>
+<text x="1344" y="1423" fill="#334155" font-size="10.5">submitted_at TIMESTAMPTZ</text>
+<rect x="1320" y="1448" width="580" height="169" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1320" y="1448" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1332" y="1467" fill="#000000" font-size="13" font-weight="bold">AIRLINE_BILLING_INVOICES</text>
+<text x="1334" y="1491" fill="#000000" font-size="11" font-weight="bold">[PK] invoice_id BIGSERIAL</text>
+<line x1="1320" y1="1496" x2="1900" y2="1496" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1344" y="1513" fill="#334155" font-size="10.5">invoice_number VARCHAR(50) UNIQUE</text>
+<text x="1334" y="1532" fill="#0f172a" font-size="10.5" text-decoration="underline">airline_id BIGINT [FK]</text>
+<text x="1344" y="1551" fill="#334155" font-size="10.5">billing_period_start DATE</text>
+<text x="1344" y="1570" fill="#334155" font-size="10.5">billing_period_end DATE</text>
+<text x="1344" y="1589" fill="#334155" font-size="10.5">total_amount_usd NUMERIC(12,2)</text>
+<text x="1344" y="1608" fill="#334155" font-size="10.5">payment_status VARCHAR(20)</text>
+<rect x="1320" y="1633" width="580" height="131" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1320" y="1633" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1332" y="1652" fill="#000000" font-size="13" font-weight="bold">INVOICE_LINE_ITEMS</text>
+<text x="1334" y="1676" fill="#000000" font-size="11" font-weight="bold">[PK] line_item_id BIGSERIAL</text>
+<line x1="1320" y1="1681" x2="1900" y2="1681" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1334" y="1698" fill="#0f172a" font-size="10.5" text-decoration="underline">invoice_id BIGINT [FK]</text>
+<text x="1334" y="1717" fill="#0f172a" font-size="10.5" text-decoration="underline">flight_id BIGINT [FK]</text>
+<text x="1344" y="1736" fill="#334155" font-size="10.5">charge_type VARCHAR(50)</text>
+<text x="1344" y="1755" fill="#334155" font-size="10.5">amount_usd NUMERIC(10,2)</text>
+<rect x="1320" y="1780" width="580" height="169" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1320" y="1780" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1332" y="1799" fill="#000000" font-size="13" font-weight="bold">OPERATIONAL_INQUIRIES</text>
+<text x="1334" y="1823" fill="#000000" font-size="11" font-weight="bold">[PK] inquiry_id BIGSERIAL</text>
+<line x1="1320" y1="1828" x2="1900" y2="1828" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1344" y="1845" fill="#334155" font-size="10.5">ticket_number VARCHAR(30) UNIQUE</text>
+<text x="1344" y="1864" fill="#334155" font-size="10.5">full_name VARCHAR(150)</text>
+<text x="1344" y="1883" fill="#334155" font-size="10.5">category VARCHAR(50)</text>
+<text x="1344" y="1902" fill="#334155" font-size="10.5">status VARCHAR(30)</text>
+<text x="1344" y="1921" fill="#334155" font-size="10.5">priority VARCHAR(20)</text>
+<text x="1334" y="1940" fill="#0f172a" font-size="10.5" text-decoration="underline">assigned_staff_user_id BIGINT [FK]</text>
+<rect x="1320" y="1965" width="580" height="131" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1320" y="1965" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1332" y="1984" fill="#000000" font-size="13" font-weight="bold">AUDIT_LOGS</text>
+<text x="1334" y="2008" fill="#000000" font-size="11" font-weight="bold">[PK] log_id BIGSERIAL</text>
+<line x1="1320" y1="2013" x2="1900" y2="2013" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1334" y="2030" fill="#0f172a" font-size="10.5" text-decoration="underline">user_id BIGINT [FK]</text>
+<text x="1344" y="2049" fill="#334155" font-size="10.5">action VARCHAR(100)</text>
+<text x="1344" y="2068" fill="#334155" font-size="10.5">target_entity VARCHAR(50)</text>
+<text x="1344" y="2087" fill="#334155" font-size="10.5">timestamp TIMESTAMPTZ</text>
+<rect x="1950" y="150" width="580" height="32" fill="#e2e8f0" stroke="#000000" stroke-width="1.5"/>
+<text x="1962" y="171" fill="#0f172a" font-size="12" font-weight="bold">5. PASSENGER JOURNEY &amp; BAGGAGE LIFECYCLE (12 TABLES)</text>
+<rect x="1950" y="192" width="580" height="169" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1950" y="192" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1962" y="211" fill="#000000" font-size="13" font-weight="bold">TRAVELERS</text>
+<text x="1964" y="235" fill="#000000" font-size="11" font-weight="bold">[PK] traveler_id BIGSERIAL</text>
+<line x1="1950" y1="240" x2="2530" y2="240" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1974" y="257" fill="#334155" font-size="10.5">first_name VARCHAR(50)</text>
+<text x="1974" y="276" fill="#334155" font-size="10.5">last_name VARCHAR(50)</text>
+<text x="1974" y="295" fill="#334155" font-size="10.5">passport_number VARCHAR(20) UNIQUE</text>
+<text x="1974" y="314" fill="#334155" font-size="10.5">nationality VARCHAR(50)</text>
+<text x="1974" y="333" fill="#334155" font-size="10.5">email VARCHAR(100)</text>
+<text x="1974" y="352" fill="#334155" font-size="10.5">phone_number VARCHAR(30)</text>
+<rect x="1950" y="377" width="580" height="131" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1950" y="377" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1962" y="396" fill="#000000" font-size="13" font-weight="bold">PASSENGERS</text>
+<text x="1964" y="420" fill="#000000" font-size="11" font-weight="bold">[PK] passenger_id BIGSERIAL</text>
+<line x1="1950" y1="425" x2="2530" y2="425" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1964" y="442" fill="#0f172a" font-size="10.5" text-decoration="underline">traveler_id BIGINT [FK]</text>
+<text x="1964" y="461" fill="#0f172a" font-size="10.5" text-decoration="underline">flight_id BIGINT [FK]</text>
+<text x="1974" y="480" fill="#334155" font-size="10.5">pnr_code VARCHAR(10)</text>
+<text x="1974" y="499" fill="#334155" font-size="10.5">is_transit_passenger BOOLEAN</text>
+<rect x="1950" y="524" width="580" height="188" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1950" y="524" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1962" y="543" fill="#000000" font-size="13" font-weight="bold">BOARDING_PASSES</text>
+<text x="1964" y="567" fill="#000000" font-size="11" font-weight="bold">[PK] boarding_pass_id BIGSERIAL</text>
+<line x1="1950" y1="572" x2="2530" y2="572" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1974" y="589" fill="#334155" font-size="10.5">barcode_data VARCHAR(255) UNIQUE</text>
+<text x="1974" y="608" fill="#334155" font-size="10.5">ticket_number VARCHAR(30) UNIQUE</text>
+<text x="1974" y="627" fill="#334155" font-size="10.5">seat_number VARCHAR(10)</text>
+<text x="1974" y="646" fill="#334155" font-size="10.5">cabin_class VARCHAR(20)</text>
+<text x="1974" y="665" fill="#334155" font-size="10.5">boarding_group VARCHAR(10)</text>
+<text x="1964" y="684" fill="#0f172a" font-size="10.5" text-decoration="underline">passenger_id BIGINT [FK]</text>
+<text x="1964" y="703" fill="#0f172a" font-size="10.5" text-decoration="underline">flight_id BIGINT [FK]</text>
+<rect x="1950" y="728" width="580" height="150" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1950" y="728" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1962" y="747" fill="#000000" font-size="13" font-weight="bold">BAG_TAGS</text>
+<text x="1964" y="771" fill="#000000" font-size="11" font-weight="bold">[PK] bag_tag_id BIGSERIAL</text>
+<line x1="1950" y1="776" x2="2530" y2="776" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1974" y="793" fill="#334155" font-size="10.5">tag_number VARCHAR(20) UNIQUE</text>
+<text x="1974" y="812" fill="#334155" font-size="10.5">weight_kg NUMERIC(5,2)</text>
+<text x="1974" y="831" fill="#334155" font-size="10.5">status VARCHAR(20)</text>
+<text x="1964" y="850" fill="#0f172a" font-size="10.5" text-decoration="underline">passenger_id BIGINT [FK]</text>
+<text x="1964" y="869" fill="#0f172a" font-size="10.5" text-decoration="underline">flight_id BIGINT [FK]</text>
+<rect x="1950" y="894" width="580" height="112" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1950" y="894" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1962" y="913" fill="#000000" font-size="13" font-weight="bold">BAGGAGE_SCAN_EVENTS</text>
+<text x="1964" y="937" fill="#000000" font-size="11" font-weight="bold">[PK] scan_id BIGSERIAL</text>
+<line x1="1950" y1="942" x2="2530" y2="942" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1964" y="959" fill="#0f172a" font-size="10.5" text-decoration="underline">bag_tag_id BIGINT [FK]</text>
+<text x="1974" y="978" fill="#334155" font-size="10.5">scan_location VARCHAR(100)</text>
+<text x="1974" y="997" fill="#334155" font-size="10.5">scan_timestamp TIMESTAMPTZ</text>
+<rect x="1950" y="1022" width="580" height="150" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1950" y="1022" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1962" y="1041" fill="#000000" font-size="13" font-weight="bold">MISHANDLED_BAGGAGE</text>
+<text x="1964" y="1065" fill="#000000" font-size="11" font-weight="bold">[PK] report_id BIGSERIAL</text>
+<line x1="1950" y1="1070" x2="2530" y2="1070" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1974" y="1087" fill="#334155" font-size="10.5">claim_number VARCHAR(50) UNIQUE</text>
+<text x="1974" y="1106" fill="#334155" font-size="10.5">incident_type VARCHAR(30)</text>
+<text x="1974" y="1125" fill="#334155" font-size="10.5">status VARCHAR(20)</text>
+<text x="1964" y="1144" fill="#0f172a" font-size="10.5" text-decoration="underline">bag_tag_id BIGINT [FK]</text>
+<text x="1964" y="1163" fill="#0f172a" font-size="10.5" text-decoration="underline">passenger_id BIGINT [FK]</text>
+<rect x="1950" y="1188" width="580" height="112" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1950" y="1188" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1962" y="1207" fill="#000000" font-size="13" font-weight="bold">SECURITY_CHECKPOINTS</text>
+<text x="1964" y="1231" fill="#000000" font-size="11" font-weight="bold">[PK] checkpoint_id BIGSERIAL</text>
+<line x1="1950" y1="1236" x2="2530" y2="1236" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1974" y="1253" fill="#334155" font-size="10.5">checkpoint_name VARCHAR(100) UNIQUE</text>
+<text x="1974" y="1272" fill="#334155" font-size="10.5">checkpoint_type VARCHAR(30)</text>
+<text x="1974" y="1291" fill="#334155" font-size="10.5">terminal VARCHAR(10)</text>
+<rect x="1950" y="1316" width="580" height="169" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1950" y="1316" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1962" y="1335" fill="#000000" font-size="13" font-weight="bold">PASSENGER_CLEARANCE_LOGS</text>
+<text x="1964" y="1359" fill="#000000" font-size="11" font-weight="bold">[PK] clearance_id BIGSERIAL</text>
+<line x1="1950" y1="1364" x2="2530" y2="1364" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1974" y="1381" fill="#334155" font-size="10.5">scan_timestamp TIMESTAMPTZ</text>
+<text x="1974" y="1400" fill="#334155" font-size="10.5">clearance_status VARCHAR(25)</text>
+<text x="1974" y="1419" fill="#334155" font-size="10.5">verification_method VARCHAR(30)</text>
+<text x="1964" y="1438" fill="#0f172a" font-size="10.5" text-decoration="underline">passenger_id BIGINT [FK]</text>
+<text x="1964" y="1457" fill="#0f172a" font-size="10.5" text-decoration="underline">boarding_pass_id BIGINT [FK]</text>
+<text x="1964" y="1476" fill="#0f172a" font-size="10.5" text-decoration="underline">checkpoint_id BIGINT [FK]</text>
+<rect x="1950" y="1501" width="580" height="150" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1950" y="1501" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1962" y="1520" fill="#000000" font-size="13" font-weight="bold">IMMIGRATION_RECORDS</text>
+<text x="1964" y="1544" fill="#000000" font-size="11" font-weight="bold">[PK] immigration_id BIGSERIAL</text>
+<line x1="1950" y1="1549" x2="2530" y2="1549" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1974" y="1566" fill="#334155" font-size="10.5">visa_type VARCHAR(30)</text>
+<text x="1974" y="1585" fill="#334155" font-size="10.5">stamp_number VARCHAR(50) UNIQUE</text>
+<text x="1974" y="1604" fill="#334155" font-size="10.5">clearance_type VARCHAR(30)</text>
+<text x="1974" y="1623" fill="#334155" font-size="10.5">biometric_facial_matched BOOLEAN</text>
+<text x="1964" y="1642" fill="#0f172a" font-size="10.5" text-decoration="underline">passenger_id BIGINT [FK]</text>
+<rect x="1950" y="1667" width="580" height="112" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1950" y="1667" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1962" y="1686" fill="#000000" font-size="13" font-weight="bold">LOUNGE_VISITS</text>
+<text x="1964" y="1710" fill="#000000" font-size="11" font-weight="bold">[PK] visit_id BIGSERIAL</text>
+<line x1="1950" y1="1715" x2="2530" y2="1715" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1974" y="1732" fill="#334155" font-size="10.5">lounge_name VARCHAR(100)</text>
+<text x="1964" y="1751" fill="#0f172a" font-size="10.5" text-decoration="underline">passenger_id BIGINT [FK]</text>
+<text x="1964" y="1770" fill="#0f172a" font-size="10.5" text-decoration="underline">receptionist_user_id BIGINT [FK]</text>
+<rect x="1950" y="1795" width="580" height="112" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1950" y="1795" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1962" y="1814" fill="#000000" font-size="13" font-weight="bold">BAGGAGE_CAROUSELS</text>
+<text x="1964" y="1838" fill="#000000" font-size="11" font-weight="bold">[PK] carousel_id BIGSERIAL</text>
+<line x1="1950" y1="1843" x2="2530" y2="1843" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1974" y="1860" fill="#334155" font-size="10.5">carousel_number VARCHAR(20) UNIQUE</text>
+<text x="1974" y="1879" fill="#334155" font-size="10.5">terminal VARCHAR(10)</text>
+<text x="1964" y="1898" fill="#0f172a" font-size="10.5" text-decoration="underline">flight_id BIGINT [FK]</text>
+<rect x="1950" y="1923" width="580" height="169" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+<rect x="1950" y="1923" width="580" height="28" fill="#f1f5f9" stroke="#000000" stroke-width="1"/>
+<text x="1962" y="1942" fill="#000000" font-size="13" font-weight="bold">LOST_AND_FOUND_ITEMS</text>
+<text x="1964" y="1966" fill="#000000" font-size="11" font-weight="bold">[PK] item_id BIGSERIAL</text>
+<line x1="1950" y1="1971" x2="2530" y2="1971" stroke="#cbd5e1" stroke-width="1"/>
+<text x="1974" y="1988" fill="#334155" font-size="10.5">reference_number VARCHAR(30) UNIQUE</text>
+<text x="1974" y="2007" fill="#334155" font-size="10.5">item_name VARCHAR(150)</text>
+<text x="1974" y="2026" fill="#334155" font-size="10.5">category VARCHAR(50)</text>
+<text x="1974" y="2045" fill="#334155" font-size="10.5">status VARCHAR(30)</text>
+<text x="1964" y="2064" fill="#0f172a" font-size="10.5" text-decoration="underline">flight_id BIGINT [FK]</text>
+<text x="1964" y="2083" fill="#0f172a" font-size="10.5" text-decoration="underline">logged_by_user_id BIGINT [FK]</text>
+</svg>
