@@ -216,7 +216,7 @@ interface DashboardLayoutProps {
   onTabChange?: (tab: string) => void;
 }
 
-export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeRole }) => {
+export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeRole, activeTab, onTabChange }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, isAuthenticated } = useAuth();
@@ -748,11 +748,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
                   )}
 
                   {items.map((item) => {
-                    const isMatch =
-                      location.pathname + location.hash === item.path ||
-                      (item.path.includes('#')
-                        ? location.hash === item.path.substring(item.path.indexOf('#'))
-                        : !location.hash && location.pathname === item.path);
+                    const itemTab = item.path.includes('#') ? item.path.substring(item.path.indexOf('#') + 1) : 'overview';
+                    const isMatch = activeTab
+                      ? (activeTab === itemTab || (itemTab === 'overview' && (!activeTab || activeTab === 'overview')))
+                      : (location.pathname + location.hash === item.path ||
+                         (item.path.includes('#')
+                           ? location.hash === item.path.substring(item.path.indexOf('#'))
+                           : !location.hash && location.pathname === item.path));
 
                     return (
                       (() => {
@@ -770,7 +772,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, acti
                           >
                             <Box
                               onClick={() => {
-                                if (item.path.startsWith('/dashboard')) navigate(item.path);
+                                if (onTabChange) {
+                                  onTabChange(itemTab);
+                                } else if (item.path.startsWith('/dashboard')) {
+                                  navigate(item.path);
+                                }
                               }}
                               sx={{
                                 display: 'flex',

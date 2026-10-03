@@ -37,7 +37,7 @@ public class GateService {
     @Transactional(readOnly = true)
     public List<GateResponseDTO> getAllGates() {
         List<Gate> gates = gateRepository.findAll();
-        List<Flight> liveFlights = flightRepository.findAllSaphireHubFlightsWithAllDetails().stream()
+        List<Flight> liveFlights = flightRepository.findOperationalFlights(org.springframework.data.domain.PageRequest.of(0, 100)).stream()
                 .filter(f -> !INACTIVE_STATUSES.contains(f.getFlightStatus()))
                 .collect(Collectors.toList());
         List<Stand> allStands = standRepository.findAll();

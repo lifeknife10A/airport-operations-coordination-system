@@ -142,8 +142,8 @@ const STATUS_PIE_DATA = [
 ];
 
 // Role/department names arrive from the API as e.g. SYSTEM_ADMINISTRATOR / TERMINAL_MANAGEMENT.
-const prettyName = (raw: string) =>
-  raw.toLowerCase().split('_').map((w) => (w === 'and' ? 'and' : w.charAt(0).toUpperCase() + w.slice(1))).join(' ');
+const prettyName = (raw?: string | null) =>
+  raw ? raw.toLowerCase().split('_').map((w) => (w === 'and' ? 'and' : w.charAt(0).toUpperCase() + w.slice(1))).join(' ') : '—';
 
 const toStaffAccount = (u: StaffUserDto): StaffAccount => ({
   id: `USR-${u.userId}`,
@@ -335,18 +335,18 @@ export const SystemAdminDashboard: React.FC = () => {
       setFlights(
         storeFlights.map((f) => ({
           id: f.flightId,
-          flightNumber: f.flightNumber,
-          aircraft: f.aircraftType,
-          airline: f.airlineName,
-          route: `${f.originAirportCode} ➔ ${f.destinationAirportCode}`,
-          gate: f.gateCode ? `Gate ${f.gateCode}` : 'Unassigned',
-          scheduledTime: f.scheduledTime,
+          flightNumber: f.flightNumber || 'FLT-000',
+          aircraft: f.aircraftType || 'Commercial Jet',
+          airline: f.airlineName || 'Saphire',
+          route: `${f.originAirportCode || 'SPH'} ➔ ${f.destinationAirportCode || 'DEST'}`,
+          gate: f.gateCode ? `Gate ${f.gateCode}` : (f.standCode ? `Stand ${f.standCode}` : 'Unassigned'),
+          scheduledTime: f.scheduledTime || '00:00 UTC',
           status: (f.status as any) || 'SCHEDULED',
         }))
       );
     }
 
-    setNotificationsList(aocsDataStore.getNotifications());
+    setNotificationsList(aocsDataStore.getNotifications() || []);
   };
 
   useEffect(() => {
@@ -491,27 +491,27 @@ export const SystemAdminDashboard: React.FC = () => {
 
   const filteredStaff = staff.filter(
     (s) =>
-      s.name.toLowerCase().includes(staffSearch.toLowerCase()) ||
-      s.email.toLowerCase().includes(staffSearch.toLowerCase()) ||
-      s.role.toLowerCase().includes(staffSearch.toLowerCase())
+      (s.name?.toLowerCase() || '').includes(staffSearch.toLowerCase()) ||
+      (s.email?.toLowerCase() || '').includes(staffSearch.toLowerCase()) ||
+      (s.role?.toLowerCase() || '').includes(staffSearch.toLowerCase())
   );
 
   const filteredFlights = flights.filter(
     (f) =>
-      f.flightNumber.toLowerCase().includes(flightSearch.toLowerCase()) ||
-      f.route.toLowerCase().includes(flightSearch.toLowerCase()) ||
-      f.gate.toLowerCase().includes(flightSearch.toLowerCase())
+      (f.flightNumber?.toLowerCase() || '').includes(flightSearch.toLowerCase()) ||
+      (f.route?.toLowerCase() || '').includes(flightSearch.toLowerCase()) ||
+      (f.gate?.toLowerCase() || '').includes(flightSearch.toLowerCase())
   );
 
   const filteredAudit = auditLogs.filter((a) => {
     const matchesSearch =
-      a.details.toLowerCase().includes(auditSearch.toLowerCase()) ||
-      a.user.toLowerCase().includes(auditSearch.toLowerCase()) ||
-      a.action.toLowerCase().includes(auditSearch.toLowerCase());
+      (a.details?.toLowerCase() || '').includes(auditSearch.toLowerCase()) ||
+      (a.user?.toLowerCase() || '').includes(auditSearch.toLowerCase()) ||
+      (a.action?.toLowerCase() || '').includes(auditSearch.toLowerCase());
     const matchesEntity =
       auditEntityFilter === 'ALL' ||
       (a.entityType && a.entityType.toUpperCase().includes(auditEntityFilter)) ||
-      a.action.includes(auditEntityFilter);
+      (a.action && a.action.includes(auditEntityFilter));
     return matchesSearch && matchesEntity;
   });
 
@@ -575,7 +575,7 @@ export const SystemAdminDashboard: React.FC = () => {
 
 
   return (
-    <DashboardLayout activeRole="system-admin">
+    <DashboardLayout activeRole="system-admin" activeTab={activeTab} onTabChange={handleTabSelect}>
       {/* ========================================================================= */}
       {/* 1. OVERVIEW (PROPTIA-STYLE COMMAND DASHBOARD)                             */}
       {/* ========================================================================= */}
@@ -1308,7 +1308,7 @@ export const SystemAdminDashboard: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredFlights.map((f) => (
+                {filteredFlights.slice(0, 30).map((f) => (
                   <TableRow key={f.id} hover>
                     <TableCell sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, color: '#0F2942' }}>
                       {f.flightNumber}
@@ -1364,8 +1364,13 @@ export const SystemAdminDashboard: React.FC = () => {
                         <MenuItem value="SCHEDULED" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>SCHEDULED</MenuItem>
                         <MenuItem value="BOARDING" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>BOARDING</MenuItem>
                         <MenuItem value="AIRBORNE" sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#15803D' }}>AIRBORNE</MenuItem>
+                        <MenuItem value="READY" sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#0369A1' }}>READY</MenuItem>
                         <MenuItem value="ON_BLOCK" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>ON BLOCK</MenuItem>
                         <MenuItem value="DELAYED" sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#B91C1C' }}>DELAYED</MenuItem>
+                        <MenuItem value="LANDED" sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#0369A1' }}>LANDED</MenuItem>
+                        <MenuItem value="DEPARTED" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>DEPARTED</MenuItem>
+                        <MenuItem value="CANCELLED" sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#DC2626' }}>CANCELLED</MenuItem>
+                        <MenuItem value="ON_TIME" sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#16A34A' }}>ON TIME</MenuItem>
                       </Select>
                     </TableCell>
                   </TableRow>
@@ -1644,7 +1649,7 @@ export const SystemAdminDashboard: React.FC = () => {
                 </Typography>
               </Box>
             ) : (
-              filteredAudit.map((log) => (
+              filteredAudit.slice(0, 30).map((log) => (
                 <Box
                   key={log.id}
                   sx={{
