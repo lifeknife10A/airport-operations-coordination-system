@@ -23,16 +23,25 @@
 
 ### 🎙️ Part 1: Architecture, Cold Boot & Public Passenger Portals
 **Speaker 1**: **Krishna Solanki (I075)** — *Database & System Integration Lead*  
-**Timestamp**: `00:00` – `03:45` (3 minutes 45 seconds)
+**Timestamp**: `[Pre-Roll Intro]` + `00:00` – `03:45`
+
+> 🎬 **DIRECTOR & EDITING NOTES**:
+> - **Pre-Roll (Greeting & Self-Intro)**: Screen demonstration is **OFF** (Fullscreen talking-head camera / Title Card).
+> - **T = 00:00 (Screen Starts)**: Exactly when Krishna says *"As you can see on the screen..."*, the screen recording (`Reference.mp4` at `00:00`) starts with the `./start.sh` cold-boot terminal. The camera transitions smoothly into a Picture-in-Picture (PiP) overlay in the corner.
 
 ```
-[00:00 - 00:30] Cold Boot & System Integration Initialization
-Visual Cue: Terminal window running './start.sh', Spring Boot 3.2.5 booting with Flyway executing 43 migrations, populating 158k+ relational records, and Vite server launching on port 5173.
+[Pre-Roll Intro: Screen OFF / Fullscreen Talking-Head Camera]
+Visual Cue: Speaker on camera (Photo Booth recording) or Project Title Card. No screen recording active.
 ```
 > **Krishna Solanki (I075)**:  
-> "Good day everyone. Welcome to the technical demonstration of the Saphire Airport Operations Coordination System—or Saphire AOCS. My name is Krishna Solanki, Roll Number I075, serving as the Database and System Integration Lead.
-> 
-> As you can see on the screen, we initiate the platform using our automated cold-boot orchestration script. Under the hood, Spring Boot 3 initializes our enterprise backend while Flyway executes 43 structured database migrations against PostgreSQL 16. This provisions our complete relational schema—encompassing over 158,000 production-grade seed records, including 5,000 flights, 500 staff credentials, dynamic baggage tracking streams, and automated turnaround workflows. Concurrently, our React 19 frontend boots instantly on Vite."
+> "Good day everyone. Welcome to the technical demonstration of the Saphire Airport Operations Coordination System—or Saphire AOCS. My name is Krishna Solanki, Roll Number I075, serving as the Database and System Integration Lead."
+
+```
+[00:00 - 00:30] Screen Recording Starts (T = 00:00:00) · Cold Boot & Database Migrations
+Visual Cue: Screen recording begins. Terminal window executes './start.sh', Spring Boot 3.2.5 boots with Flyway executing 43 migrations, populating 158k+ relational records, and Vite server launching on port 5173. Camera transitions to Picture-in-Picture (PiP) in corner.
+```
+> **Krishna Solanki (I075)**:  
+> "As you can see on the screen, we initiate the platform using our automated cold-boot orchestration script. Under the hood, Spring Boot 3 initializes our enterprise backend while Flyway executes 43 structured database migrations against PostgreSQL 16. This provisions our complete relational schema—encompassing over 158,000 production-grade seed records, including 5,000 flights, 500 staff credentials, dynamic baggage tracking streams, and automated turnaround workflows. Concurrently, our React 19 frontend boots instantly on Vite."
 
 ```
 [00:30 - 01:00] Public Passenger Landing Portal & Sanctuary Overview
