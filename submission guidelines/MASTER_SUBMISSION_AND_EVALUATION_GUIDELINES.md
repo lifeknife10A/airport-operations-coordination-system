@@ -1,6 +1,6 @@
 # Master Submission, Presentation, and Viva Evaluation Handbook
 **Project Title**: Saphire AOCS (Airport Operations Coordination System)  
-**Academic Level**: Graduate Capstone / Semester Software Engineering Project Evaluation  
+**Academic Level**: Graduate Software Engineering / Semester Software Engineering Project Evaluation  
 **Target Folder**: `/Users/krish/Desktop/Software Engineering/Submission Guidelines`  
 
 ---
@@ -43,7 +43,7 @@ The presentation deck is compiled at:
 `Submission Guidelines/I075_I078_I080_I088_Saphire_AOCS_Presentation.pptx`
 
 ### Slide 01: Title & Executive Summary
-* **Header**: Graduate Capstone Project Evaluation
+* **Header**: Software Engineering Project Evaluation
 * **Title**: SAPHIRE AOCS: Airport Operations Coordination System
 * **Subtitle**: A full-stack enterprise platform coordinating multi-terminal flight turnaround, dynamic gate assignment, departure control check-in, baggage reconciliation (BHS), runway telemetry, and airline billing.
 * **Team Details**: Krishna Solanki (I075), Chaitanya Tikku (I078), Anuvrat Tripathi (I080), Anay Modi (I088).
@@ -307,7 +307,7 @@ The presentation deck is compiled at:
 
 ### Prompt 1: Google NotebookLM Video Overview Prompt
 ```text
-Create a structured, high-impact technical explainer video for the Graduate Capstone Project "Saphire AOCS" (Airport Operations Coordination System) developed by Krishna Solanki (I075), Chaitanya Tikku (I078), Anuvrat Tripathi (I080), and Anay Modi (I088).
+Create a structured, high-impact technical explainer video for the Software Engineering Project "Saphire AOCS" (Airport Operations Coordination System) developed by Krishna Solanki (I075), Chaitanya Tikku (I078), Anuvrat Tripathi (I080), and Anay Modi (I088).
 
 Structure the video narration and visuals into 5 clear chronological segments:
 1. Operational Scope & Problem Formulation:
@@ -328,7 +328,7 @@ Conclude with the 109 automated JUnit 5 and Mockito backend unit/integration tes
 
 ### Prompt 2: External AI Auditor / Second-Opinion Review Prompt
 ```text
-You are an expert academic evaluator and university professor reviewing a final Capstone Software Engineering project presentation and documentation package for "Saphire AOCS (Airport Operations Coordination System)".
+You are an expert academic evaluator and university professor reviewing a final Software Engineering project presentation and documentation package for "Saphire AOCS (Airport Operations Coordination System)".
 
 Evaluate our project artifacts against standard university Software Engineering grading rubrics:
 1. Team & Authorship: Krishna Solanki (I075), Chaitanya Tikku (I078), Anuvrat Tripathi (I080), Anay Modi (I088).

@@ -13,7 +13,7 @@
 ## 📋 Master Technical Prompt for Claude (Opus 5.5) in PowerPoint
 
 ```markdown
-You are an expert Software Engineering architect and slide author. Build a comprehensive, 22-slide, technically rigorous, deeply detailed presentation deck for our graduate software engineering capstone project: "Saphire AOCS (Airport Operations Coordination System)".
+You are an expert Software Engineering architect and slide author. Build a comprehensive, 22-slide, technically rigorous, deeply detailed presentation deck for our graduate software engineering Software Engineering project: "Saphire AOCS (Airport Operations Coordination System)".
 
 IMPORTANT INSTRUCTIONS:
 1. Context & Depth: The faculty evaluator will inspect this deck and the live codebase to conduct an in-depth technical viva. Ensure every slide contains exhaustive technical depth, specific formulas, exact database table names, REST endpoints, algorithms, design patterns, and engineering metrics. Avoid high-level superficial summaries.

@@ -9,7 +9,7 @@
 Copy and paste this into the **Custom topic** field when creating a **Video Overview** (Explainer / Cinematic) in Google NotebookLM:
 
 ```text
-Create a structured, high-impact technical explainer video for the Graduate Capstone Project "Saphire AOCS" (Airport Operations Coordination System) developed by Krishna Solanki (I075), Chaitanya Tikku (I078), Anuvrat Tripathi (I080), and Anay Modi (I088).
+Create a structured, high-impact technical explainer video for the Software Engineering Project "Saphire AOCS" (Airport Operations Coordination System) developed by Krishna Solanki (I075), Chaitanya Tikku (I078), Anuvrat Tripathi (I080), and Anay Modi (I088).
 
 Structure the video narration and visuals into 5 clear chronological segments:
 
@@ -36,7 +36,7 @@ Conclude with the 109 automated JUnit 5 and Mockito backend unit/integration tes
 Use this prompt with any external Large Language Model (e.g. Claude Opus, ChatGPT, Gemini Pro) to audit your submission completeness:
 
 ```text
-You are an expert university professor and external accreditation evaluator conducting a final audit on a Capstone Software Engineering project submission named "Saphire AOCS (Airport Operations Coordination System)".
+You are an expert university professor and external accreditation evaluator conducting a final audit on a Software Engineering project submission named "Saphire AOCS (Airport Operations Coordination System)".
 
 Evaluate our project artifacts against university grading rubrics:
 
@@ -56,7 +56,7 @@ Evaluate our project artifacts against university grading rubrics:
 - Live software integration with zero mock data.
 
 Please provide an objective audit report:
-- Score out of 100 based on standard SE Capstone evaluation rubrics.
+- Score out of 100 based on standard Software Engineering evaluation rubrics.
 - Identify potential viva trap questions the external examiner might ask.
 - Confirm if all technical deliverables are complete and aligned.
 ```

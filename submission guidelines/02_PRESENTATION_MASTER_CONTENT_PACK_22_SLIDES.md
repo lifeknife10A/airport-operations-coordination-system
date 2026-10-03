@@ -5,9 +5,9 @@
 ---
 
 ### Slide 01: Title & Executive Summary
-* **Category**: GRADUATE CAPSTONE PROJECT EVALUATION
+* **Category**: Software Engineering Project EVALUATION
 * **Title**: SAPHIRE AOCS
-* **Subtitle**: Airport Operations Coordination System: Master Capstone Platform
+* **Subtitle**: Airport Operations Coordination System: Enterprise Operations Platform
 * **Overview Box**: A full-stack enterprise platform coordinating multi-terminal flight turnaround, dynamic gate assignment, departure control check-in, baggage reconciliation (BHS), runway telemetry, and airline billing.
 * **Team Roster**:
   - Krishna Solanki (I075) - Database & System Integration Lead (PostgreSQL / Flyway / API Wiring)
