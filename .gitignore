@@ -23,3 +23,7 @@ frontend/.playwright-cli/
 .claude/
 .codex/
 skills-lock.json
+
+# Video production raw captures
+video_production/raw_video/
+
