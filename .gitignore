@@ -24,11 +24,17 @@ frontend/.playwright-cli/
 .codex/
 skills-lock.json
 
-# Video production raw captures
-video_production/raw_video/
-video_production/raw_video_clean/
-video_production/audio/*.wav
-video_production/audio/*.aiff
-video_production/audio/*.txt
+# Video files (Landing.mp4 in website code is strictly preserved)
+*.mp4
+!frontend/public/Landing.mp4
+*.mov
+*.avi
+*.mkv
+
+# Video production, raw captures, and external working notes
+video_production/
+documentation/Video Making/
+Frontend Study/
+
 
 
